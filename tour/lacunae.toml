@@ -1,0 +1,69 @@
+# The catalogue of planted lacunae. Single source of truth: the harness asserts
+# each `expected` finding, and the narrative + per-flaw docs are generated from
+# this file. Every entry is an INTENTIONAL, permanent demonstration fixture.
+#
+# Rule IDs were reconciled against live tool output:
+#   - PY-WL-101/102/103/104 captured from `wardline scan` (Task 2.3).
+#   - dead-entity / circular-import are the tokens the tour harness emits when it
+#     finds the planted structures in `.clarion/clarion.db` (Task 2.4); they are
+#     not Wardline rule IDs.
+
+[[lacuna]]
+id = "wl-trust-violation"
+file = "specimen/trust_flow.py"
+symbol = "unsafe_account_key"
+category = "trust-boundary"
+demonstrates = ["wardline", "wardline+clarion", "wardline+filigree"]
+explanation = "Declares return trust ASSURED but returns EXTERNAL_RAW — untrusted data reaches a trusted producer with no validation."
+expected_tool = "wardline"
+expected_rule = "PY-WL-101"
+
+[[lacuna]]
+id = "wl-non-rejecting-boundary"
+file = "specimen/exception_flow.py"
+symbol = "non_rejecting_boundary"
+category = "trust-boundary"
+demonstrates = ["wardline"]
+explanation = "A @trust_boundary that normalizes but never rejects — it cannot actually validate anything."
+expected_tool = "wardline"
+expected_rule = "PY-WL-102"
+
+[[lacuna]]
+id = "wl-broad-except"
+file = "specimen/exception_flow.py"
+symbol = "broad_handler"
+category = "exception-handling"
+demonstrates = ["wardline"]
+explanation = "A broad `except Exception` in a trusted-tier function that masks failures."
+expected_tool = "wardline"
+expected_rule = "PY-WL-103"
+
+[[lacuna]]
+id = "wl-swallowed-exception"
+file = "specimen/exception_flow.py"
+symbol = "swallowed_error"
+category = "exception-handling"
+demonstrates = ["wardline"]
+explanation = "An exception silently swallowed with `pass` in a trusted-tier function."
+expected_tool = "wardline"
+expected_rule = "PY-WL-104"
+
+[[lacuna]]
+id = "cl-dead-code"
+file = "specimen/dead_code.py"
+symbol = "orphaned_helper"
+category = "structure"
+demonstrates = ["clarion"]
+explanation = "A function with no callers — Clarion's dead-entity query surfaces it."
+expected_tool = "clarion"
+expected_rule = "dead-entity"
+
+[[lacuna]]
+id = "cl-circular-import"
+file = "specimen/cycle_a.py"
+symbol = "cycle_a"
+category = "structure"
+demonstrates = ["clarion"]
+explanation = "specimen.cycle_a and specimen.cycle_b import each other — Clarion's import graph contains a 2-cycle the harness surfaces from .clarion/clarion.db."
+expected_tool = "clarion"
+expected_rule = "circular-import"
