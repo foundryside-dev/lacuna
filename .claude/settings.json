@@ -30,7 +30,7 @@
       {
         "hooks": [
           {
-            "command": "clarion hook session-start --path '/home/john/testo'",
+            "command": "clarion hook session-start --path '/home/john/lacuna'",
             "type": "command"
           }
         ]
