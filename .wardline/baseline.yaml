@@ -1,0 +1,36 @@
+version: 1
+entries:
+- fingerprint: 80d1028db41b89ef4494c015589623ab4a4ad582c0c589ed7871f2506df28d92
+  rule_id: PY-WL-101
+  path: specimen/exception_flow.py
+  message: specimen.exception_flow.swallowed_error declares return trust ASSURED but
+    actually returns EXTERNAL_RAW (less trusted) — untrusted data reaches a trusted
+    producer
+- fingerprint: 9c1e861d4df3605f5d18a523e4b7867d728147c44200566b6801315dbfb5c69f
+  rule_id: PY-WL-101
+  path: specimen/exception_flow.py
+  message: specimen.exception_flow.broad_handler declares return trust ASSURED but
+    actually returns EXTERNAL_RAW (less trusted) — untrusted data reaches a trusted
+    producer
+- fingerprint: d947b4b637b7173e7149eebde7e9f01902a566e5f7ab6338772748187b8c70d6
+  rule_id: PY-WL-101
+  path: specimen/trust_flow.py
+  message: specimen.trust_flow.unsafe_account_key declares return trust ASSURED but
+    actually returns EXTERNAL_RAW (less trusted) — untrusted data reaches a trusted
+    producer
+- fingerprint: ae3a87cf85d8ba6330a0d758455d048f4622cc5a7892e13b7717087fac8eab34
+  rule_id: PY-WL-102
+  path: specimen/exception_flow.py
+  message: specimen.exception_flow.non_rejecting_boundary declares a trust boundary
+    (EXTERNAL_RAW -> ASSURED) but has no rejection path (no raise / no falsy return)
+    — it cannot validate
+- fingerprint: 8a72a8c25b56945a62e98e5d849cd9dc6eff7cba2d2fba32e2e7e54615e6a286
+  rule_id: PY-WL-103
+  path: specimen/exception_flow.py
+  message: 'specimen.exception_flow.broad_handler: broad exception handler at line
+    32'
+- fingerprint: 39c46db4c466635440084450c05eb32cb4747b03b12b67498b32d06ac30fa9ca
+  rule_id: PY-WL-104
+  path: specimen/exception_flow.py
+  message: 'specimen.exception_flow.swallowed_error: exception silently swallowed
+    at line 43'
