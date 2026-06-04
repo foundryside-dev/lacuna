@@ -57,10 +57,13 @@ def run_verify() -> int:
         if lac.expected_tool in live and lac.id in cov.missing_ids:
             failures.append(f"expected lacuna not surfaced: {lac.id} ({lac.expected_rule})")
 
-    # 2. Narrative lockstep: regenerated tour.md must match the committed file.
-    fresh = render_tour_md(results)
-    if not TOUR_MD.exists() or TOUR_MD.read_text() != fresh:
+    # 2. Narrative lockstep: regenerated docs must match the committed files.
+    fresh_tour = render_tour_md(results)
+    if not TOUR_MD.exists() or TOUR_MD.read_text() != fresh_tour:
         failures.append("docs/tour.md is stale — run `make tour` and commit")
+    fresh_matrix = render_matrix_md(manifest, caps)
+    if not MATRIX_MD.exists() or MATRIX_MD.read_text() != fresh_matrix:
+        failures.append("docs/matrix.md is stale — run `make tour` and commit")
 
     if failures:
         print("VERIFY FAILED:")

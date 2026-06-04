@@ -38,6 +38,18 @@ def test_coverage_does_not_credit_token_on_wrong_symbol():
     assert "b" in coverage(m, results2).demonstrated_ids
 
 
+def test_coverage_uses_suffix_match_not_substring():
+    """`safe_account_key` is a substring of `unsafe_account_key`. A surfaced pair for
+    `unsafe_account_key` must NOT credit a lacuna whose symbol is `safe_account_key`."""
+    m = Manifest(lacunae=(
+        Lacuna("safe", "specimen/trust_flow.py", "safe_account_key", "structure",
+               ("clarion",), "exp", "clarion", "dead-entity"),
+    ))
+    results = [StepResult("clarion", ok=True, detail="",
+                          surfaced=(("dead-entity", "specimen.trust_flow.unsafe_account_key"),))]
+    assert "safe" in coverage(m, results).missing_ids
+
+
 def test_tour_md_lists_each_step():
     md = render_tour_md([StepResult("clarion analyze", ok=True, detail="85 entities")])
     assert "clarion analyze" in md

@@ -28,12 +28,19 @@ class Coverage:
     missing_ids: set[str]
 
 
+def _symbol_matches(symbol: str, qualname: str) -> bool:
+    """Match on the exact symbol or a dotted-suffix (``…module.symbol``), NOT a bare
+    substring — otherwise ``safe_account_key`` would match ``unsafe_account_key`` and
+    one symbol rename could silently make the gate pass on the wrong finding."""
+    return qualname == symbol or qualname.endswith("." + symbol)
+
+
 def coverage(manifest: Manifest, results: list[StepResult]) -> Coverage:
     pairs = {p for r in results for p in r.surfaced}
     demonstrated = {
         l.id
         for l in manifest.lacunae
-        if any(rule == l.expected_rule and l.symbol in (name or "") for rule, name in pairs)
+        if any(rule == l.expected_rule and _symbol_matches(l.symbol, name or "") for rule, name in pairs)
     }
     missing = {l.id for l in manifest.lacunae} - demonstrated
     return Coverage(demonstrated_ids=demonstrated, missing_ids=missing)

@@ -121,14 +121,15 @@ def clarion_analyze() -> StepResult:
     proc = _run([str(BIN / "clarion"), "analyze"])
     ents = edges = 0
     if CLARION_DB.exists():
-        con = sqlite3.connect(str(CLARION_DB))
-        try:
-            ents = con.execute("select count(*) from entities").fetchone()[0]
-            edges = con.execute("select count(*) from edges").fetchone()[0]
+        try:  # connect() itself can raise (e.g. corrupt DB) — keep the step total
+            con = sqlite3.connect(str(CLARION_DB))
+            try:
+                ents = con.execute("select count(*) from entities").fetchone()[0]
+                edges = con.execute("select count(*) from edges").fetchone()[0]
+            finally:
+                con.close()
         except sqlite3.Error:
             pass
-        finally:
-            con.close()
     return StepResult(
         "clarion analyze",
         ok=proc.returncode == 0,
@@ -149,11 +150,19 @@ def wardline_scan() -> StepResult:
 
 
 def filigree_findings() -> StepResult:
+    """Demonstrate the Filigree leg: confirm the tracker is reachable.
+
+    The narrative detail is intentionally a STABLE description, not a live issue
+    count — the `.filigree/` DB is gitignored and mutates as scans emit findings,
+    so embedding its count would make the byte-for-byte `make verify` lockstep flap
+    between runs/environments. The Wardline→Filigree dataflow itself is exercised by
+    `wardline scan` posting to the scan-results endpoint configured in wardline.yaml.
+    """
     proc = _run([str(BIN / "filigree"), "list", "--json"])
     ok = proc.returncode == 0
-    try:
-        items = json.loads(proc.stdout) if ok else []
-        count = len(items) if isinstance(items, list) else len(items.get("issues", []))
-    except (json.JSONDecodeError, AttributeError):
-        count = 0
-    return StepResult("filigree list", ok=ok, detail=f"{count} tracked issue(s)")
+    detail = (
+        "live — Wardline findings POST to the filigree scan-results bridge (wardline.yaml)"
+        if ok
+        else "filigree CLI not reachable"
+    )
+    return StepResult("filigree list", ok=ok, detail=detail)
