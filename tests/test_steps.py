@@ -20,20 +20,26 @@ def test_missing_file_yields_no_pairs(tmp_path):
 
 
 def _mini_clarion_db(path):
-    """Build a minimal clarion.db with the entities/edges shape the harness reads."""
+    """Build a minimal clarion.db with the entities/edges shape the harness reads.
+
+    `parent_id` matters: the dead-code query keeps only module-level functions
+    (parent kind module/file), so each function points at its containing module.
+    """
     c = sqlite3.connect(str(path))
-    c.execute("create table entities (id text, kind text, name text)")
+    c.execute("create table entities (id text, kind text, name text, parent_id text)")
     c.execute("create table edges (kind text, from_id text, to_id text)")
-    c.executemany("insert into entities values (?,?,?)", [
-        ("e1", "function", "specimen.dead_code.orphaned_helper"),
-        ("e2", "function", "specimen.cycle_a.ping"),
-        ("e3", "function", "specimen.service.live"),
-        ("ma", "module", "specimen.cycle_a"),
-        ("mb", "module", "specimen.cycle_b"),
+    c.executemany("insert into entities values (?,?,?,?)", [
+        ("e1", "function", "specimen.dead_code.orphaned_helper", "md"),  # dead: no incoming
+        ("e2", "function", "specimen.cycle_a.ping", "ma"),
+        ("e3", "function", "specimen.service.live", "msvc"),             # has an incoming call
+        ("ma", "module", "specimen.cycle_a", None),
+        ("mb", "module", "specimen.cycle_b", None),
+        ("md", "module", "specimen.dead_code", None),
+        ("msvc", "module", "specimen.service", None),
     ])
     c.executemany("insert into edges values (?,?,?)", [
-        ("calls", "e2", "e3"),
-        ("imports", "ma", "mb"),
+        ("calls", "e2", "e3"),          # e3 is called -> live
+        ("imports", "ma", "mb"),        # cycle halves (module <-> module)
         ("imports", "mb", "ma"),
     ])
     c.commit()

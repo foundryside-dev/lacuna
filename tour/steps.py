@@ -43,11 +43,20 @@ def structure_facts(db_path: Path = CLARION_DB) -> StructureFacts:
     except sqlite3.Error:
         return StructureFacts(dead=(), cycle_members=())
     try:
+        # "Dead" = a module-level (not a method/dunder) specimen function with no
+        # incoming call/reference/import edge. Restricting to module-level non-dunder
+        # functions avoids the huge false-positive list Clarion's static call graph
+        # would otherwise produce (dunders invoked by operators, methods reached by
+        # dynamic dispatch) — those have no `calls` edge but are not dead.
         dead = tuple(
             r[0]
             for r in con.execute(
-                "select name from entities where kind='function' "
-                "and name like 'specimen.%' and id not in "
+                "select e.name from entities e "
+                "left join entities p on p.id = e.parent_id "
+                "where e.kind='function' and e.name like 'specimen.%' "
+                "and e.name not glob '*.__*__' "
+                "and (p.kind is null or p.kind in ('module', 'file')) "
+                "and e.id not in "
                 "(select to_id from edges where kind in ('calls','references','imports'))"
             )
         )
