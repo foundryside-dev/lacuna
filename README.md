@@ -40,5 +40,11 @@ anything new.
 
 Loom models a codebase as **entities**, each carrying typed facts from different
 tools, keyed on one durable identity (SEI), read in one call. Lacuna is the
-shared specimen that demonstrates the whole matrix: Clarion (structure),
-Wardline (trust), Filigree (work), Legis (governance), Charter (requirements).
+shared specimen that demonstrates the whole matrix.
+
+The Loom federation hub at `~/loom` is the authoritative source for the
+federation narrative and roster — see `~/loom/doctrine.md` for the axiom and the
+member roster, and `~/loom/members/lacuna.md` for Lacuna's place in the suite as
+the demonstration specimen (it is **not** a roster member). This README does not
+restate the roster; the hub owns it. Lacuna owns its own specimen, planted-flaw
+manifest, and tour, as described above.

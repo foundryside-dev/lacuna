@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Federation roster/axiom — defer to the hub.** The authoritative source for the Loom federation axiom and member roster is the hub at `~/loom` (`~/loom/doctrine.md`); the integration matrix is `~/loom/federation-map.md`. Per the hub, Lacuna is the **demonstration specimen, not a roster member** (`~/loom/members/lacuna.md`); the "first-class Loom member" phrasing below predates that ruling. The specimen/manifest/tour design is unaffected.
+
 **Goal:** Turn the `testo` integration sandbox into **Lacuna** — a first-class Loom member that is the deliberately-flawed reference specimen the whole suite is demonstrated against, with an automated tour harness, a generated narrative, and a re-keyed identity across all four tools.
 
 **Architecture:** A single machine-readable flaw manifest (`tour/lacunae.toml`) is the source of truth. A `tour/` Python package loads it, detects which Loom tools are runnable, drives each live tool against the `specimen/` app, asserts the manifest's expected findings, and renders the narrative + matrix-coverage docs from the run. The specimen is a clean-cored library app seeded with isolated, catalogued flaws. The project is re-keyed from `testo` to `lacuna` (paths, configs, hooks, Filigree prefix, fresh Clarion SEIs, re-baselined Wardline).

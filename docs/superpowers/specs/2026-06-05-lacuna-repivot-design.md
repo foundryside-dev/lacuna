@@ -4,6 +4,16 @@
 **Status:** Design (awaiting review → implementation plan)
 **Supersedes:** the `testo` "Loom suite integration sandbox" framing (`README.md`, `INTEGRATION_LOG.md`)
 
+> **Federation roster/axiom — defer to the hub.** This spec narrates Lacuna's
+> place in the Loom suite and references the member matrix. The authoritative
+> source for the federation axiom and roster is the Loom hub at `~/loom`:
+> see `~/loom/doctrine.md` (axiom + roster) and `~/loom/federation-map.md`
+> (integration matrix). Per the hub, Lacuna is the federation's **demonstration
+> specimen, not a roster member** (`~/loom/members/lacuna.md`); the "first-class
+> Loom member" phrasing below predates the hub's ruling and is superseded by it
+> for roster purposes. Everything below about the *specimen, manifest, and tour
+> design* remains Lacuna's own and is unaffected.
+
 ## One-line
 
 Lacuna is the **MissingNo of the Loom suite**: a first-class Loom member whose role

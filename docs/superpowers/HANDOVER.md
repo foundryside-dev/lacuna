@@ -9,6 +9,14 @@ prompt, then read the spec and plan it points to before doing anything.**
 
 ## What this is
 
+> **Federation roster/axiom — defer to the hub.** The authoritative source for
+> the Loom federation axiom and member roster is the hub at `~/loom` (see
+> `~/loom/doctrine.md`). Per the hub, Lacuna is the **demonstration specimen,
+> not a roster member** (`~/loom/members/lacuna.md`); the "first-class Loom
+> member/product" phrasing here predates that ruling. For "suite context," read
+> `~/loom/federation-map.md` rather than enumerating the member repos. The
+> specimen/manifest/tour content below is Lacuna's own and is unaffected.
+
 `/home/john/testo` was a throwaway "Loom suite integration sandbox." It is being
 repivoted into a **first-class Loom product called Lacuna** — *the MissingNo of
 Loom*: a clean-cored reference application seeded with documented, **permanent**
