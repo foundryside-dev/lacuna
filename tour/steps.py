@@ -31,6 +31,10 @@ def structure_facts(db_path: Path = CLARION_DB) -> StructureFacts:
     Clarion ships no dead-code/cycle CLI verb, so the harness queries the DB the
     `clarion analyze` pass already wrote. Never raises: a missing/locked DB yields
     empty facts.
+
+    Scoped to ``specimen.*`` entities: the specimen is the subject of the demo,
+    whereas ``tour/`` (the harness) and ``tests/`` are instruments — their
+    uncalled functions are not specimen lacunae and would only be narrative noise.
     """
     if not Path(db_path).exists():
         return StructureFacts(dead=(), cycle_members=())
@@ -42,7 +46,8 @@ def structure_facts(db_path: Path = CLARION_DB) -> StructureFacts:
         dead = tuple(
             r[0]
             for r in con.execute(
-                "select name from entities where kind='function' and id not in "
+                "select name from entities where kind='function' "
+                "and name like 'specimen.%' and id not in "
                 "(select to_id from edges where kind in ('calls','references','imports'))"
             )
         )
@@ -52,7 +57,8 @@ def structure_facts(db_path: Path = CLARION_DB) -> StructureFacts:
             "join edges b on a.from_id=b.to_id and a.to_id=b.from_id "
             "join entities ef on ef.id=a.from_id "
             "join entities et on et.id=a.to_id "
-            "where a.kind='imports' and b.kind='imports' and a.from_id<a.to_id"
+            "where a.kind='imports' and b.kind='imports' and a.from_id<a.to_id "
+            "and ef.name like 'specimen.%' and et.name like 'specimen.%'"
         ):
             members.extend((ef, et))
         return StructureFacts(dead=dead, cycle_members=tuple(dict.fromkeys(members)))
