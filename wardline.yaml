@@ -1,5 +1,4 @@
 clarion:
-  url: "http://127.0.0.1:9111"
-
+  url: http://127.0.0.1:9111
 filigree:
-  url: "http://127.0.0.1:8749/api/loom/scan-results"
+  url: http://127.0.0.1:8749/api/loom/scan-results
