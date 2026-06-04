@@ -1,0 +1,2 @@
+[mcp_servers.filigree]
+command = "/home/john/.local/bin/filigree-mcp"
