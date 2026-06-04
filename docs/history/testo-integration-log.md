@@ -1,3 +1,7 @@
+> **Historical.** This is the original `testo` integration-sandbox log, retained
+> for provenance. Its `testo-…` issue IDs and `clarion:eid:…` SEIs predate the
+> re-key to **Lacuna** and are no longer live. See `README.md` for the product.
+
 # Loom Integration Log
 
 ## 2026-06-04
