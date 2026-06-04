@@ -7,8 +7,8 @@ import functools
 from collections.abc import Callable
 from typing import Protocol
 
-from sampleapp.models import Book, Loan, Money, User
-from sampleapp.repository import BookRepository, UserRepository
+from specimen.models import Book, Loan, Money, User
+from specimen.repository import BookRepository, UserRepository
 
 Listener = Callable[[str], None]
 

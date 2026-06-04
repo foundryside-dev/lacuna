@@ -61,13 +61,13 @@ green, no bugs. Every apparent failure was either wrong args or a guardrail
 firing correctly (claim-aware writes, transition validation, project-prefix
 import isolation, force-required deletes).
 
-## `sampleapp/` — test corpus for Clarion/Wardline
+## `specimen/` — test corpus for Clarion/Wardline
 
 A tiny, runnable in-memory library system, deliberately structured to give
 Clarion's extractor a rich entity/edge graph and Wardline a taint boundary.
 
 ```
-sampleapp/
+specimen/
   __init__.py
   models.py      # Genre(Enum), Identifiable(Protocol), Entity(ABC),
                  # Money(frozen dataclass, operator overloading), Book, User, Loan
@@ -88,14 +88,14 @@ dataclasses, and strategy/observer/decorator/registry patterns.
 Cross-module edges: `cli → service → repository → models` (imports = references;
 method calls = calls) plus inheritance edges.
 
-Run it: `.venv/bin/python -m sampleapp.cli register grace "Grace Hopper"`
+Run it: `.venv/bin/python -m specimen.cli register grace "Grace Hopper"`
 
 ## Next steps
 
 1. **Clarion** (the hub): build the Rust CLI (`cargo`, ~68K LOC, a few min) and
    `pip install -e` the `clarion_plugin_python` plugin. Then point `clarion
-   analyze` at `sampleapp/` and test the Filigree↔Clarion binding (Filigree
+   analyze` at `specimen/` and test the Filigree↔Clarion binding (Filigree
    `entity_association_*` ↔ Clarion `issues_for` / WP9-A).
-2. **Wardline**: pip install; scan `sampleapp/` (the `cli.py` argv→service flow).
+2. **Wardline**: pip install; scan `specimen/` (the `cli.py` argv→service flow).
 3. **Legis**: design review only — check its intended contracts against what the
    live three expose.

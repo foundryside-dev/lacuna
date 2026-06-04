@@ -63,7 +63,7 @@ never drift.
 
 ### 2. The specimen — clean core + planted lacunae
 
-`sampleapp/` → `specimen/`. Keep the existing rich, *well-formed* pattern set (ABCs,
+`specimen/` → `specimen/`. Keep the existing rich, *well-formed* pattern set (ABCs,
 `Protocol` structural typing, bounded generics, mixins/MRO, decorator factories,
 classmethod factories, properties, operator overloading, enums, dataclasses, and the
 strategy/observer/decorator/registry patterns). Then seed **isolated, catalogued**
@@ -160,7 +160,7 @@ lacuna/
 
 1. **Re-key** (`testo` → `lacuna`): paths, configs, hooks, Filigree prefix, Clarion
    re-analyze, Wardline re-scan. *Lands first* — the harness depends on the new paths.
-2. **Specimen + manifest**: restructure `sampleapp/` → `specimen/`, plant the
+2. **Specimen + manifest**: restructure `specimen/` → `specimen/`, plant the
    catalogued lacunae, author `tour/lacunae.toml`, baseline them in `wardline.yaml`.
 3. **Harness + narrative**: `tour/tour.py` (tour + verify modes), generated
    `docs/tour.md` / `docs/matrix.md` / `docs/flaws/`, `Makefile` targets.

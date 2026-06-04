@@ -6,8 +6,8 @@ from __future__ import annotations
 import sys
 from collections.abc import Callable, Sequence
 
-from sampleapp.models import Book, Genre
-from sampleapp.service import LibraryService
+from specimen.models import Book, Genre
+from specimen.service import LibraryService
 
 Command = Callable[["App", Sequence[str]], str]
 

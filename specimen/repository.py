@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from typing import Generic, Iterator, TypeVar
 
-from sampleapp.models import Book, Entity, User
+from specimen.models import Book, Entity, User
 
 T = TypeVar("T", bound=Entity)
 

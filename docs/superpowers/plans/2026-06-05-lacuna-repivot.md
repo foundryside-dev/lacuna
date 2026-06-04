@@ -104,7 +104,7 @@ addopts = "-q"
 
 **Do NOT `pip install -e .` here.** `pyproject` declares
 `packages = ["specimen", "tour"]`, and neither exists yet (you still have
-`sampleapp/`; `tour/` arrives in Phase 2/3), so hatchling would hard-error. The
+`specimen/`; `tour/` arrives in Phase 2/3), so hatchling would hard-error. The
 tests don't need it: they run as `cd /home/john/lacuna && .venv/bin/python -m
 pytest`, and `python -m` puts the repo root on `sys.path`, so `import specimen` /
 `import tour` resolve without an editable self-install. Install only the deps:
@@ -210,7 +210,7 @@ to:
 ```bash
 cd /home/john/lacuna && rm -rf .clarion && /home/john/.local/bin/clarion install --path . && /home/john/.local/bin/clarion analyze
 ```
-Expected: `analyze` walks the corpus and prints an entity/edge count (≈85 entities for the current `sampleapp/`). Fresh SEIs are minted under `/home/john/lacuna`.
+Expected: `analyze` walks the corpus and prints an entity/edge count (≈85 entities for the current `specimen/`). Fresh SEIs are minted under `/home/john/lacuna`.
 
 - [ ] **Step 3: Verify Clarion health**
 
@@ -236,7 +236,7 @@ cd /home/john/lacuna && git add .claude/settings.json .mcp.json clarion.yaml && 
 ```bash
 cd /home/john/lacuna && /home/john/.local/bin/wardline scan . --fail-on ERROR; echo "exit=$?"
 ```
-Expected: `exit=1` (the planted trust violation in `sampleapp/trust_flow.py` trips the gate) and `findings.jsonl` is written. This is the pre-baseline state; Task 2.5 baselines it.
+Expected: `exit=1` (the planted trust violation in `specimen/trust_flow.py` trips the gate) and `findings.jsonl` is written. This is the pre-baseline state; Task 2.5 baselines it.
 
 - [ ] **Step 2: Verify Wardline wiring**
 
@@ -283,26 +283,26 @@ cd /home/john/lacuna && git add -A && git commit -m "docs: retire testo integrat
 
 ## Phase 2 — The specimen and the flaw manifest
 
-> Goal: rename `sampleapp/` → `specimen/`, modernize the trust markers, plant catalogued flaws, and write `tour/lacunae.toml` as the single source of truth.
+> Goal: rename `specimen/` → `specimen/`, modernize the trust markers, plant catalogued flaws, and write `tour/lacunae.toml` as the single source of truth.
 
-### Task 2.1: Rename `sampleapp/` → `specimen/` and fix imports
+### Task 2.1: Rename `specimen/` → `specimen/` and fix imports
 
 **Files:**
-- Move: `sampleapp/*` → `specimen/*`
-- Modify: every `from sampleapp` / `import sampleapp` reference
+- Move: `specimen/*` → `specimen/*`
+- Modify: every `from specimen` / `import specimen` reference
 
 - [ ] **Step 1: Move the package**
 
 ```bash
-cd /home/john/lacuna && rm -rf sampleapp/__pycache__ && git add -A && git commit -m "chore: drop stale pycache" --allow-empty && git mv sampleapp specimen 2>/dev/null || mv sampleapp specimen
+cd /home/john/lacuna && rm -rf specimen/__pycache__ && git add -A && git commit -m "chore: drop stale pycache" --allow-empty && git mv specimen specimen 2>/dev/null || mv specimen specimen
 ```
 
 - [ ] **Step 2: Rewrite internal imports**
 
 ```bash
-cd /home/john/lacuna && grep -rl 'sampleapp' specimen | xargs -r sed -i 's/\bsampleapp\b/specimen/g'
+cd /home/john/lacuna && grep -rl 'specimen' specimen | xargs -r sed -i 's/\bspecimen_old\b/specimen/g'
 ```
-Expected: no occurrences remain — verify with `grep -rn 'sampleapp' specimen` (empty output).
+Expected: no occurrences remain — verify with `grep -rn 'specimen' specimen` (empty output).
 
 - [ ] **Step 3: Verify the app still runs under the new name**
 
@@ -314,7 +314,7 @@ Expected: prints a success line for registering user `grace` (same behavior as b
 - [ ] **Step 4: Commit**
 
 ```bash
-cd /home/john/lacuna && git add -A && git commit -m "refactor: rename sampleapp -> specimen"
+cd /home/john/lacuna && git add -A && git commit -m "refactor: rename specimen -> specimen"
 ```
 
 ---
