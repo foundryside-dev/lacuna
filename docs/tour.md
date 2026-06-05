@@ -14,9 +14,9 @@ dead entities: _add_book, _register, audited, broad_handler, main, non_rejecting
 
 surfaced rules: PY-WL-101, PY-WL-102, PY-WL-103, PY-WL-104, WLN-ENGINE-METRICS, WLN-L3-LOW-RESOLUTION
 
-## ⚠️ legis govern
+## ✅ legis govern
 
-wardline produced no legis artifact (exit 2)
+governed 1 active defects → surface_override
 
 ## ✅ filigree list
 
