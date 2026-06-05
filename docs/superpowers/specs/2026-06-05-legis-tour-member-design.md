@@ -138,6 +138,12 @@ If the specimen's findings change, the committed narrative is regenerated
   `baselined`→`suppressed` / relocate proof). After legis `bc43694` those are no
   longer required by legis; the doc's "legis rejects" rationale is stale.
 
+## Implementation notes & known limitations (2026-06-05)
+
+- **Wardline handoff doc is stale (flag for the Wardline owner).** `wardline/docs/guides/legis-handoff.md` still describes the *pre-relaxation* legis contract ("legis rejects any non-tier property"; Wardline must drop diagnostics / map `baselined`→`suppressed` / relocate suppression proof into `properties`). After legis `bc43694`, legis carries diagnostics verbatim, accepts `baselined`/`judged`, and reads proof top-level OR in properties — so those projection steps are no longer *required by legis*. The doc's "legis rejects" rationale should be refreshed.
+- **Signed handshake needs a clean tree → `make verify` is clean-tree-only.** `wardline scan --format legis` refuses to sign a dirty working tree and (with the `.env` key set) cannot emit an unsigned artifact, so the planned unsigned dirty-tree fallback was infeasible. The `legis_govern` step therefore degrades to `ok=False` on a dirty tree and signs on a clean tree. The tour's operating condition is a clean checkout (CI), where it governs 1 active defect and records `artifact: verified`. Consequence: run `make tour` / `make verify` on a committed clean tree; a dirty tree will produce a degraded (and non-matching) narrative.
+- **Wardline install requires the `[scanner,clarion]` extras.** `uv tool install --force /home/john/wardline` alone omits `blake3` (a clarion extra), making `wardline scan` exit 2. Install with: `uv tool install --force "wardline[scanner,clarion] @ /home/john/wardline"`.
+
 ## Testing / acceptance
 
 - `make tour` runs the legis leg green; the report shows the governed count and the

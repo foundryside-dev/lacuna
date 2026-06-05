@@ -23,7 +23,7 @@
 ```bash
 uv tool install --force /home/john/legis              # installs `legis` (committed HEAD)
 uv tool install --force /home/john/filigree           # 2.3.0 -> 3.0.0 (committed, closure-gate)
-uv tool install --force /home/john/wardline           # working tree -> includes B4a `--format legis`
+uv tool install --force "wardline[scanner,clarion] @ /home/john/wardline"           # working tree -> includes B4a --format legis (scanner+clarion extras required)
 ```
 
 - [ ] **Step 2: Install the freshly-built clarion 1.3.0 binary (B3)**
