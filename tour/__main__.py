@@ -27,6 +27,7 @@ def _drive() -> tuple[list, list]:
         steps.clarion_analyze(),
         steps.clarion_structure(),
         steps.wardline_scan(),
+        steps.legis_govern(),
         steps.filigree_findings(),
     ]
     return caps, results
