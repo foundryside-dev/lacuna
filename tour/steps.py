@@ -185,6 +185,7 @@ def _tool(name: str) -> str | None:
 
 
 def _free_port() -> int:
+    # NOTE: bind→close→reuse is racy (no SO_REUSEPORT); acceptable for a throwaway tour server.
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
@@ -246,16 +247,24 @@ def legis_govern() -> StepResult:
     POST it to a throwaway `legis serve` with server-owned surface_override routing,
     and record the deterministic governed-defect count. Never raises (tour contract).
     """
+    # NOTE: signing needs a clean tree, so on a dirty working tree this step
+    # degrades to ok=False; the tour's operating condition is a clean checkout
+    # (make verify / CI).
     name = "legis govern"
     wardline = _tool("wardline")
     legis = _tool("legis")
     if not wardline or not legis:
         return StepResult(name, ok=False, detail="legis/wardline not installed")
 
-    secret = _artifact_secret()
-    proc = None
-    try:
-        with tempfile.TemporaryDirectory() as tmp:
+    # The temp dir wraps the try/finally so teardown order on return is:
+    # finally (kill the server) FIRST, then TemporaryDirectory.__exit__ deletes
+    # the dir (incl. gov.db) — never the inverse.
+    with tempfile.TemporaryDirectory() as tmp:
+        proc = None
+        try:
+            # _artifact_secret() reads .env from disk; its OSError must be caught
+            # by the except below, so it lives INSIDE the try (never-raises contract).
+            secret = _artifact_secret()
             artifact_path = Path(tmp) / "scan.legis.json"
             produced, last_exit = _produce_legis_artifact(wardline, artifact_path, secret)
             if not produced:
@@ -308,13 +317,13 @@ def legis_govern() -> StepResult:
                 detail=f"governed {n} active defects → surface_override",
                 note=f"artifact: {status}",
             )
-    except (urllib.error.HTTPError, urllib.error.URLError, OSError,
-            json.JSONDecodeError, ValueError) as exc:
-        return StepResult(name, ok=False, detail=f"handshake failed: {exc}")
-    finally:
-        if proc is not None:
-            proc.terminate()
-            try:
-                proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                proc.kill()
+        except (urllib.error.HTTPError, urllib.error.URLError, OSError,
+                json.JSONDecodeError, ValueError) as exc:
+            return StepResult(name, ok=False, detail=f"handshake failed: {exc}")
+        finally:
+            if proc is not None:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    proc.kill()

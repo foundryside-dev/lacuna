@@ -37,3 +37,14 @@ def test_legis_govern_never_raises_when_tools_missing(monkeypatch):
     r = steps.legis_govern()
     assert r.ok is False
     assert r.name == "legis govern"
+
+
+def test_legis_govern_never_raises_on_a_live_path_error(monkeypatch):
+    # tools resolve, but a live call inside the try raises -> must degrade, not raise.
+    monkeypatch.setattr(steps, "_tool", lambda name: f"/home/john/.local/bin/{name}")
+    def _boom():
+        raise OSError("disk gone")
+    monkeypatch.setattr(steps, "_artifact_secret", _boom)
+    r = steps.legis_govern()
+    assert r.ok is False
+    assert r.name == "legis govern"
