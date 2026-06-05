@@ -318,7 +318,9 @@ def legis_govern() -> StepResult:
                 note=f"artifact: {status}",
             )
         except (urllib.error.HTTPError, urllib.error.URLError, OSError,
-                json.JSONDecodeError, ValueError) as exc:
+                json.JSONDecodeError, ValueError, AttributeError, TypeError) as exc:
+            # AttributeError/TypeError guard a non-object JSON response (array/scalar)
+            # whose `.get("routed", ...)` would otherwise escape the never-raises contract.
             return StepResult(name, ok=False, detail=f"handshake failed: {exc}")
         finally:
             if proc is not None:
