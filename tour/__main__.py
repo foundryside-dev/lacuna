@@ -40,6 +40,9 @@ def run_tour() -> int:
     MATRIX_MD.write_text(render_matrix_md(manifest, caps))
     cov = coverage(manifest, results)
     print(render_tour_md(results))
+    for r in results:
+        if r.note:
+            print(f"note [{r.name}]: {r.note}")
     print(f"\nDemonstrated lacunae: {sorted(cov.demonstrated_ids)}")
     print(f"Not surfaced:         {sorted(cov.missing_ids)}")
     return 0

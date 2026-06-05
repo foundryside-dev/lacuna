@@ -61,3 +61,16 @@ def test_matrix_md_labels_design_only_cells():
     caps = [Capability("legis", False, "design-only (not yet first-class)")]
     md = render_matrix_md(m, caps)
     assert "design-only" in md
+
+
+def test_note_is_not_rendered_into_locked_markdown():
+    r = StepResult("legis govern", ok=True, detail="governed 3 active defects → surface_override",
+                   note="artifact: verified")
+    md = render_tour_md([r])
+    assert "governed 3 active defects → surface_override" in md
+    assert "verified" not in md            # note stays OUT of the locked narrative
+
+
+def test_note_defaults_empty_and_is_optional():
+    r = StepResult("x", ok=True, detail="d")
+    assert r.note == ""

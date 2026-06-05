@@ -20,6 +20,10 @@ class StepResult:
     # gate is not hollow: an incidental `dead-entity` on some other symbol must not
     # credit the planted one.
     surfaced: tuple[tuple[str, str], ...] = field(default=())
+    # Environment-dependent live-only detail (e.g. signed/unsigned artifact status).
+    # Deliberately NOT rendered into the locked markdown so `make verify` stays
+    # byte-for-byte deterministic across machines.
+    note: str = ""
 
 
 @dataclass(frozen=True)
