@@ -29,8 +29,3 @@ entries:
   path: specimen/exception_flow.py
   message: 'specimen.exception_flow.broad_handler: broad exception handler at line
     32'
-- fingerprint: 39c46db4c466635440084450c05eb32cb4747b03b12b67498b32d06ac30fa9ca
-  rule_id: PY-WL-104
-  path: specimen/exception_flow.py
-  message: 'specimen.exception_flow.swallowed_error: exception silently swallowed
-    at line 43'

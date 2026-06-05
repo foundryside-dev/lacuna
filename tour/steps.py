@@ -3,8 +3,16 @@
 from __future__ import annotations
 
 import json
+import os
+import secrets
+import shutil
+import socket
 import sqlite3
 import subprocess
+import tempfile
+import time
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -166,3 +174,147 @@ def filigree_findings() -> StepResult:
         else "filigree CLI not reachable"
     )
     return StepResult("filigree list", ok=ok, detail=detail)
+
+
+def _tool(name: str) -> str | None:
+    """Resolve a tool by ~/.local/bin then PATH (mirrors capability._locate)."""
+    candidate = BIN / name
+    if candidate.exists():
+        return str(candidate)
+    return shutil.which(name)
+
+
+def _free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def _artifact_secret() -> str | None:
+    """Read the shared HMAC secret from lacuna's gitignored .env, if provisioned."""
+    env_file = ROOT / ".env"
+    if not env_file.exists():
+        return None
+    for line in env_file.read_text().splitlines():
+        if line.startswith("WARDLINE_LEGIS_ARTIFACT_KEY="):
+            value = line.split("=", 1)[1].strip()
+            return value or None
+    return None
+
+
+def _wait_health(port: int, timeout_s: float = 8.0) -> bool:
+    deadline = time.monotonic() + timeout_s
+    url = f"http://127.0.0.1:{port}/health"
+    while time.monotonic() < deadline:
+        try:
+            with urllib.request.urlopen(url, timeout=1.0) as resp:
+                if resp.status == 200:
+                    return True
+        except (urllib.error.URLError, OSError):
+            time.sleep(0.2)
+    return False
+
+
+def _produce_legis_artifact(
+    wardline: str, out: Path, secret: str | None
+) -> tuple[bool, int]:
+    """Run `wardline scan --format legis`, writing the artifact to ``out``.
+
+    Returns ``(produced, exit_code)``. The artifact is signed when the shared
+    HMAC key is provisioned (the tour's `.env`). Note: wardline loads that key
+    from `.env` on disk and then *refuses to sign a dirty working tree* — and
+    `scan --format legis` exposes no `--allow-dirty`, so an unsigned fallback by
+    clearing the env is impossible (an env override can only *set* the key, not
+    unset a `.env` one). The tour's canonical run (`make verify` / CI) is
+    post-commit on a clean tree, where signing succeeds; on a dirty tree this
+    yields no artifact and the step degrades to ``ok=False`` (tour contract).
+    """
+    scan_env = {**os.environ}
+    if secret:
+        scan_env["WARDLINE_LEGIS_ARTIFACT_KEY"] = secret
+    proc = subprocess.run(
+        [wardline, "scan", ".", "--format", "legis", "--output", str(out)],
+        cwd=ROOT, capture_output=True, text=True, check=False, env=scan_env,
+    )
+    return out.exists(), proc.returncode
+
+
+def legis_govern() -> StepResult:
+    """Drive the live Wardline -> Legis governance handshake against the specimen.
+
+    Produce a (signed-when-keyed) legis artifact with `wardline scan --format legis`,
+    POST it to a throwaway `legis serve` with server-owned surface_override routing,
+    and record the deterministic governed-defect count. Never raises (tour contract).
+    """
+    name = "legis govern"
+    wardline = _tool("wardline")
+    legis = _tool("legis")
+    if not wardline or not legis:
+        return StepResult(name, ok=False, detail="legis/wardline not installed")
+
+    secret = _artifact_secret()
+    proc = None
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            artifact_path = Path(tmp) / "scan.legis.json"
+            produced, last_exit = _produce_legis_artifact(wardline, artifact_path, secret)
+            if not produced:
+                return StepResult(name, ok=False,
+                                  detail=f"wardline produced no legis artifact (exit {last_exit})")
+            artifact = json.loads(artifact_path.read_text())
+            signed = bool(artifact.get("artifact_signature"))
+
+            # Real auth: provision an ephemeral API secret and present it as a
+            # Bearer token on the writer route (legis HTTPBearer + LEGIS_API_SECRET).
+            # The throwaway server is loopback-only and torn down in `finally`.
+            api_secret = secrets.token_hex(16)
+            port = _free_port()
+            serve_env = {
+                **os.environ,
+                "LEGIS_WARDLINE_CELL": "surface_override",
+                "LEGIS_API_SECRET": api_secret,
+            }
+            # Only assert verification when BOTH a key is provisioned AND the
+            # winning artifact carries a signature (the unsigned fallback drops it).
+            if secret and signed:
+                serve_env["LEGIS_WARDLINE_ARTIFACT_KEY"] = secret
+            gov_db = f"sqlite:///{Path(tmp) / 'gov.db'}"
+            proc = subprocess.Popen(
+                [legis, "serve", "--host", "127.0.0.1", "--port", str(port),
+                 "--governance-db", gov_db],
+                cwd=ROOT, env=serve_env,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+            if not _wait_health(port):
+                return StepResult(name, ok=False, detail="legis serve did not become healthy")
+
+            body = json.dumps({"agent_id": "lacuna-tour", "scan": artifact}).encode("utf-8")
+            req = urllib.request.Request(
+                f"http://127.0.0.1:{port}/wardline/scan-results",
+                data=body,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {api_secret}",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=5.0) as resp:
+                routed = json.loads(resp.read()).get("routed", [])
+
+            n = len(routed)
+            status = ("verified" if (secret and signed) else "unverified")
+            return StepResult(
+                name, ok=True,
+                detail=f"governed {n} active defects → surface_override",
+                note=f"artifact: {status}",
+            )
+    except (urllib.error.HTTPError, urllib.error.URLError, OSError,
+            json.JSONDecodeError, ValueError) as exc:
+        return StepResult(name, ok=False, detail=f"handshake failed: {exc}")
+    finally:
+        if proc is not None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
