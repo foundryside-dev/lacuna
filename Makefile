@@ -14,7 +14,10 @@ test:
 	$(PY) -m pytest
 
 scan:
-	$(WARDLINE) scan . --fail-on ERROR
+	# Trusted local checkout: the repo-owned baseline (deliberate planted
+	# specimen flaws) is allowed to clear the gate. CI-on-PR should instead
+	# scope to new findings with `--new-since <merge-base>`.
+	$(WARDLINE) scan . --fail-on ERROR --trust-suppressions
 
 docs:
 	$(PY) -m tour.docs_gen

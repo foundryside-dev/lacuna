@@ -20,7 +20,7 @@ from tour.report import StepResult
 
 ROOT = Path("/home/john/lacuna")
 BIN = Path("/home/john/.local/bin")
-CLARION_DB = ROOT / ".clarion" / "clarion.db"
+LOOMWEAVE_DB = ROOT / ".loomweave" / "loomweave.db"
 
 
 def _run(cmd: list[str], cwd: Path = ROOT) -> subprocess.CompletedProcess[str]:
@@ -33,11 +33,11 @@ class StructureFacts:
     cycle_members: tuple[str, ...]  # entity names participating in an `imports` 2-cycle
 
 
-def structure_facts(db_path: Path = CLARION_DB) -> StructureFacts:
-    """Read structural facts straight from Clarion's SQLite index.
+def structure_facts(db_path: Path = LOOMWEAVE_DB) -> StructureFacts:
+    """Read structural facts straight from Loomweave's SQLite index.
 
-    Clarion ships no dead-code/cycle CLI verb, so the harness queries the DB the
-    `clarion analyze` pass already wrote. Never raises: a missing/locked DB yields
+    Loomweave ships no dead-code/cycle CLI verb, so the harness queries the DB the
+    `loomweave analyze` pass already wrote. Never raises: a missing/locked DB yields
     empty facts.
 
     Scoped to ``specimen.*`` entities: the specimen is the subject of the demo,
@@ -53,7 +53,7 @@ def structure_facts(db_path: Path = CLARION_DB) -> StructureFacts:
     try:
         # "Dead" = a module-level (not a method/dunder) specimen function with no
         # incoming call/reference/import edge. Restricting to module-level non-dunder
-        # functions avoids the huge false-positive list Clarion's static call graph
+        # functions avoids the huge false-positive list Loomweave's static call graph
         # would otherwise produce (dunders invoked by operators, methods reached by
         # dynamic dispatch) — those have no `calls` edge but are not dead.
         dead = tuple(
@@ -85,8 +85,8 @@ def structure_facts(db_path: Path = CLARION_DB) -> StructureFacts:
         con.close()
 
 
-def clarion_structure() -> StepResult:
-    """Surface Clarion's structural lacunae as (token, qualname) pairs the coverage
+def loomweave_structure() -> StepResult:
+    """Surface Loomweave's structural lacunae as (token, qualname) pairs the coverage
     map matches against a SPECIFIC lacuna symbol — never a bare token."""
     facts = structure_facts()
     surfaced = tuple(("dead-entity", n) for n in facts.dead) + tuple(
@@ -95,9 +95,191 @@ def clarion_structure() -> StepResult:
     dead_short = ", ".join(sorted(n.rsplit(".", 1)[-1] for n in facts.dead)) or "(none)"
     cyc_short = ", ".join(sorted(n.rsplit(".", 1)[-1] for n in facts.cycle_members)) or "(none)"
     return StepResult(
-        "clarion structure",
-        ok=Path(CLARION_DB).exists(),
+        "loomweave structure",
+        ok=Path(LOOMWEAVE_DB).exists(),
         detail=f"dead entities: {dead_short}; import cycle: {cyc_short}",
+        surfaced=surfaced,
+    )
+
+
+# Minimum length (in `calls` edges) for a chain to count as a demonstrable
+# execution path. The planted specimen.pipeline chain is 4 hops deep.
+CHAIN_MIN = 4
+# How many top coupling hotspots to surface — mirrors a paged
+# entity_coupling_hotspot_list read.
+HOTSPOT_TOP = 5
+# The module whose subsystem the gate asserts membership of (the app's CLI front
+# end always clusters with its service/repository/model layers).
+SUBSYS_ANCHOR = "specimen.cli"
+
+
+@dataclass(frozen=True)
+class NavigationFacts:
+    # (head qualname, chain depth in calls-edges) for chains >= CHAIN_MIN.
+    chain_heads: tuple[tuple[str, int], ...]
+    # (qualname, fan_in+fan_out) ranked desc — mirrors entity_coupling_hotspot_list,
+    # which ranks distinct fan-in + fan-out over call+import edges (no "both arms" gate).
+    hotspots: tuple[tuple[str, int], ...]
+    # qualnames carrying Loomweave's `entry-point` categorisation tag (what
+    # entity_entry_point_list returns), specimen-scoped.
+    entry_points: tuple[str, ...]
+    # specimen modules sharing SUBSYS_ANCHOR's subsystem (what subsystem_member_list
+    # returns for it) — keyed on membership, not the unstable generated name.
+    subsystem_members: tuple[str, ...]
+
+
+def _specimen_calls(con: sqlite3.Connection) -> dict[str, set[str]]:
+    """Adjacency of specimen→specimen `calls` edges, keyed by qualname."""
+    adj: dict[str, set[str]] = {}
+    for frm, to in con.execute(
+        "select ef.name, et.name from edges e "
+        "join entities ef on ef.id=e.from_id "
+        "join entities et on et.id=e.to_id "
+        "where e.kind='calls' and ef.name like 'specimen.%' and et.name like 'specimen.%'"
+    ):
+        adj.setdefault(frm, set()).add(to)
+    return adj
+
+
+def _longest_chain(node: str, adj: dict[str, set[str]], stack: frozenset[str]) -> int:
+    """Longest acyclic outgoing call-path length (in edges) from ``node``.
+
+    ``stack`` carries the nodes on the current path so the walk is cycle-guarded —
+    the specimen's deliberate ``cycle_a``/``cycle_b`` 2-cycle would otherwise recurse
+    forever. Bounded depth, tiny graph: a plain DFS is fine.
+    """
+    best = 0
+    for nxt in adj.get(node, ()):  # noqa: SIM118 — set membership, not dict keys
+        if nxt in stack:
+            continue
+        best = max(best, 1 + _longest_chain(nxt, adj, stack | {nxt}))
+    return best
+
+
+def navigation_facts(db_path: Path = LOOMWEAVE_DB) -> NavigationFacts:
+    """Read navigation-shaped facts (deep call chains) from the Loomweave index.
+
+    Loomweave's MCP navigation tools (entity_execution_path_list, entity_callers_list)
+    expose these live; the harness reconstructs the same facts from the index so the
+    gate can assert a SPECIFIC planted symbol offline. Never raises (tour contract).
+    """
+    if not Path(db_path).exists():
+        return NavigationFacts(
+            chain_heads=(), hotspots=(), entry_points=(), subsystem_members=()
+        )
+    try:
+        con = sqlite3.connect(str(db_path))
+    except sqlite3.Error:
+        return NavigationFacts(
+            chain_heads=(), hotspots=(), entry_points=(), subsystem_members=()
+        )
+    try:
+        adj = _specimen_calls(con)
+        heads = tuple(
+            sorted(
+                (n, depth)
+                for n in adj
+                if (depth := _longest_chain(n, adj, frozenset({n}))) >= CHAIN_MIN
+            )
+        )
+        # Coupling: distinct fan-in + fan-out over call + import edges, ranked desc —
+        # the same metric entity_coupling_hotspot_list uses (structural contains/
+        # in_subsystem edges are excluded so membership fan-out doesn't dominate).
+        ranked = sorted(
+            (
+                (name, fan_in + fan_out)
+                for name, fan_in, fan_out in con.execute(
+                    "select e.name, "
+                    "(select count(distinct from_id) from edges "
+                    " where to_id=e.id and kind in ('calls','imports')), "
+                    "(select count(distinct to_id) from edges "
+                    " where from_id=e.id and kind in ('calls','imports')) "
+                    "from entities e where e.name like 'specimen.%'"
+                )
+                if fan_in + fan_out > 0
+            ),
+            key=lambda t: (-t[1], t[0]),  # coupling desc, ties by name (matches tool)
+        )
+        hotspots = tuple(ranked[:HOTSPOT_TOP])
+        # Entry points: entities carrying Loomweave's `entry-point` categorisation tag —
+        # exactly what entity_entry_point_list returns (the Python plugin emits it).
+        entry_points = tuple(
+            name
+            for (name,) in con.execute(
+                "select e.name from entity_tags t join entities e on e.id=t.entity_id "
+                "where t.tag='entry-point' and e.name like 'specimen.%' order by e.name"
+            )
+        )
+        # Subsystem co-members: the specimen modules sharing SUBSYS_ANCHOR's subsystem,
+        # i.e. what subsystem_member_list returns for it. Keyed on membership, not the
+        # generated name (the coherent app cluster is hash-named for this corpus, and
+        # which cluster wins the bare package name is not stable). DISTINCT guards
+        # against stale subsystem rows from repeated in-place analyze (CI rebuilds clean).
+        subsystem_members = tuple(
+            name
+            for (name,) in con.execute(
+                "select distinct m.name from edges e "
+                "join entities m on m.id = e.from_id "
+                "where e.kind='in_subsystem' and m.name like 'specimen.%' "
+                "and e.to_id in ("
+                "  select e2.to_id from edges e2 "
+                "  join entities a on a.id = e2.from_id "
+                "  where e2.kind='in_subsystem' and a.name = ?"
+                ") order by m.name",
+                (SUBSYS_ANCHOR,),
+            )
+        )
+        return NavigationFacts(
+            chain_heads=heads,
+            hotspots=hotspots,
+            entry_points=entry_points,
+            subsystem_members=subsystem_members,
+        )
+    except sqlite3.Error:
+        return NavigationFacts(
+            chain_heads=(), hotspots=(), entry_points=(), subsystem_members=()
+        )
+    finally:
+        con.close()
+
+
+def loomweave_navigation() -> StepResult:
+    """Surface Loomweave's graph-navigation facts as (token, qualname) pairs — the
+    structural counterpart to a taint chain: a path the tool traces end-to-end."""
+    facts = navigation_facts()
+    surfaced = (
+        tuple(("execution-path", n) for n, _ in facts.chain_heads)
+        # Only the #1-ranked hotspot is asserted, so the gate fails loudly if the
+        # (volatile) wardline fixtures ever push a sink past the planted hub — keeping
+        # the "ranks #1" claim honest rather than merely "appears in the top-N".
+        + tuple(("coupling-hotspot", n) for n, _ in facts.hotspots[:1])
+        + tuple(("entry-point", n) for n in facts.entry_points)
+        + tuple(("subsystem", n) for n in facts.subsystem_members)
+    )
+    chain_short = (
+        ", ".join(f"{n.rsplit('.', 1)[-1]} (depth {d})" for n, d in facts.chain_heads)
+        or "(none)"
+    )
+    hot_short = (
+        ", ".join(f"{n.rsplit('.', 1)[-1]} ({c})" for n, c in facts.hotspots) or "(none)"
+    )
+    entry_short = (
+        ", ".join(n.rsplit(".", 2)[-2] + "." + n.rsplit(".", 1)[-1] for n in facts.entry_points)
+        or "(none)"
+    )
+    sub_short = (
+        f"{len(facts.subsystem_members)} specimen modules "
+        f"({', '.join(n.rsplit('.', 1)[-1] for n in facts.subsystem_members)})"
+        if facts.subsystem_members
+        else "(none)"
+    )
+    return StepResult(
+        "loomweave navigation",
+        ok=Path(LOOMWEAVE_DB).exists(),
+        detail=(
+            f"execution paths: {chain_short}; coupling hotspots: {hot_short}; "
+            f"entry points: {entry_short}; cli subsystem: {sub_short}"
+        ),
         surfaced=surfaced,
     )
 
@@ -121,16 +303,16 @@ def pairs_from_findings(path: Path) -> tuple[tuple[str, str], ...]:
     return tuple(dict.fromkeys(pairs))  # de-duped, order-preserving
 
 
-def clarion_analyze() -> StepResult:
+def loomweave_analyze() -> StepResult:
     # The generated narrative is compared byte-for-byte by `make verify`, so the
     # detail MUST be deterministic — never echo raw tool stdout (it may carry timing
     # or a run-id and would flap the lockstep check). Derive a stable count from the
     # DB the analyze pass just wrote.
-    proc = _run([str(BIN / "clarion"), "analyze"])
+    proc = _run([str(BIN / "loomweave"), "analyze"])
     ents = edges = 0
-    if CLARION_DB.exists():
+    if LOOMWEAVE_DB.exists():
         try:  # connect() itself can raise (e.g. corrupt DB) — keep the step total
-            con = sqlite3.connect(str(CLARION_DB))
+            con = sqlite3.connect(str(LOOMWEAVE_DB))
             try:
                 ents = con.execute("select count(*) from entities").fetchone()[0]
                 edges = con.execute("select count(*) from edges").fetchone()[0]
@@ -139,7 +321,7 @@ def clarion_analyze() -> StepResult:
         except sqlite3.Error:
             pass
     return StepResult(
-        "clarion analyze",
+        "loomweave analyze",
         ok=proc.returncode == 0,
         detail=f"{ents} entities, {edges} edges",
     )
@@ -218,17 +400,22 @@ def _wait_health(port: int, timeout_s: float = 8.0) -> bool:
 
 def _produce_legis_artifact(
     wardline: str, out: Path, secret: str | None
-) -> tuple[bool, int]:
+) -> tuple[bool, int, str]:
     """Run `wardline scan --format legis`, writing the artifact to ``out``.
 
-    Returns ``(produced, exit_code)``. The artifact is signed when the shared
-    HMAC key is provisioned (the tour's `.env`). Note: wardline loads that key
-    from `.env` on disk and then *refuses to sign a dirty working tree* — and
+    Returns ``(produced, exit_code, reason)``. The artifact is signed when the
+    shared HMAC key is provisioned (the tour's `.env`). Note: wardline loads that
+    key from `.env` on disk and then *refuses to sign a dirty working tree* — and
     `scan --format legis` exposes no `--allow-dirty`, so an unsigned fallback by
     clearing the env is impossible (an env override can only *set* the key, not
     unset a `.env` one). The tour's canonical run (`make verify` / CI) is
     post-commit on a clean tree, where signing succeeds; on a dirty tree this
     yields no artifact and the step degrades to ``ok=False`` (tour contract).
+
+    ``reason`` is a short, deterministic explanation when production fails — most
+    importantly the dirty-tree signing refusal, so the tour reports *why* legis
+    is red instead of a bare exit code. It is "" on success or an unclassified
+    failure (the caller falls back to the exit code there).
     """
     scan_env = {**os.environ}
     if secret:
@@ -237,7 +424,17 @@ def _produce_legis_artifact(
         [wardline, "scan", ".", "--format", "legis", "--output", str(out)],
         cwd=ROOT, capture_output=True, text=True, check=False, env=scan_env,
     )
-    return out.exists(), proc.returncode
+    produced = out.exists()
+    reason = ""
+    if not produced and "dirty working tree" in (proc.stderr or ""):
+        # Deterministic + actionable: wardline won't sign a legis artifact for a
+        # dirty tree, so the signed handshake can't run until the tree is clean.
+        reason = (
+            "wardline refused to sign the legis artifact: dirty working tree "
+            "(uncommitted changes) — commit first, then re-run "
+            "(the signed Wardline→Legis handshake requires a clean tree)"
+        )
+    return produced, proc.returncode, reason
 
 
 def legis_govern() -> StepResult:
@@ -266,10 +463,12 @@ def legis_govern() -> StepResult:
             # by the except below, so it lives INSIDE the try (never-raises contract).
             secret = _artifact_secret()
             artifact_path = Path(tmp) / "scan.legis.json"
-            produced, last_exit = _produce_legis_artifact(wardline, artifact_path, secret)
+            produced, last_exit, reason = _produce_legis_artifact(wardline, artifact_path, secret)
             if not produced:
-                return StepResult(name, ok=False,
-                                  detail=f"wardline produced no legis artifact (exit {last_exit})")
+                return StepResult(
+                    name, ok=False,
+                    detail=reason or f"wardline produced no legis artifact (exit {last_exit})",
+                )
             artifact = json.loads(artifact_path.read_text())
             signed = bool(artifact.get("artifact_signature"))
 

@@ -1,6 +1,6 @@
 import sqlite3
 
-from tour.steps import pairs_from_findings, structure_facts
+from tour.steps import navigation_facts, pairs_from_findings, structure_facts
 
 
 def test_parses_rule_symbol_pairs_from_jsonl(tmp_path):
@@ -19,8 +19,8 @@ def test_missing_file_yields_no_pairs(tmp_path):
     assert pairs_from_findings(tmp_path / "nope.jsonl") == ()
 
 
-def _mini_clarion_db(path):
-    """Build a minimal clarion.db with the entities/edges shape the harness reads.
+def _mini_loomweave_db(path):
+    """Build a minimal loomweave.db with the entities/edges shape the harness reads.
 
     `parent_id` matters: the dead-code query keeps only module-level functions
     (parent kind module/file), so each function points at its containing module.
@@ -47,8 +47,8 @@ def _mini_clarion_db(path):
 
 
 def test_structure_facts_detects_dead_and_cycle(tmp_path):
-    db = tmp_path / "clarion.db"
-    _mini_clarion_db(db)
+    db = tmp_path / "loomweave.db"
+    _mini_loomweave_db(db)
     facts = structure_facts(db)
     assert "specimen.dead_code.orphaned_helper" in facts.dead
     assert "specimen.cycle_a" in facts.cycle_members
@@ -58,3 +58,64 @@ def test_structure_facts_detects_dead_and_cycle(tmp_path):
 def test_structure_facts_missing_db(tmp_path):
     facts = structure_facts(tmp_path / "absent.db")
     assert facts.dead == () and facts.cycle_members == ()
+
+
+def _mini_nav_db(path):
+    """Minimal index with a deep call chain, a coupling hub, a `main` entry point,
+    and a 4-member subsystem — the shape navigation_facts() reads."""
+    c = sqlite3.connect(str(path))
+    c.execute("create table entities (id text, kind text, name text, parent_id text)")
+    c.execute("create table edges (kind text, from_id text, to_id text)")
+    c.execute("create table entity_tags (entity_id text, tag text)")
+    ents = [
+        # 5-node linear chain ingest->n1->n2->n3->tail (4 edges == CHAIN_MIN)
+        ("ig", "function", "specimen.pipeline.ingest", "mp"),
+        ("n1", "function", "specimen.pipeline.normalize", "mp"),
+        ("n2", "function", "specimen.pipeline.enrich", "mp"),
+        ("n3", "function", "specimen.pipeline.validate_record", "mp"),
+        ("tl", "function", "specimen.pipeline.persist", "mp"),
+        # coupling hub: 2 callers, 2 callees
+        ("hb", "function", "specimen.hub.dispatch", "mh"),
+        ("c1", "function", "specimen.hub.Dispatcher.handle_a", "kd"),
+        ("c2", "function", "specimen.hub.Dispatcher.handle_b", "kd"),
+        ("o1", "function", "specimen.hub._audit", "mh"),
+        ("o2", "function", "specimen.hub._route", "mh"),
+        # entry point: module-level `main`, no incoming, has outgoing call
+        ("mn", "function", "specimen.cli.main", "mc"),
+        ("mp", "module", "specimen.pipeline", None),
+        ("mh", "module", "specimen.hub", None),
+        ("kd", "class", "specimen.hub.Dispatcher", "mh"),
+        ("mc", "module", "specimen.cli", None),
+        # a 4-member subsystem the co-membership query should surface
+        ("ss", "subsystem", "Subsystem deadbeef", None),
+    ]
+    c.executemany("insert into entities values (?,?,?,?)", ents)
+    c.executemany("insert into edges values (?,?,?)", [
+        ("calls", "ig", "n1"), ("calls", "n1", "n2"),
+        ("calls", "n2", "n3"), ("calls", "n3", "tl"),
+        ("calls", "c1", "hb"), ("calls", "c2", "hb"),
+        ("calls", "hb", "o1"), ("calls", "hb", "o2"),
+        ("calls", "mn", "ig"),  # main drives the pipeline
+        ("in_subsystem", "mp", "ss"), ("in_subsystem", "mh", "ss"),
+        ("in_subsystem", "mc", "ss"), ("in_subsystem", "ig", "ss"),
+    ])
+    # entity_entry_point_list reads the `entry-point` categorisation tag.
+    c.execute("insert into entity_tags values ('mn', 'entry-point')")
+    c.commit()
+    c.close()
+
+
+def test_navigation_facts_surfaces_chain_hub_entry_and_subsystem(tmp_path):
+    db = tmp_path / "loomweave.db"
+    _mini_nav_db(db)
+    nf = navigation_facts(db)
+    assert ("specimen.pipeline.ingest", 4) in nf.chain_heads
+    assert nf.hotspots and nf.hotspots[0][0] == "specimen.hub.dispatch"
+    assert nf.entry_points == ("specimen.cli.main",)
+    assert "specimen.cli" in nf.subsystem_members
+
+
+def test_navigation_facts_missing_db(tmp_path):
+    nf = navigation_facts(tmp_path / "absent.db")
+    assert nf.chain_heads == () and nf.hotspots == ()
+    assert nf.entry_points == () and nf.subsystem_members == ()

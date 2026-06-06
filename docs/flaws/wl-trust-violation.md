@@ -4,7 +4,7 @@ _Generated from `tour/lacunae.toml`. Do not edit by hand._
 
 - **Location:** `specimen/trust_flow.py` → `unsafe_account_key`
 - **Category:** trust-boundary
-- **Demonstrates:** `wardline`, `wardline+clarion`, `wardline+filigree`
+- **Demonstrates:** `wardline`, `wardline+loomweave`, `wardline+filigree`
 - **Expected finding:** `wardline` / `PY-WL-101`
 
 ## Why it's here

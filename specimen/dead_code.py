@@ -1,4 +1,4 @@
-"""LACUNA: an entity with no callers — Clarion's entity_dead_list surfaces it.
+"""LACUNA: an entity with no callers — Loomweave's entity_dead_list surfaces it.
 
 Intentional, catalogued fixture (tour/lacunae.toml). Do not delete.
 """

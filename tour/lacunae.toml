@@ -4,8 +4,9 @@
 #
 # Rule IDs were reconciled against live tool output:
 #   - PY-WL-101/102/103/104 captured from `wardline scan` (Task 2.3).
-#   - dead-entity / circular-import are the tokens the tour harness emits when it
-#     finds the planted structures in `.clarion/clarion.db` (Task 2.4); they are
+#   - dead-entity / circular-import (plus the navigation tokens execution-path /
+#     coupling-hotspot / entry-point / subsystem) are emitted by the tour harness
+#     when it finds the planted structures in `.loomweave/loomweave.db`; they are
 #     not Wardline rule IDs.
 
 [[lacuna]]
@@ -13,7 +14,7 @@ id = "wl-trust-violation"
 file = "specimen/trust_flow.py"
 symbol = "unsafe_account_key"
 category = "trust-boundary"
-demonstrates = ["wardline", "wardline+clarion", "wardline+filigree"]
+demonstrates = ["wardline", "wardline+loomweave", "wardline+filigree"]
 explanation = "Declares return trust ASSURED but returns EXTERNAL_RAW — untrusted data reaches a trusted producer with no validation."
 expected_tool = "wardline"
 expected_rule = "PY-WL-101"
@@ -49,21 +50,226 @@ expected_tool = "wardline"
 expected_rule = "PY-WL-104"
 
 [[lacuna]]
-id = "cl-dead-code"
+id = "lw-dead-code"
 file = "specimen/dead_code.py"
 symbol = "orphaned_helper"
 category = "structure"
-demonstrates = ["clarion"]
-explanation = "A function with no callers — Clarion's dead-entity query surfaces it."
-expected_tool = "clarion"
+demonstrates = ["loomweave"]
+explanation = "A function with no callers — Loomweave's dead-entity query (entity_dead_list) surfaces it."
+expected_tool = "loomweave"
 expected_rule = "dead-entity"
 
 [[lacuna]]
-id = "cl-circular-import"
+id = "lw-circular-import"
 file = "specimen/cycle_a.py"
 symbol = "cycle_a"
 category = "structure"
-demonstrates = ["clarion"]
-explanation = "specimen.cycle_a and specimen.cycle_b import each other — Clarion's import graph contains a 2-cycle the harness surfaces from .clarion/clarion.db."
-expected_tool = "clarion"
+demonstrates = ["loomweave"]
+explanation = "specimen.cycle_a and specimen.cycle_b import each other — Loomweave's import graph (module_circular_import_list) contains a 2-cycle the harness surfaces from .loomweave/loomweave.db."
+expected_tool = "loomweave"
 expected_rule = "circular-import"
+
+[[lacuna]]
+id = "lw-call-chain"
+file = "specimen/pipeline.py"
+symbol = "ingest"
+category = "navigation"
+demonstrates = ["loomweave"]
+explanation = "A five-hop call chain ingest→normalize→enrich→validate_record→persist — Loomweave's entity_execution_path_list traces it end-to-end, and entity_callers_list walks it back from the tail."
+expected_tool = "loomweave"
+expected_rule = "execution-path"
+
+[[lacuna]]
+id = "lw-coupling-hotspot"
+file = "specimen/hub.py"
+symbol = "dispatch"
+category = "navigation"
+demonstrates = ["loomweave"]
+explanation = "specimen.hub.dispatch is called by five Dispatcher methods and calls five routines (fan-in 5 + fan-out 5) — Loomweave's entity_coupling_hotspot_list ranks it the #1 coupling hotspot in the specimen app."
+expected_tool = "loomweave"
+expected_rule = "coupling-hotspot"
+
+[[lacuna]]
+id = "lw-entry-point"
+file = "specimen/cli.py"
+symbol = "main"
+category = "navigation"
+demonstrates = ["loomweave"]
+explanation = "specimen.cli.main is the app's entry point — the Python plugin tags it `entry-point`, so Loomweave's entity_entry_point_list returns it (vs. library internals reached only through it)."
+expected_tool = "loomweave"
+expected_rule = "entry-point"
+
+[[lacuna]]
+id = "lw-subsystem"
+file = "specimen/cli.py"
+symbol = "cli"
+category = "navigation"
+demonstrates = ["loomweave"]
+explanation = "Loomweave's clustering groups the related specimen modules into a cohesive subsystem (specimen.cli alongside models, repository, service, pipeline); entity subsystem_member_list enumerates it. Asserted by co-membership, not the generated subsystem name."
+expected_tool = "loomweave"
+expected_rule = "subsystem"
+
+# ── Wardline rule-coverage expansion (PY-WL-105..120) ──────────────────────────
+# Planted 2026-06-06 to exercise the 16 Wardline rules not previously demonstrated.
+# Flaws live in specimen/wardline_sinks.py (taint→sink) and
+# specimen/wardline_boundaries.py (trust-boundary / decorator shape).
+
+[[lacuna]]
+id = "wl-untrusted-callee"
+file = "specimen/wardline_boundaries.py"
+symbol = "register_member"
+category = "trust-boundary"
+demonstrates = ["wardline"]
+explanation = "An untrusted value is passed straight into a @trusted callee at the call site, with no validating boundary in between."
+expected_tool = "wardline"
+expected_rule = "PY-WL-105"
+
+[[lacuna]]
+id = "wl-untrusted-deser"
+file = "specimen/wardline_sinks.py"
+symbol = "import_catalog_blob"
+category = "injection"
+demonstrates = ["wardline"]
+explanation = "Untrusted bytes reach pickle.loads inside a trusted-tier function — arbitrary-object deserialization."
+expected_tool = "wardline"
+expected_rule = "PY-WL-106"
+
+[[lacuna]]
+id = "wl-untrusted-exec"
+file = "specimen/wardline_sinks.py"
+symbol = "eval_report_formula"
+category = "injection"
+demonstrates = ["wardline"]
+explanation = "Untrusted text reaches eval() inside a trusted-tier function — dynamic code execution."
+expected_tool = "wardline"
+expected_rule = "PY-WL-107"
+
+[[lacuna]]
+id = "wl-untrusted-command"
+file = "specimen/wardline_sinks.py"
+symbol = "run_export_command"
+category = "injection"
+demonstrates = ["wardline"]
+explanation = "Untrusted text reaches os.system — OS-command injection."
+expected_tool = "wardline"
+expected_rule = "PY-WL-108"
+
+[[lacuna]]
+id = "wl-none-leak"
+file = "specimen/wardline_boundaries.py"
+symbol = "renewal_count"
+category = "none-leak"
+demonstrates = ["wardline"]
+explanation = "A @trusted producer typed to return a non-None int falls through one path and returns None — a contract violation a consumer will trust."
+expected_tool = "wardline"
+expected_rule = "PY-WL-109"
+
+[[lacuna]]
+id = "wl-contradictory-trust"
+file = "specimen/wardline_boundaries.py"
+symbol = "contradictory_member"
+category = "decorator-hygiene"
+demonstrates = ["wardline"]
+explanation = "A function marked BOTH @trusted and @external_boundary — contradictory markers the engine resolves silently. (Asserted via wardline.decorators; the weft_markers variant is a known gap, filigree wardline-d62845bb18.)"
+expected_tool = "wardline"
+expected_rule = "PY-WL-110"
+
+[[lacuna]]
+id = "wl-assert-only-boundary"
+file = "specimen/wardline_boundaries.py"
+symbol = "assert_only_member"
+category = "trust-boundary"
+demonstrates = ["wardline"]
+explanation = "A trust boundary whose only rejection path is `assert` — stripped under `python -O`, so it validates nothing in production."
+expected_tool = "wardline"
+expected_rule = "PY-WL-111"
+
+[[lacuna]]
+id = "wl-untrusted-shell"
+file = "specimen/wardline_sinks.py"
+symbol = "shell_archive"
+category = "injection"
+demonstrates = ["wardline"]
+explanation = "Untrusted text reaches a shell=True subprocess call — shell injection."
+expected_tool = "wardline"
+expected_rule = "PY-WL-112"
+
+[[lacuna]]
+id = "wl-failopen-boundary"
+file = "specimen/wardline_boundaries.py"
+symbol = "failopen_member"
+category = "trust-boundary"
+demonstrates = ["wardline"]
+explanation = "A trust boundary that fails OPEN — on a validation error it returns the raw input unchanged instead of rejecting it."
+expected_tool = "wardline"
+expected_rule = "PY-WL-113"
+
+[[lacuna]]
+id = "wl-invalid-level"
+file = "specimen/wardline_boundaries.py"
+symbol = "invalid_level_member"
+category = "decorator-hygiene"
+demonstrates = ["wardline"]
+explanation = "A builtin trust decorator declares a level (`SUPERUSER`) that is not in Wardline's trust lattice."
+expected_tool = "wardline"
+expected_rule = "PY-WL-114"
+
+[[lacuna]]
+id = "wl-untrusted-import"
+file = "specimen/wardline_sinks.py"
+symbol = "load_report_plugin"
+category = "injection"
+demonstrates = ["wardline"]
+explanation = "Untrusted text reaches importlib.import_module — dynamic-import injection."
+expected_tool = "wardline"
+expected_rule = "PY-WL-115"
+
+[[lacuna]]
+id = "wl-path-traversal"
+file = "specimen/wardline_sinks.py"
+symbol = "open_catalog_file"
+category = "injection"
+demonstrates = ["wardline"]
+explanation = "Untrusted text reaches a filesystem open() — path traversal."
+expected_tool = "wardline"
+expected_rule = "PY-WL-116"
+
+[[lacuna]]
+id = "wl-ssrf"
+file = "specimen/wardline_sinks.py"
+symbol = "fetch_cover_image"
+category = "injection"
+demonstrates = ["wardline"]
+explanation = "Untrusted text reaches an HTTP client (requests.get) — server-side request forgery."
+expected_tool = "wardline"
+expected_rule = "PY-WL-117"
+
+[[lacuna]]
+id = "wl-sql-injection"
+file = "specimen/wardline_sinks.py"
+symbol = "lookup_member"
+category = "injection"
+demonstrates = ["wardline"]
+explanation = "Untrusted text is interpolated into a SQL string reaching cursor.execute — SQL injection."
+expected_tool = "wardline"
+expected_rule = "PY-WL-118"
+
+[[lacuna]]
+id = "wl-degenerate-boundary"
+file = "specimen/wardline_boundaries.py"
+symbol = "degenerate_member"
+category = "trust-boundary"
+demonstrates = ["wardline"]
+explanation = "A no-op validator boundary whose return value is its input parameter verbatim — it claims to validate but checks nothing."
+expected_tool = "wardline"
+expected_rule = "PY-WL-119"
+
+[[lacuna]]
+id = "wl-stored-taint"
+file = "specimen/wardline_boundaries.py"
+symbol = "load_member_record"
+category = "stored-taint"
+demonstrates = ["wardline"]
+explanation = "Data read from persistent storage (a file read) reaches a @trusted producer's return value with no validation — stored/persisted taint promoted to trusted."
+expected_tool = "wardline"
+expected_rule = "PY-WL-120"

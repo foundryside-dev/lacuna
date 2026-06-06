@@ -7,9 +7,11 @@ MANIFEST = Path("/home/john/lacuna/tour/lacunae.toml")
 
 def test_loads_all_lacunae():
     m = load_manifest(MANIFEST)
-    assert len(m.lacunae) == 6
+    assert len(m.lacunae) == 26
     ids = {l.id for l in m.lacunae}
     assert "wl-trust-violation" in ids
+    # the loomweave navigation showcases (call chain, coupling, entry point, subsystem)
+    assert {"lw-call-chain", "lw-coupling-hotspot", "lw-entry-point", "lw-subsystem"} <= ids
 
 
 def test_lacuna_fields():
@@ -19,10 +21,10 @@ def test_lacuna_fields():
     assert l.symbol == "unsafe_account_key"
     assert l.expected_tool == "wardline"
     assert l.expected_rule == "PY-WL-101"
-    assert "wardline+clarion" in l.demonstrates
+    assert "wardline+loomweave" in l.demonstrates
 
 
 def test_cells_are_the_union_of_demonstrates():
     m = load_manifest(MANIFEST)
     assert "wardline+filigree" in m.cells()
-    assert "clarion" in m.cells()
+    assert "loomweave" in m.cells()

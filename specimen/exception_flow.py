@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from loom_markers import external_boundary, trust_boundary, trusted
+from weft_markers import external_boundary, trust_boundary, trusted
 
 
 @external_boundary

@@ -59,7 +59,7 @@ def test_legis_govern_never_raises_on_non_object_response(monkeypatch):
 
     def _fake_produce(_wardline, out, _secret):
         out.write_text('{"findings": []}')  # valid object, no signature
-        return True, 0
+        return True, 0, ""
 
     monkeypatch.setattr(steps, "_produce_legis_artifact", _fake_produce)
     monkeypatch.setattr(steps, "_free_port", lambda: 65000)
@@ -82,3 +82,44 @@ def test_legis_govern_never_raises_on_non_object_response(monkeypatch):
     r = steps.legis_govern()
     assert r.ok is False
     assert r.name == "legis govern"
+
+
+def test_legis_govern_explains_a_dirty_tree_refusal(monkeypatch):
+    # When wardline refuses to sign because the tree is dirty, the step must say
+    # SO — not a bare "no artifact (exit N)". This is the common reason legis goes
+    # red in the demo bed while the other tools stay green.
+    monkeypatch.setattr(steps, "_tool", lambda name: f"/home/john/.local/bin/{name}")
+    monkeypatch.setattr(steps, "_artifact_secret", lambda: "deadbeef")
+
+    def _dirty_produce(_wardline, _out, _secret):
+        # No artifact written; classified dirty-tree reason returned.
+        return False, 2, (
+            "wardline refused to sign the legis artifact: dirty working tree "
+            "(uncommitted changes) — commit first, then re-run "
+            "(the signed Wardline→Legis handshake requires a clean tree)"
+        )
+
+    monkeypatch.setattr(steps, "_produce_legis_artifact", _dirty_produce)
+
+    r = steps.legis_govern()
+    assert r.ok is False
+    assert r.name == "legis govern"
+    assert "dirty working tree" in r.detail
+    assert "commit first" in r.detail
+
+
+def test_produce_legis_artifact_classifies_dirty_tree(monkeypatch, tmp_path):
+    # Unit: the classifier turns wardline's dirty-tree stderr into a reason and
+    # leaves the artifact absent.
+    class _Proc:
+        returncode = 2
+        stdout = ""
+        stderr = "error: refusing to sign a legis artifact for a dirty working tree"
+
+    monkeypatch.setattr(steps.subprocess, "run", lambda *_a, **_k: _Proc())
+    produced, code, reason = steps._produce_legis_artifact(
+        "/home/john/.local/bin/wardline", tmp_path / "missing.json", "deadbeef"
+    )
+    assert produced is False
+    assert code == 2
+    assert "dirty working tree" in reason

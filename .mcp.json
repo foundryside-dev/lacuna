@@ -1,26 +1,29 @@
 {
   "mcpServers": {
-    "clarion": {
+    "filigree": {
+      "headers": {
+        "Authorization": "Bearer ${FILIGREE_API_TOKEN}"
+      },
+      "type": "streamable-http",
+      "url": "http://localhost:8749/mcp/?project=lacuna"
+    },
+    "loomweave": {
       "args": [
         "serve"
       ],
-      "command": "/home/john/.local/bin/clarion",
+      "command": "/home/john/.local/share/uv/tools/loomweave/bin/loomweave",
       "env": {},
       "type": "stdio"
-    },
-    "filigree": {
-      "type": "streamable-http",
-      "url": "http://localhost:8749/mcp/?project=lacuna"
     },
     "wardline": {
       "args": [
         "mcp",
         "--root",
         ".",
-        "--clarion-url",
-        "http://127.0.0.1:9111",
+        "--loomweave-url",
+        "http://127.0.0.1:9730",
         "--filigree-url",
-        "http://127.0.0.1:8749/api/loom/scan-results"
+        "http://127.0.0.1:8749/api/weft/scan-results"
       ],
       "command": "/home/john/.local/bin/wardline",
       "type": "stdio"

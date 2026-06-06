@@ -16,6 +16,8 @@ class StepResult:
     # Each surfaced fact is (rule_token, qualname) — e.g.
     # ("PY-WL-101", "specimen.trust_flow.unsafe_account_key") or
     # ("dead-entity", "specimen.dead_code.orphaned_helper"). Carrying the qualname
+    # (loomweave structural tokens like dead-entity/circular-import are emitted by the
+    # harness from the index, not by a tool CLI).
     # (not just the token) is what lets coverage match a SPECIFIC lacuna, so the
     # gate is not hollow: an incidental `dead-entity` on some other symbol must not
     # credit the planted one.

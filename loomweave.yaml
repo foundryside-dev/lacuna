@@ -1,6 +1,6 @@
 integrations:
   filigree:
-    actor: clarion-mcp
+    actor: loomweave-mcp
     base_url: http://127.0.0.1:8749
     enabled: true
     timeout_seconds: 5
@@ -29,14 +29,13 @@ llm_policy:
   openrouter:
     api_key_env: OPENROUTER_API_KEY
     attribution:
-      referer: https://github.com/tachyon-beep/clarion
-      title: Clarion
+      referer: https://github.com/foundryside-dev/loomweave
+      title: Loomweave
     endpoint_url: https://openrouter.ai/api/v1
   provider: openrouter
   session_token_ceiling: 1000000
 serve:
   http:
-    bind: 127.0.0.1:9111
     enabled: true
     wardline_taint_write: true
   mcp:

@@ -1,21 +1,21 @@
 ---
-name: clarion-workflow
+name: loomweave-workflow
 description: >
   Use when orienting in an unfamiliar or large codebase and you want to avoid
   re-reading or grepping the whole source tree: answering "what calls X",
   "where is X defined", "what does X depend on", "what subsystem is X in", or
-  "find the function/class/module that does Y". Applies whenever a Clarion
-  code-archaeology MCP server (clarion serve / mcp__clarion__* tools) is
+  "find the function/class/module that does Y". Applies whenever a Loomweave
+  code-archaeology MCP server (loomweave serve / mcp__loomweave__* tools) is
   available for the project.
 ---
 
-# Clarion Workflow
+# Loomweave Workflow
 
 ## Overview
 
-Clarion pre-extracts a codebase into a queryable map — entities (functions,
+Loomweave pre-extracts a codebase into a queryable map — entities (functions,
 classes, modules, files), the call/reference/import edges between them, and
-subsystem clusters — and serves it over MCP. **Ask Clarion instead of
+subsystem clusters — and serves it over MCP. **Ask Loomweave instead of
 re-exploring the tree.** One `find_entity` + one `callers_of` answers "what
 calls this?" without reading a single file.
 
@@ -26,7 +26,7 @@ calls this?" without reading a single file.
 - You need a function's neighborhood, execution paths, or which subsystem it belongs to.
 
 **Not for:** editing code, reading exact implementation bodies (use `summary` or
-read the file once you have its path), or codebases with no `.clarion/` index.
+read the file once you have its path), or codebases with no `.loomweave/` index.
 
 ## Entity IDs — the model
 
@@ -44,10 +44,10 @@ They are not interchangeable:
 
 - **`id`** is the entity's *locator* — a mutable address. It changes when the
   code is renamed or moved, and it's the right thing to feed into the next
-  Clarion tool call (above).
+  Loomweave tool call (above).
 - **`sei`** is the entity's *durable, stable identity*. It survives renames and
   moves. **When you record a cross-tool binding** — e.g. attaching a Filigree
-  issue to a Clarion entity — **bind on the `sei`, not the `id`.** A binding
+  issue to a Loomweave entity — **bind on the `sei`, not the `id`.** A binding
   keyed on the mutable `id` silently breaks the first time the entity moves.
 
 `sei` is `null` when the index predates SEI support or the entity has no binding
@@ -99,7 +99,7 @@ re-reading each path element. `truncated`/`truncation_reason` report `edge-cap`
 
 ## Catalogue tools — inspection · faceted search · shortcuts
 
-Beyond navigation, Clarion serves a **stateless catalogue** of read tools. All
+Beyond navigation, Loomweave serves a **stateless catalogue** of read tools. All
 of them: take explicit ids/scopes (no cursor/session — there is no `goto`/`back`
 state to manage); **paginate** (`limit`/`offset`, with a `page` block reporting
 `total`/`returned`/`truncated` — no silent caps); carry `sei` on every entity
@@ -151,14 +151,14 @@ honest-empty unless a plugin emits those tags. Likewise `high_churn` and
 `index_diff` for repo-level freshness).
 
 `search_semantic` is also in the catalogue. It is opt-in under
-`semantic_search:`; when enabled, `clarion analyze` populates the git-ignored
-`.clarion/embeddings.db` sidecar and the query path filters stale vectors by
+`semantic_search:`; when enabled, `loomweave analyze` populates the git-ignored
+`.loomweave/embeddings.db` sidecar and the query path filters stale vectors by
 content hash.
 
 > Not in this catalogue: `emit_observation` as a general-purpose write surface.
 
 **Guidance authoring has an operator boundary.** Operators can manage sheets via
-`clarion guidance create/edit/show/list/delete/promote` (plus `export`/`import`
+`loomweave guidance create/edit/show/list/delete/promote` (plus `export`/`import`
 for team sharing). Agents may call `propose_guidance` to create a Filigree
 observation, but that proposal is inert until an operator promotes it through
 `promote_guidance` or the CLI. Promoted sheets reach you through `guidance_for`
@@ -192,10 +192,10 @@ and are composed into `summary` prompts with a real guidance fingerprint.
 
 ## Launch
 
-`clarion serve --path <dir>` where `<dir>` contains `.clarion/clarion.db`
-(built by `clarion analyze <dir>`). In an MCP client the tools appear as
-`mcp__clarion__find_entity`, etc.
+`loomweave serve --path <dir>` where `<dir>` contains `.loomweave/loomweave.db`
+(built by `loomweave analyze <dir>`). In an MCP client the tools appear as
+`mcp__loomweave__find_entity`, etc.
 
-Besides the tools, the server exposes a `clarion://context` **resource** — live
+Besides the tools, the server exposes a `loomweave://context` **resource** — live
 entity/subsystem/finding counts and index freshness as JSON, a lightweight read
 when you only want the numbers (`project_status` is the fuller tool-based view).

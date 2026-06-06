@@ -24,8 +24,9 @@ MATRIX_MD = ROOT / "docs" / "matrix.md"
 def _drive() -> tuple[list, list]:
     caps = detect()
     results = [
-        steps.clarion_analyze(),
-        steps.clarion_structure(),
+        steps.loomweave_analyze(),
+        steps.loomweave_structure(),
+        steps.loomweave_navigation(),
         steps.wardline_scan(),
         steps.legis_govern(),
         steps.filigree_findings(),
