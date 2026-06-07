@@ -7,6 +7,16 @@
       "type": "streamable-http",
       "url": "http://localhost:8749/mcp/?project=lacuna"
     },
+    "legis": {
+      "args": [
+        "mcp",
+        "--agent-id",
+        "claude-code"
+      ],
+      "command": "/home/john/.local/bin/legis",
+      "env": {},
+      "type": "stdio"
+    },
     "loomweave": {
       "args": [
         "serve"

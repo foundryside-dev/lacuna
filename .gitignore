@@ -17,3 +17,6 @@ findings.jsonl
 # Legis — local working dir / config (regenerated/local; never commit)
 .legis/
 legis.yaml
+
+# Legis — local working dir / config (regenerated/local; never commit)
+.weft/legis/
