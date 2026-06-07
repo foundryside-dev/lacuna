@@ -1,0 +1,40 @@
+# Loomweave .gitignore — ADR-005 tracked-vs-excluded list.
+# Tracked (committed): loomweave.db, config.json, .gitignore itself.
+# Excluded (ignored): WAL sidecars, shadow DB, per-run logs, tmp scratch,
+#   the read-API live port discovery file, the per-project instance id, and
+#   the analyze advisory lock.
+
+# Read-API live port discovery file (ADR-044): present only while serve runs,
+# rewritten per bind, loopback-only — a runtime artifact, never committed.
+ephemeral.port
+
+# Per-project instance fingerprint (loomweave serve) and the analyze advisory
+# lock (loomweave.lock, fs2). Both are process-/machine-local runtime state,
+# never durable: committing them stages a live lock + instance id, and the lock
+# is meaningless on another checkout (clarion-7381e6382d). `*.lock` also covers
+# any future lock sidecar.
+instance_id
+*.lock
+
+# SQLite write-ahead files never belong in the repo.
+*-wal
+*-shm
+*.db-wal
+*.db-shm
+
+# Shadow DB intermediate (ADR-011 --shadow-db).
+*.shadow.db
+*.db.new
+
+# Semantic-search embeddings sidecar (ADR-040): large + rebuildable, never
+# committed (keeps loomweave.db unbloated). WAL files are covered by *.db-wal/-shm.
+embeddings.db
+
+# Scratch / temp space.
+tmp/
+
+# Per-run log directories (see detailed-design §File layout). The run dir
+# metadata (config.yaml, stats.json, partial.json) is tracked; only the
+# raw LLM request/response log is excluded.
+logs/
+runs/*/log.jsonl

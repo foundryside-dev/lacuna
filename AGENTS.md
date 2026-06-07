@@ -1,4 +1,4 @@
-<!-- filigree:instructions:v3.0.0rc3:98d5c5f2 -->
+<!-- filigree:instructions:v3.0.0rc5:65e6fb25 -->
 ## Filigree Issue Tracker
 
 `filigree` tracks tasks for this project. Data lives in `.filigree/`. Prefer
@@ -101,7 +101,7 @@ Errors return `{error: str, code: ErrorCode, details?: dict}`. Switch on
 `code`, not on message text. Codes: `VALIDATION`, `NOT_FOUND`, `CONFLICT`,
 `INVALID_TRANSITION`, `PERMISSION`, `NOT_INITIALIZED`, `IO`,
 `INVALID_API_URL`, `FILE_REGISTRY_DISPLACED`, `REGISTRY_UNAVAILABLE`,
-`CLARION_REGISTRY_VERSION_MISMATCH`, `CLARION_OUT_OF_SYNC`,
+`LOOMWEAVE_REGISTRY_VERSION_MISMATCH`, `LOOMWEAVE_OUT_OF_SYNC`,
 `BRIEFING_BLOCKED`, `STOP_FAILED`, `SCHEMA_MISMATCH`, `INTERNAL`.
 
 On `INVALID_TRANSITION`, call `workflow_transition_list` (MCP) or
@@ -121,3 +121,48 @@ Two failure modes deserve a specific response:
 <!-- wardline:instructions:v1:bcd19330 -->
 This project uses **wardline** as its trust-boundary gate. Before handing back code that touches external input, run `wardline scan . --fail-on ERROR` (exit 0 = clean, 1 = gate tripped, 2 = wardline error) and fix findings at the boundary, not the sink. The full scan -> explain -> fix -> rescan loop and the baseline-vs-waiver discipline live in the `wardline-gate` skill and in `docs/agents.md`.
 <!-- /wardline:instructions -->
+
+<!-- loomweave:instructions:v1.1.0-rc3:f142fa70 -->
+## Loomweave (code archaeology)
+
+This repo is indexed by Loomweave: it has pre-extracted the tree into a
+queryable map of entities (functions, classes, modules, files), the call /
+reference / import edges between them, and subsystem clusters. Before grepping
+or re-reading the tree to answer "what calls X", "where is X defined", "what
+subsystem owns X", or "find the thing that does Y" — ask Loomweave's MCP tools
+(`mcp__loomweave__*`): `entity_find`, `entity_at`, `entity_callers_list`,
+`entity_neighborhood_get`, `project_status_get`.
+
+Entity IDs are `{plugin}:{kind}:{qualified_name}` (e.g.
+`python:function:pkg.mod.func`); subsystems are `core:subsystem:{hash}`. You
+rarely type IDs — get one from `entity_find` or `entity_at`, then copy it
+verbatim into the next tool.
+
+Index freshness and counts: `project_status_get` (or the `loomweave://context`
+resource). If the index is stale, run `loomweave analyze <path>`.
+
+LLM summaries (`entity_summary_get`) are off by default and need a configured live
+provider; `project_status_get` reports the posture and `loomweave config check`
+explains how to enable it.
+
+Full workflow: the `loomweave-workflow` skill.
+<!-- /loomweave:instructions -->
+
+<!-- legis:instructions:v1.0.0rc4:6604fe0c -->
+## Legis (git/CI + governance)
+
+Legis is the git/CI and governance layer of the Weft suite. Reach for it when a policy fires at the CI/git boundary and a change needs a *recordable* override or human sign-off, when you need governance attestations keyed to stable code identity (SEI), or when you need git/CI context — branches, commits, pull requests, check outcomes, and the Loomweave-bound rename feed — around the work. Enforcement is graded: agent-programmable policy cells decide whether a violation self-clears with an audit trail, is judged inline, or escalates to a human; every decision lands in an append-only, SEI-keyed audit trail that survives rename/move.
+
+Prefer the `mcp__legis__*` MCP tools when available; fall back to the `legis` CLI.
+
+CLI subcommands:
+
+- `serve` — run the Legis API server.
+- `mcp` — run the Legis MCP stdio server (launch-bound `--agent-id`).
+- `check-override-rate` — exit 1 if the override-rate gate is FAIL (for CI).
+- `governance-gate` — run governance CI gates (currently the override-rate gate).
+- `sei-backfill` — resolve legacy locator-keyed governance records through Loomweave batch resolve.
+- `policy-boundary-check` — fail when `@policy_boundary` metadata lacks current behavioural evidence.
+
+Full command + MCP-tool reference: see the `legis-workflow` skill.
+<!-- /legis:instructions -->
