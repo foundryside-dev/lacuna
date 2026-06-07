@@ -18,6 +18,26 @@ suite at Lacuna and watch it work.
 | `docs/tour.md`, `docs/matrix.md` | Generated narrative + combination-matrix coverage |
 | `docs/flaws/` | Per-lacuna explainer pages (generated) |
 
+## Set up
+
+```bash
+make setup    # provision the demo's gitignored secrets (idempotent)
+```
+
+`make setup` generates `.env` (gitignored, `0600`) with a fresh shared HMAC for
+the Wardline→Legis signed-scan handshake. Secrets are **never committed** — a
+fresh clone bootstraps its own, and `make setup` never clobbers an existing
+`.env`. `make tour`/`make verify` depend on it, so the signed handshake just
+works (without it, the tour degrades honestly to an *unsigned* handshake).
+
+For the agent's Filigree MCP (the dashboard transport on `:8749`), export the
+federation token into the shell **before** launching Claude Code — `.mcp.json`
+interpolates `${WEFT_FEDERATION_TOKEN}` from the environment, not from `.env`:
+
+```bash
+export WEFT_FEDERATION_TOKEN="$(cat ~/.config/filigree/federation_token)"
+```
+
 ## Run the tour
 
 ```bash
