@@ -2,7 +2,7 @@
   "mcpServers": {
     "filigree": {
       "headers": {
-        "Authorization": "Bearer ${WEFT_FEDERATION_TOKEN}"
+        "Authorization": "Bearer W6xozNBpxpxOTg6hxd7S_pTs5gKDa9ia8im1ioTTQFU"
       },
       "type": "streamable-http",
       "url": "http://localhost:8749/mcp/?project=lacuna"
