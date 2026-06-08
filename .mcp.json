@@ -14,7 +14,9 @@
         "claude-code"
       ],
       "command": "/home/john/.local/bin/legis",
-      "env": {},
+      "env": {
+        "LEGIS_WARDLINE_CELL": "surface_override"
+      },
       "type": "stdio"
     },
     "loomweave": {

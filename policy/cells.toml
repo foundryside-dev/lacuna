@@ -1,0 +1,32 @@
+# policy/cells.toml — Lacuna demo: policy → governance-cell routing for the
+# standing Legis MCP surface. Legis reads <cwd>/policy/cells.toml at server start
+# (and `legis doctor` reads <root>/policy/cells.toml), so this lights up
+# policy_evaluate / policy_explain against the specimen without any env wiring.
+#
+# Exact policy names beat globs; an unlisted policy falls through to default_cell.
+#
+#   simple tier  — chill / coached        : KEYLESS (self-clear / advisory). Live now.
+#   complex tier — structured / protected : human-in-loop / block+escalate. Routes
+#                  correctly keyless, but closure evidence needs the binding ledger
+#                  (LEGIS_HMAC_KEY) — until that is wired it reports enabled:false.
+#                  That visible gating IS the tiering showcase, not a gap.
+
+default_cell = "structured"   # fail-closed: an unmapped policy escalates to a human, never self-clears
+
+# Keyless advisory lane — policy_explain returns enabled:true immediately.
+[[policy]]
+pattern = "import-allowlist"
+cell = "coached"
+
+[[policy]]
+pattern = "no-broad-except"
+cell = "coached"
+
+# Complex tier on display — human-in-loop / block+escalate (binding ledger gates closure).
+[[policy]]
+pattern = "human.*"
+cell = "structured"
+
+[[policy]]
+pattern = "protected.*"
+cell = "protected"
