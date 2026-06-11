@@ -27,3 +27,6 @@ legis.yaml
 # Migration / local artifacts (the .weft/ store cut-over)
 .filigree.conf.imported
 .weft-backup-*.tgz
+
+# Filigree server-mode MCP config embeds a literal federation token
+.mcp.json
