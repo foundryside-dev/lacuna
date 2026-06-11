@@ -6,6 +6,8 @@ requires-python = ">=3.12"
 # NOTE: the specimen's runtime trust markers come from `weft-markers`, and the
 # scanner from `wardline`. Both are UNPUBLISHED (they live in /home/john/wardline)
 # so they are installed editable-from-path in Step 2, NOT listed as registry deps.
+# `legis` is also editable-from-path (unpublished, /home/john/legis), for the
+# `@policy_boundary` specimens.
 dependencies = []
 
 [project.optional-dependencies]

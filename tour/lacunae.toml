@@ -373,3 +373,13 @@ demonstrates = ["loomweave"]
 explanation = "specimen/colliding.py and specimen/colliding/__init__.py both define ShelfMark — an in-run cross-file entity-id collision; LMWV-DUPLICATE-LOCATOR fires (ERROR)."
 expected_tool = "loomweave"
 expected_rule = "LMWV-DUPLICATE-LOCATOR"
+
+[[lacuna]]
+id = "lg-disabled-boundary-evidence"
+file = "specimen/policy_boundaries.py"
+symbol = "pinned_import"
+category = "governance"
+demonstrates = ["legis"]
+explanation = "A @policy_boundary whose evidence test is @pytest.mark.skip — legis policy-boundary-check flags POLICY_BOUNDARY_TEST_DISABLED; the healthy sibling boundary passes, proving the check discriminates."
+expected_tool = "legis"
+expected_rule = "POLICY_BOUNDARY_TEST_DISABLED"
