@@ -368,15 +368,22 @@ def loomweave_analyze() -> StepResult:
     # The generated narrative is compared byte-for-byte by `make verify`, so the
     # detail MUST be deterministic — never echo raw tool stdout (it may carry timing
     # or a run-id and would flap the lockstep check). Derive a stable count from the
-    # DB the analyze pass just wrote.
+    # DB the analyze pass just wrote — EXCLUDING clustering artifacts: subsystem
+    # entities and in_subsystem edges are order-sensitive across re-analyze of an
+    # unchanged tree (loomweave clarion-14398b2536), so counting them flaps the
+    # lockstep too.
     proc = _run([str(BIN / "loomweave"), "analyze"])
     ents = edges = 0
     if LOOMWEAVE_DB.exists():
         try:  # connect() itself can raise (e.g. corrupt DB) — keep the step total
             con = sqlite3.connect(str(LOOMWEAVE_DB))
             try:
-                ents = con.execute("select count(*) from entities").fetchone()[0]
-                edges = con.execute("select count(*) from edges").fetchone()[0]
+                ents = con.execute(
+                    "select count(*) from entities where kind != 'subsystem'"
+                ).fetchone()[0]
+                edges = con.execute(
+                    "select count(*) from edges where kind != 'in_subsystem'"
+                ).fetchone()[0]
             finally:
                 con.close()
         except sqlite3.Error:
@@ -384,7 +391,7 @@ def loomweave_analyze() -> StepResult:
     return StepResult(
         "loomweave analyze",
         ok=proc.returncode == 0,
-        detail=f"{ents} entities, {edges} edges",
+        detail=f"{ents} entities, {edges} structural edges",
     )
 
 
