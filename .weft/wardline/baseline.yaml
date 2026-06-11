@@ -13,6 +13,24 @@ entries:
   message: specimen.exception_flow.broad_handler declares return trust ASSURED but
     actually returns EXTERNAL_RAW (less trusted) — untrusted data reaches a trusted
     producer
+- fingerprint: b148e0c5dd876d99f20daeb8e0bfde401bd52e5bf0b8611984badc91c59b2027
+  rule_id: PY-WL-101
+  path: specimen/preview_sinks.py
+  message: specimen.preview_sinks.parse_catalog_feed declares return trust ASSURED
+    but actually returns UNKNOWN_RAW (less trusted) — untrusted data reaches a trusted
+    producer
+- fingerprint: dea44d39ea885c736270a108c2c411b7aa10cfddf8de131834a1068039990142
+  rule_id: PY-WL-101
+  path: specimen/preview_sinks.py
+  message: specimen.preview_sinks.render_report_template declares return trust ASSURED
+    but actually returns UNKNOWN_RAW (less trusted) — untrusted data reaches a trusted
+    producer
+- fingerprint: f08ed4cca9b19364df531d82a264de763cb72fc2366be1501ba2c56bd6221d23
+  rule_id: PY-WL-101
+  path: specimen/preview_sinks.py
+  message: specimen.preview_sinks.load_codec_library declares return trust ASSURED
+    but actually returns UNKNOWN_RAW (less trusted) — untrusted data reaches a trusted
+    producer
 - fingerprint: dee6eef0ccc989cb7c78dc930feff2a63c1eac1d175e03a29c175ac6e58e959c
   rule_id: PY-WL-101
   path: specimen/trust_flow.py
@@ -138,6 +156,21 @@ entries:
   path: specimen/wardline_sinks.py
   message: specimen.wardline_sinks.lookup_member returns stored/persisted data (EXTERNAL_RAW)
     without validation at line 90
+- fingerprint: 0b0aee2a5d2a61d7f4a609fd9766ffd2e20fb4edd81f2b6f09c24ae0daef2738
+  rule_id: PY-WL-121
+  path: specimen/preview_sinks.py
+  message: 'specimen.preview_sinks.parse_catalog_feed: EXTERNAL_RAW (untrusted) data
+    reaches the XML-parsing sink lxml.etree.fromstring() at line 42'
+- fingerprint: 1e7817a10377bc605197e78fcf355a14e7bce6dc5bbcb2bc1f2f5fd9e9df41d2
+  rule_id: PY-WL-122
+  path: specimen/preview_sinks.py
+  message: 'specimen.preview_sinks.render_report_template: EXTERNAL_RAW (untrusted)
+    data reaches the template-compilation sink jinja2.Template() at line 49'
+- fingerprint: 8ef3f8042f4f757a312a8b0a7535265e3357916200e3adc0e392fe31c990f136
+  rule_id: PY-WL-124
+  path: specimen/preview_sinks.py
+  message: 'specimen.preview_sinks.load_codec_library: EXTERNAL_RAW (untrusted) data
+    reaches the native-library-load sink ctypes.CDLL() at line 63'
 - fingerprint: 229bf58d7f3192a918945abb570e0d60da5253c3b5a7702155189ff1e7a15c73
   rule_id: PY-WL-103
   path: specimen/exception_flow.py
@@ -191,3 +224,13 @@ entries:
   path: specimen/wardline_sinks.py
   message: 'specimen.wardline_sinks.fetch_cover_image: EXTERNAL_RAW (untrusted) data
     reaches the HTTP-client sink requests.get() at line 80'
+- fingerprint: 49ec5b5998229424afd640d76862f6919cd8cede8fcf84851e8fdbe6e11111fa
+  rule_id: PY-WL-123
+  path: specimen/preview_sinks.py
+  message: 'specimen.preview_sinks.apply_display_option: EXTERNAL_RAW (untrusted)
+    data reaches the attribute-reflection sink setattr() at line 56'
+- fingerprint: f01e25ab4c5383a5a158abd65a1d76d844721adcf24927a2d212e2e60569ae49
+  rule_id: PY-WL-126
+  path: specimen/preview_sinks.py
+  message: 'specimen.preview_sinks.notify_member: EXTERNAL_RAW (untrusted) data reaches
+    the SMTP-send sink smtplib.SMTP.sendmail() at line 78'

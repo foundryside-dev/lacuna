@@ -68,6 +68,11 @@ removed lacuna fails `make verify`. New, *un*-catalogued findings are bugs, not
 features: Wardline's gate stays green on the baselined lacunae and trips on
 anything new.
 
+> **The sentinel:** `wl-log-injection` (PY-WL-125, `specimen/preview_sinks.py`)
+> is deliberately **unbaselined** — preview rules are gate-immune, and the
+> filigree tour leg promotes and work-cycles exactly this finding. The scan
+> summary showing `1 active` is correct, not drift. Do not baseline it.
+
 ## Part of Weft
 
 Weft models a codebase as **entities**, each carrying typed facts from different

@@ -293,3 +293,63 @@ demonstrates = ["wardline"]
 explanation = "Data read from persistent storage (a file read) reaches a @trusted producer's return value with no validation — stored/persisted taint promoted to trusted."
 expected_tool = "wardline"
 expected_rule = "PY-WL-120"
+
+[[lacuna]]
+id = "wl-xxe"
+file = "specimen/preview_sinks.py"
+symbol = "parse_catalog_feed"
+category = "injection"
+demonstrates = ["wardline"]
+explanation = "Untrusted XML text reaches lxml.etree.fromstring — XXE (preview rule, gate-immune)."
+expected_tool = "wardline"
+expected_rule = "PY-WL-121"
+
+[[lacuna]]
+id = "wl-ssti"
+file = "specimen/preview_sinks.py"
+symbol = "render_report_template"
+category = "injection"
+demonstrates = ["wardline"]
+explanation = "Untrusted template source reaches jinja2.Template — server-side template injection (preview)."
+expected_tool = "wardline"
+expected_rule = "PY-WL-122"
+
+[[lacuna]]
+id = "wl-reflection-injection"
+file = "specimen/preview_sinks.py"
+symbol = "apply_display_option"
+category = "injection"
+demonstrates = ["wardline"]
+explanation = "Untrusted attribute NAME reaches setattr — reflection injection (preview)."
+expected_tool = "wardline"
+expected_rule = "PY-WL-123"
+
+[[lacuna]]
+id = "wl-native-lib-load"
+file = "specimen/preview_sinks.py"
+symbol = "load_codec_library"
+category = "injection"
+demonstrates = ["wardline"]
+explanation = "Untrusted path reaches ctypes.CDLL — native-library load (preview)."
+expected_tool = "wardline"
+expected_rule = "PY-WL-124"
+
+[[lacuna]]
+id = "wl-log-injection"
+file = "specimen/preview_sinks.py"
+symbol = "log_export_request"
+category = "injection"
+demonstrates = ["wardline", "wardline+filigree"]
+explanation = "Untrusted text reaches logging — log injection (preview). THE SENTINEL: deliberately unbaselined; the filigree leg promotes and cycles it."
+expected_tool = "wardline"
+expected_rule = "PY-WL-125"
+
+[[lacuna]]
+id = "wl-mail-injection"
+file = "specimen/preview_sinks.py"
+symbol = "notify_member"
+category = "injection"
+demonstrates = ["wardline"]
+explanation = "Untrusted recipient/body reach smtplib sendmail — mail injection (preview)."
+expected_tool = "wardline"
+expected_rule = "PY-WL-126"
