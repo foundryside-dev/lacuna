@@ -30,6 +30,7 @@ def _drive() -> tuple[list, list]:
         steps.loomweave_navigation(),
         steps.loomweave_findings(),
         steps.wardline_scan(),
+        steps.wardline_fail_closed(),
         steps.legis_govern(),
         steps.legis_policy_check(),
         steps.filigree_findings(),

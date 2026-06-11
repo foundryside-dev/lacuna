@@ -178,3 +178,31 @@ def test_filigree_work_cycle_detail_is_deterministic(monkeypatch):
     assert r.ok
     assert "sentinel issue cycled" in r.detail
     assert "lacuna-sentinel1" not in r.detail  # live ids must never enter the locked narrative
+
+
+def test_wardline_fail_closed_requires_trip(monkeypatch, tmp_path):
+    from tour import steps
+
+    out = tmp_path / "quarantine.jsonl"
+    out.write_text('{"rule_id": "WLN-ENGINE-PARSE-ERROR", "qualname": ""}\n')
+
+    class P:
+        returncode = 1
+        stdout = ""
+        stderr = ""
+
+    monkeypatch.setattr(steps, "_tool", lambda name: "/fake/wardline")
+    monkeypatch.setattr(steps.subprocess, "run", lambda *a, **k: P())
+    monkeypatch.setattr(steps.tempfile, "TemporaryDirectory", lambda: _FakeTmp(tmp_path))
+    r = steps.wardline_fail_closed()
+    assert r.ok
+    assert ("WLN-ENGINE-PARSE-ERROR", "specimen_quarantine.unparseable") in r.surfaced
+
+
+class _FakeTmp:
+    def __init__(self, p):
+        self.p = p
+    def __enter__(self):
+        return str(self.p)
+    def __exit__(self, *exc):
+        return False

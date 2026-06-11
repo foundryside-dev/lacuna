@@ -469,6 +469,35 @@ def wardline_scan() -> StepResult:
     )
 
 
+def wardline_fail_closed() -> StepResult:
+    """Scan the quarantine dir expecting the gate to TRIP (fail-closed analyzer).
+
+    The unparseable file must produce WLN-ENGINE-PARSE-ERROR and
+    --fail-on-unanalyzed must exit 1. A quarantine scan that PASSES is a failure.
+    The surfaced qualname is synthesized from the fixture path (parse-error FACTs
+    carry no qualname).
+    """
+    name = "wardline fail-closed gate"
+    wardline = _tool("wardline")
+    if not wardline:
+        return StepResult(name, ok=False, detail="wardline not installed")
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "quarantine.jsonl"
+        proc = subprocess.run(
+            [wardline, "scan", str(ROOT / "specimen_quarantine"),
+             "--fail-on-unanalyzed", "--output", str(out)],
+            cwd=ROOT, capture_output=True, text=True, check=False,
+        )
+        rules = {r for r, _ in pairs_from_findings(out)}
+    tripped = proc.returncode == 1 and "WLN-ENGINE-PARSE-ERROR" in rules
+    return StepResult(
+        name,
+        ok=tripped,
+        detail="unparseable specimen trips the gate: WLN-ENGINE-PARSE-ERROR, exit 1 (fail-closed, not silent)",
+        surfaced=(("WLN-ENGINE-PARSE-ERROR", "specimen_quarantine.unparseable"),) if tripped else (),
+    )
+
+
 def filigree_findings() -> StepResult:
     """Demonstrate the Filigree leg: confirm the tracker is reachable.
 

@@ -383,3 +383,15 @@ demonstrates = ["legis"]
 explanation = "A @policy_boundary whose evidence test is @pytest.mark.skip — legis policy-boundary-check flags POLICY_BOUNDARY_TEST_DISABLED; the healthy sibling boundary passes, proving the check discriminates."
 expected_tool = "legis"
 expected_rule = "POLICY_BOUNDARY_TEST_DISABLED"
+
+[[lacuna]]
+id = "wl-unparseable"
+file = "specimen_quarantine/unparseable.py"
+symbol = "unparseable"
+category = "fail-closed"
+demonstrates = ["wardline"]
+explanation = "A committed parse failure in the quarantine dir; the fail-closed analyzer surfaces WLN-ENGINE-PARSE-ERROR and --fail-on-unanalyzed trips the gate (exit 1). The demo asserts the FAILURE."
+expected_tool = "wardline"
+expected_rule = "WLN-ENGINE-PARSE-ERROR"
+expected_kind = "gate-trip"
+scan_target = "specimen_quarantine"
