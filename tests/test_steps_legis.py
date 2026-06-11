@@ -123,3 +123,23 @@ def test_produce_legis_artifact_classifies_dirty_tree(monkeypatch, tmp_path):
     assert produced is False
     assert code == 2
     assert "dirty working tree" in reason
+
+
+def test_legis_policy_check_discriminates(monkeypatch):
+    from tour import steps
+
+    fake_out = (
+        "specimen/policy_boundaries.py:30: POLICY_BOUNDARY_TEST_DISABLED: "
+        "specimen.policy_boundaries.pinned_import: evidence test is skip-marked\n"
+    )
+
+    class P:
+        returncode = 1
+        stdout = fake_out
+        stderr = ""
+
+    monkeypatch.setattr(steps, "_run", lambda cmd, cwd=None: P())
+    monkeypatch.setattr(steps, "_tool", lambda name: "/fake/legis")
+    r = steps.legis_policy_check()
+    assert r.ok
+    assert ("POLICY_BOUNDARY_TEST_DISABLED", "specimen.policy_boundaries.pinned_import") in r.surfaced

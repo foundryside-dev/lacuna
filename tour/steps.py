@@ -660,3 +660,43 @@ def legis_govern() -> StepResult:
                     proc.wait(timeout=5)
                 except subprocess.TimeoutExpired:
                     proc.kill()
+
+
+def legis_policy_check() -> StepResult:
+    """Run `legis policy-boundary-check` over the specimen and assert it
+    DISCRIMINATES: the disabled-evidence boundary is flagged, the healthy one is not."""
+    name = "legis policy-boundary-check"
+    legis = _tool("legis")
+    if not legis:
+        return StepResult(name, ok=False, detail="legis not installed")
+    # The stock `legis` binary hits RecursionError walking specimen/nesting_bomb.py
+    # (the permanent lw-too-complex lacuna), so the check runs through the venv
+    # python with a raised recursion limit (see specimen/policy_boundaries.py NOTE).
+    proc = _run([
+        str(ROOT / ".venv" / "bin" / "python"), "-c",
+        "import sys; sys.setrecursionlimit(100000); "
+        "from legis.cli import main; sys.exit(main())",
+        "policy-boundary-check", "--root", "specimen", "--repo-root", str(ROOT),
+    ])
+    # Finding-line format: {file}:{line}: {rule_id}: {qualname}: {reason}.
+    pairs: list[tuple[str, str]] = []
+    for line in (proc.stdout or "").splitlines():
+        parts = [p.strip() for p in line.split(": ")]
+        if len(parts) >= 4 and parts[1].startswith("POLICY_BOUNDARY"):
+            pairs.append((parts[1], parts[2]))
+    flagged = [q for _, q in pairs]
+    # The live check emits BARE qualnames (`pinned_import`); accept dotted too.
+    ok = (
+        proc.returncode == 1
+        and any(q == "pinned_import" or q.endswith(".pinned_import") for q in flagged)
+        and not any(q == "validated_recovery" or q.endswith(".validated_recovery") for q in flagged)
+    )
+    return StepResult(
+        name,
+        ok=ok,
+        detail=(
+            "boundary-evidence check discriminates: disabled-evidence boundary flagged, "
+            "healthy boundary passes"
+        ),
+        surfaced=tuple(pairs) if ok else (),
+    )

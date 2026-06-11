@@ -31,6 +31,7 @@ def _drive() -> tuple[list, list]:
         steps.loomweave_findings(),
         steps.wardline_scan(),
         steps.legis_govern(),
+        steps.legis_policy_check(),
         steps.filigree_findings(),
     ]
     return caps, results
