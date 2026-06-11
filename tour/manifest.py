@@ -17,6 +17,9 @@ class Lacuna:
     explanation: str
     expected_tool: str
     expected_rule: str
+    lang: str = "python"
+    expected_kind: str = "finding"   # "finding" | "gate-trip"
+    scan_target: str = ""            # non-empty only for quarantine legs
 
 
 @dataclass(frozen=True)
@@ -41,6 +44,9 @@ def load_manifest(path: Path) -> Manifest:
             explanation=e["explanation"],
             expected_tool=e["expected_tool"],
             expected_rule=e["expected_rule"],
+            lang=e.get("lang", "python"),
+            expected_kind=e.get("expected_kind", "finding"),
+            scan_target=e.get("scan_target", ""),
         )
         for e in entries
     )

@@ -36,3 +36,30 @@ def test_cells_are_the_union_of_demonstrates():
     m = load_manifest(MANIFEST)
     assert "wardline+filigree" in m.cells()
     assert "loomweave" in m.cells()
+
+
+def test_optional_fields_default(tmp_path):
+    from tour.manifest import load_manifest
+    p = tmp_path / "m.toml"
+    p.write_text(
+        '[[lacuna]]\nid = "x"\nfile = "f.py"\nsymbol = "s"\ncategory = "c"\n'
+        'demonstrates = ["wardline"]\nexplanation = "e"\n'
+        'expected_tool = "wardline"\nexpected_rule = "R"\n'
+    )
+    lac = load_manifest(p).lacunae[0]
+    assert lac.lang == "python"
+    assert lac.expected_kind == "finding"
+    assert lac.scan_target == ""
+
+
+def test_optional_fields_explicit(tmp_path):
+    from tour.manifest import load_manifest
+    p = tmp_path / "m.toml"
+    p.write_text(
+        '[[lacuna]]\nid = "x"\nfile = "f.rs"\nsymbol = "s"\ncategory = "c"\n'
+        'demonstrates = ["wardline"]\nexplanation = "e"\n'
+        'expected_tool = "wardline"\nexpected_rule = "R"\n'
+        'lang = "rust"\nexpected_kind = "gate-trip"\nscan_target = "specimen_quarantine"\n'
+    )
+    lac = load_manifest(p).lacunae[0]
+    assert (lac.lang, lac.expected_kind, lac.scan_target) == ("rust", "gate-trip", "specimen_quarantine")
