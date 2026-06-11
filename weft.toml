@@ -1,0 +1,2 @@
+[wardline]
+exclude = ["specimen/nesting_bomb.py", "specimen_quarantine", "specimen_quarantine/*"]

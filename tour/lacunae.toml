@@ -353,3 +353,13 @@ demonstrates = ["wardline"]
 explanation = "Untrusted recipient/body reach smtplib sendmail — mail injection (preview)."
 expected_tool = "wardline"
 expected_rule = "PY-WL-126"
+
+[[lacuna]]
+id = "lw-too-complex"
+file = "specimen/nesting_bomb.py"
+symbol = "nesting_bomb"
+category = "archaeology"
+demonstrates = ["loomweave"]
+explanation = "A generated deep-nesting bomb; the python plugin degrades it to parse_status=too_complex and emits LMWV-PY-TOO-COMPLEX instead of crashing."
+expected_tool = "loomweave"
+expected_rule = "LMWV-PY-TOO-COMPLEX"
