@@ -30,3 +30,4 @@ legis.yaml
 
 # Filigree server-mode MCP config embeds a literal federation token
 .mcp.json
+.vscode/
