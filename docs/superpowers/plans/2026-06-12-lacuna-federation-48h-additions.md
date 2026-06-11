@@ -1078,7 +1078,8 @@ Expected: the exact doc-comment / attribute forms for (a) marking a fn trusted (
 **PINNED DIALECT (verified 2026-06-12 against `/home/john/wardline`):**
 
 - **(a) Trusted-fn marker:** `/// @trusted(level=ASSURED)` (or `GUARDED`) — an outer doc comment whose text *leads* with the directive, on the contiguous doc-comment/attribute run immediately preceding the `fn`. Ground truth: `tests/corpus/rust/command_sink.rs` (every RS-WL-108/112 positive in the corpus carries exactly `/// @trusted(level=ASSURED)`; asserted by `tests/unit/rust/test_corpus.py`) and `src/wardline/rust/provider.py` (`_MARKER = re.compile(r"\s*@trusted\s*\(\s*level\s*=\s*(\w+)\s*\)")`, applied with `re.match` — start-anchored). Pitfalls: a bare `/// @trusted` (no `(level=...)`) does **not** match and is silently ignored, leaving the fn unmarked; an invalid level word raises `ValueError`; only `ASSURED`/`GUARDED` are declarable.
-- **(b) Untrusted source:** there is **no source marker**. `RustTrustProvider` seeds *declared trust only*; taint sources are built-in vocabulary rows in `src/wardline/rust/rust_taint.yaml`: `env::var`, `env::var_os`, `env::args`, `env::vars`, `fs::read_to_string`, `fs::read` → `EXTERNAL_RAW` (matched by trailing path segments, so `std::env::args(...)` qualifies). Use a plain descriptive doc line on the source fn — nothing machine-read.
+- **(b) Untrusted source:** there is **no source marker**. `RustTrustProvider` seeds *declared trust only*; taint sources are built-in vocabulary rows in `src/wardline/rust/rust_taint.yaml`: `env::var`, `env::var_os`, `env::args`, `env::vars`, `fs::read_to_string`, `fs::read` → `EXTERNAL_RAW` (matched by trailing path segments, so `std::env::args(...)` qualifies). **The taint model is flat-local (intra-procedural)** — `rust_taint.yaml`'s own v2 comment names "the flat-local taint model", and every RS-WL-108/112 positive in `tests/corpus/rust/command_sink.rs` calls the source *inside* the same `@trusted` fn as the sink. Taint does **not** cross fn boundaries via parameters or return values: a separate `fn read_operator_arg()` feeding the trusted fns through `main` produces ZERO findings (live-verified 2026-06-12 — only WLN-RUST-COVERAGE). The vocabulary source call must therefore live in the same fn body as the sink.
+- **Re-verification (2026-06-12, live scratch crate):** an exact replica of Task 12's main.rs below (source inlined per-fn), scanned with `wardline scan . --lang rust`, fired both `RS-WL-108` (qualname `specimen_rs.run_export`) and `RS-WL-112` (qualname `specimen_rs.shell_archive`); the control with the source hoisted into a helper fn fired neither. `cargo check` exit 0 on the replica.
 
 ### Task 12: `specimen-rs/` crate with five lacunae
 
@@ -1107,28 +1108,26 @@ mod catalog;
 #[path = "shelf_layout.rs"]
 mod shelving; // LACUNA (rs-path-mount): #[path] module mount — loomweave routes it (ADR-049 Am.8)
 
-/// Untrusted source: no marker exists in the dialect — `std::env::args` is a
-/// built-in EXTERNAL_RAW vocabulary source (wardline `rust_taint.yaml`).
-fn read_operator_arg() -> String {
-    std::env::args().nth(1).unwrap_or_default()
-}
-
 /// @trusted(level=ASSURED)
-fn run_export(prog: String) {
+fn run_export() {
     // LACUNA (RS-WL-108): operator input reaches the program slot of Command::new.
+    // `std::env::args` is a built-in EXTERNAL_RAW vocabulary source (rust_taint.yaml);
+    // it must be called HERE — wardline's Rust taint model is flat-local, so taint
+    // does not cross fn boundaries via parameters.
+    let prog = std::env::args().nth(1).unwrap_or_default();
     Command::new(prog).status().ok();
 }
 
 /// @trusted(level=ASSURED)
-fn shell_archive(line: String) {
+fn shell_archive() {
     // LACUNA (RS-WL-112): operator input reaches a `sh -c` command line.
+    let line = std::env::args().nth(2).unwrap_or_default();
     Command::new("sh").arg("-c").arg(line).status().ok();
 }
 
 fn main() {
-    let arg = read_operator_arg();
-    run_export(arg.clone());
-    shell_archive(arg);
+    run_export();
+    shell_archive();
     println!("{}", catalog::summary());
     println!("{}", shelving::label());
 }
