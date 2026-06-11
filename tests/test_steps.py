@@ -148,3 +148,33 @@ def test_loomweave_findings_maps_paths_to_module_qualnames(tmp_path):
     assert result.ok
     assert ("LMWV-PY-TOO-COMPLEX", "specimen.nesting_bomb") in result.surfaced
     assert ("LMWV-DUPLICATE-LOCATOR", "specimen.colliding") in result.surfaced
+
+
+def test_filigree_work_cycle_detail_is_deterministic(monkeypatch):
+    from tour import steps
+
+    calls = []
+
+    def fake_api(method, path, token, body=None):
+        calls.append((method, path))
+        if path.endswith("/findings/promote"):
+            return {"issue_id": "lacuna-sentinel1", "status": "closed", "created": False}
+        if path.endswith("/reopen"):
+            return {"status": "fixing"}
+        if path.endswith("/claim"):
+            return {"assignee": "tour"}
+        if path.endswith("/close"):
+            return {"status": "closed"}
+        if "files/stats" in path:
+            return {"suppressed": {"critical": 10, "high": 20, "medium": 9, "low": 0, "info": 0}}
+        if "issues?" in path:
+            return [{"id": "lacuna-sentinel1"}]
+        raise AssertionError(path)
+
+    monkeypatch.setattr(steps, "_filigree_api", fake_api)
+    monkeypatch.setattr(steps, "_federation_token", lambda: "tok")
+    monkeypatch.setattr(steps, "_sentinel_fingerprint", lambda: "fp123")
+    r = steps.filigree_work_cycle()
+    assert r.ok
+    assert "sentinel issue cycled" in r.detail
+    assert "lacuna-sentinel1" not in r.detail  # live ids must never enter the locked narrative

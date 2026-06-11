@@ -490,6 +490,132 @@ def filigree_findings() -> StepResult:
     return StepResult("filigree list", ok=ok, detail=detail)
 
 
+FILIGREE_BASE = "http://localhost:8749"
+
+
+def _federation_token() -> str | None:
+    env_file = ROOT / ".env"
+    if env_file.exists():
+        for line in env_file.read_text().splitlines():
+            if line.startswith("WEFT_FEDERATION_TOKEN="):
+                value = line.split("=", 1)[1].strip()
+                if value:
+                    return value
+    fallback = Path.home() / ".config" / "filigree" / "federation_token"
+    if fallback.exists():
+        return fallback.read_text().strip() or None
+    return None
+
+
+def _sentinel_fingerprint() -> str | None:
+    """The sentinel is the (sole, unbaselined) PY-WL-125 finding in findings.jsonl.
+
+    findings.jsonl stores the bare 64-hex digest, but wardline's filigree emit
+    stamps the wire/store form with its fingerprint scheme
+    (``format_fingerprint(FINGERPRINT_SCHEME, ...)`` → ``wlfp2:<hex>``), and
+    promote-by-fingerprint matches the stored form — so stamp it here too.
+    """
+    path = ROOT / "findings.jsonl"
+    if not path.exists():
+        return None
+    for line in path.read_text().splitlines():
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if obj.get("rule_id") == "PY-WL-125":
+            fp = obj.get("fingerprint")
+            if fp and ":" not in fp:
+                fp = f"wlfp2:{fp}"
+            return fp
+    return None
+
+
+def _filigree_api(method: str, path: str, token: str, body: dict | None = None) -> object:
+    data = json.dumps(body).encode() if body is not None else None
+    req = urllib.request.Request(
+        f"{FILIGREE_BASE}{path}",
+        data=data,
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
+        method=method,
+    )
+    with urllib.request.urlopen(req, timeout=5.0) as resp:
+        return json.loads(resp.read())
+
+
+def filigree_work_cycle() -> StepResult:
+    """Cycle ONE sentinel issue through the tracker work lifecycle.
+
+    Run 1: promote the unbaselined PY-WL-125 sentinel finding -> bug at triage,
+    claim, walk the bug workflow (triage -> confirmed -> fixing -> verifying),
+    close (``fix_verification`` is a required close field from ``verifying``).
+    Runs 2+: promote is idempotent (same issue, created=false) -> reopen (lands
+    on the most recent non-done predecessor, ``verifying``) -> claim -> close.
+    The HTTP claim route requires an explicit assignee (FIL-3 actor-alone landed
+    on the MCP/CLI claim verbs, not this dashboard surface — a2ccde6 touches
+    cli_commands/mcp_tools only), so the claim passes actor AND assignee. Also
+    asserts the two new query surfaces: the priority-range query params (N-6)
+    and the suppressed-severity rollup (classic ``/files/stats`` — the weft
+    prefix carries no stats route). Detail is a STABLE sentence — live
+    ids/counts would flap the verify lockstep.
+    """
+    name = "filigree work cycle"
+    token = _federation_token()
+    fp = _sentinel_fingerprint()
+    if not token or not fp:
+        return StepResult(name, ok=False, detail="sentinel cycle unavailable (token or sentinel finding missing)")
+    try:
+        promoted = _filigree_api("POST", "/api/p/lacuna/weft/findings/promote", token, {
+            "scan_source": "wardline", "fingerprint": fp,
+            "labels": ["tour-sentinel"], "actor": "tour",
+        })
+        issue_id = promoted["issue_id"]
+        if not promoted.get("created"):
+            # rc12's promote response carries no status field — re-read the issue.
+            status = promoted.get("status")
+            category = None
+            if status is None:
+                issue = _filigree_api("GET", f"/api/p/lacuna/weft/issues/{issue_id}", token)
+                if isinstance(issue, dict):
+                    status = issue.get("status")
+                    category = issue.get("status_category")
+            if status in ("closed", "done") or category == "closed":
+                _filigree_api("POST", f"/api/p/lacuna/weft/issues/{issue_id}/reopen", token, {"actor": "tour"})
+        claimed = _filigree_api("POST", f"/api/p/lacuna/weft/issues/{issue_id}/claim", token, {
+            "actor": "tour", "assignee": "tour",
+        })
+        # Walk the bug workflow's soft transitions to the closable status —
+        # close is INVALID_TRANSITION except from `verifying`.
+        ladder = ("triage", "confirmed", "fixing", "verifying")
+        current = claimed.get("status") if isinstance(claimed, dict) else None
+        if current in ladder:
+            for nxt in ladder[ladder.index(current) + 1:]:
+                _filigree_api("PATCH", f"/api/p/lacuna/weft/issues/{issue_id}", token, {
+                    "status": nxt, "actor": "tour",
+                })
+        _filigree_api("POST", f"/api/p/lacuna/weft/issues/{issue_id}/close", token, {
+            "actor": "tour", "reason": "tour sentinel cycle complete",
+            "fields": {"fix_verification": "tour sentinel cycle — demo lifecycle only; the planted lacuna stays"},
+        })
+        ranged = _filigree_api("GET", "/api/p/lacuna/weft/issues?priority_min=0&priority_max=4", token)
+        stats = _filigree_api("GET", "/api/p/lacuna/files/stats", token)
+        suppressed = stats.get("suppressed", {}) if isinstance(stats, dict) else {}
+        rollup_ok = sum(int(v) for v in suppressed.values()) > 0
+        items = ranged.get("items") if isinstance(ranged, dict) else ranged
+        listed_ok = isinstance(items, list) and len(items) > 0
+        ok = rollup_ok and listed_ok
+        return StepResult(
+            name, ok=ok,
+            detail=(
+                "sentinel issue cycled: promote (idempotent) → claim by actor → close; "
+                "priority-range filter and suppressed-severity rollup asserted"
+            ),
+        )
+    except (urllib.error.HTTPError, urllib.error.URLError, OSError,
+            json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        return StepResult(name, ok=False, detail=f"sentinel cycle failed: {exc}")
+
+
 def _tool(name: str) -> str | None:
     """Resolve a tool by ~/.local/bin then PATH (mirrors capability._locate)."""
     candidate = BIN / name
