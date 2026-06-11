@@ -395,3 +395,15 @@ expected_tool = "wardline"
 expected_rule = "WLN-ENGINE-PARSE-ERROR"
 expected_kind = "gate-trip"
 scan_target = "specimen_quarantine"
+
+[[lacuna]]
+id = "lg-zero-under-green"
+file = "specimen_quarantine/malformed_artifact.json"
+symbol = "malformed_artifact"
+category = "fail-closed"
+demonstrates = ["legis", "wardline+legis"]
+explanation = "A wardline scan artifact with the findings key ABSENT; legis rejects it (HTTP 422, G1) instead of routing zero defects under green. The demo asserts the REJECTION."
+expected_tool = "legis"
+expected_rule = "artifact-missing-findings-rejected"
+expected_kind = "gate-trip"
+scan_target = "specimen_quarantine"

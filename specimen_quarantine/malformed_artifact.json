@@ -1,0 +1,54 @@
+{
+  "commit_sha": "4b62188d6b6b016de77e8b22537fe3bb480c068e",
+  "fingerprint_scheme": "wlfp2",
+  "rule_set_version": "sha256:e954f11d51f9f46530dfad93d2e01b29bb81873c7edd56eef673fbe2477d0716",
+  "scan_scope": {
+    "is_git_root": true,
+    "resolved_source_roots": [
+      "."
+    ],
+    "scan_root": ".",
+    "scanned_paths": [
+      "specimen/__init__.py",
+      "specimen/cli.py",
+      "specimen/colliding/__init__.py",
+      "specimen/colliding.py",
+      "specimen/cycle_a.py",
+      "specimen/cycle_b.py",
+      "specimen/dead_code.py",
+      "specimen/exception_flow.py",
+      "specimen/hub.py",
+      "specimen/models.py",
+      "specimen/pipeline.py",
+      "specimen/policy_boundaries.py",
+      "specimen/preview_sinks.py",
+      "specimen/repository.py",
+      "specimen/service.py",
+      "specimen/trust_flow.py",
+      "specimen/wardline_boundaries.py",
+      "specimen/wardline_sinks.py",
+      "tests/test_capability.py",
+      "tests/test_docs_gen.py",
+      "tests/test_drive.py",
+      "tests/test_manifest.py",
+      "tests/test_policy_boundaries.py",
+      "tests/test_report.py",
+      "tests/test_specimen_imports.py",
+      "tests/test_steps.py",
+      "tests/test_steps_legis.py",
+      "tour/__init__.py",
+      "tour/__main__.py",
+      "tour/capability.py",
+      "tour/docs_gen.py",
+      "tour/manifest.py",
+      "tour/report.py",
+      "tour/steps.py"
+    ],
+    "schema": "wardline-legis-scan-scope-1",
+    "source_roots": [
+      "."
+    ]
+  },
+  "scanner_identity": "wardline@1.0.0rc4",
+  "tree_sha": "6390a6da02ea8e739c601ed3c3b8804ef36dbc22"
+}

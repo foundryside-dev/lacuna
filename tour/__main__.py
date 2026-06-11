@@ -33,6 +33,7 @@ def _drive() -> tuple[list, list]:
         steps.wardline_fail_closed(),
         steps.legis_govern(),
         steps.legis_policy_check(),
+        steps.legis_reject_malformed(),
         steps.filigree_findings(),
         steps.filigree_work_cycle(),
     ]

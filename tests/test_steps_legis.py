@@ -143,3 +143,20 @@ def test_legis_policy_check_discriminates(monkeypatch):
     r = steps.legis_policy_check()
     assert r.ok
     assert ("POLICY_BOUNDARY_TEST_DISABLED", "specimen.policy_boundaries.pinned_import") in r.surfaced
+
+
+def test_legis_reject_malformed_requires_422(monkeypatch):
+    import urllib.error
+    from tour import steps
+
+    monkeypatch.setattr(steps, "_tool", lambda name: "/fake/legis")
+    monkeypatch.setattr(steps, "_spawn_legis_server", lambda env: ("proc", 9999))
+    monkeypatch.setattr(steps, "_teardown", lambda proc: None)
+
+    def fake_post(port, body, token):
+        raise urllib.error.HTTPError("u", 422, "Unprocessable", {}, None)
+
+    monkeypatch.setattr(steps, "_post_scan_results", fake_post)
+    r = steps.legis_reject_malformed()
+    assert r.ok
+    assert ("artifact-missing-findings-rejected", "specimen_quarantine.malformed_artifact") in r.surfaced

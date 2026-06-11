@@ -7,7 +7,7 @@ MANIFEST = Path("/home/john/lacuna/tour/lacunae.toml")
 
 def test_loads_all_lacunae():
     m = load_manifest(MANIFEST)
-    assert len(m.lacunae) == 38
+    assert len(m.lacunae) == 39
     ids = {l.id for l in m.lacunae}
     assert "wl-trust-violation" in ids
     # the loomweave navigation showcases (call chain, coupling, entry point, subsystem,

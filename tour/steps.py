@@ -724,6 +724,41 @@ def _produce_legis_artifact(
     return produced, proc.returncode, reason
 
 
+def _spawn_legis_server(env: dict) -> tuple[subprocess.Popen, int]:
+    """Start a loopback throwaway `legis serve`; returns (proc, port). Raises OSError if unhealthy."""
+    legis = _tool("legis")
+    port = _free_port()
+    proc = subprocess.Popen(
+        [legis, "serve", "--host", "127.0.0.1", "--port", str(port),
+         "--governance-db", env.pop("_GOV_DB")],
+        cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    if not _wait_health(port):
+        proc.terminate()
+        raise OSError("legis serve did not become healthy")
+    return proc, port
+
+
+def _post_scan_results(port: int, body: dict, token: str) -> dict:
+    req = urllib.request.Request(
+        f"http://127.0.0.1:{port}/wardline/scan-results",
+        data=json.dumps(body).encode("utf-8"),
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=5.0) as resp:
+        return json.loads(resp.read())
+
+
+def _teardown(proc: subprocess.Popen | None) -> None:
+    if proc is not None:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+
+
 def legis_govern() -> StepResult:
     """Drive the live Wardline -> Legis governance handshake against the specimen.
 
@@ -763,38 +798,21 @@ def legis_govern() -> StepResult:
             # Bearer token on the writer route (legis HTTPBearer + LEGIS_API_SECRET).
             # The throwaway server is loopback-only and torn down in `finally`.
             api_secret = secrets.token_hex(16)
-            port = _free_port()
             serve_env = {
                 **os.environ,
                 "LEGIS_WARDLINE_CELL": "surface_override",
                 "LEGIS_API_SECRET": api_secret,
+                "_GOV_DB": f"sqlite:///{Path(tmp) / 'gov.db'}",
             }
             # Only assert verification when BOTH a key is provisioned AND the
             # winning artifact carries a signature (the unsigned fallback drops it).
             if secret and signed:
                 serve_env["LEGIS_WARDLINE_ARTIFACT_KEY"] = secret
-            gov_db = f"sqlite:///{Path(tmp) / 'gov.db'}"
-            proc = subprocess.Popen(
-                [legis, "serve", "--host", "127.0.0.1", "--port", str(port),
-                 "--governance-db", gov_db],
-                cwd=ROOT, env=serve_env,
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            )
-            if not _wait_health(port):
-                return StepResult(name, ok=False, detail="legis serve did not become healthy")
+            proc, port = _spawn_legis_server(serve_env)
 
-            body = json.dumps({"agent_id": "lacuna-tour", "scan": artifact}).encode("utf-8")
-            req = urllib.request.Request(
-                f"http://127.0.0.1:{port}/wardline/scan-results",
-                data=body,
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {api_secret}",
-                },
-                method="POST",
-            )
-            with urllib.request.urlopen(req, timeout=5.0) as resp:
-                routed = json.loads(resp.read()).get("routed", [])
+            routed = _post_scan_results(
+                port, {"agent_id": "lacuna-tour", "scan": artifact}, api_secret
+            ).get("routed", [])
 
             n = len(routed)
             status = ("verified" if (secret and signed) else "unverified")
@@ -809,12 +827,41 @@ def legis_govern() -> StepResult:
             # whose `.get("routed", ...)` would otherwise escape the never-raises contract.
             return StepResult(name, ok=False, detail=f"handshake failed: {exc}")
         finally:
-            if proc is not None:
-                proc.terminate()
-                try:
-                    proc.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    proc.kill()
+            _teardown(proc)
+
+
+def legis_reject_malformed() -> StepResult:
+    """Feed legis an artifact whose `findings` key is ABSENT and assert the G1
+    fail-closed rejection (HTTP 422) — never zero-defects-under-green."""
+    name = "legis reject malformed artifact"
+    if not _tool("legis"):
+        return StepResult(name, ok=False, detail="legis not installed")
+    fixture = ROOT / "specimen_quarantine" / "malformed_artifact.json"
+    if not fixture.exists():
+        return StepResult(name, ok=False, detail="malformed artifact fixture missing")
+    proc = None
+    try:
+        artifact = json.loads(fixture.read_text())
+        api_secret = secrets.token_hex(16)
+        with tempfile.TemporaryDirectory() as tmp:
+            env = {**os.environ, "LEGIS_WARDLINE_CELL": "surface_override",
+                   "LEGIS_API_SECRET": api_secret, "_GOV_DB": f"sqlite:///{Path(tmp)}/gov.db"}
+            proc, port = _spawn_legis_server(env)
+            try:
+                _post_scan_results(port, {"agent_id": "lacuna-tour", "scan": artifact}, api_secret)
+                return StepResult(name, ok=False, detail="malformed artifact was ACCEPTED — fail-closed contract broken")
+            except urllib.error.HTTPError as err:
+                if err.code == 422:
+                    return StepResult(
+                        name, ok=True,
+                        detail="absent findings key REJECTED (HTTP 422) — fail-closed, never zero-under-green",
+                        surfaced=(("artifact-missing-findings-rejected", "specimen_quarantine.malformed_artifact"),),
+                    )
+                return StepResult(name, ok=False, detail=f"unexpected rejection status {err.code}")
+    except (urllib.error.URLError, OSError, json.JSONDecodeError, ValueError) as exc:
+        return StepResult(name, ok=False, detail=f"negative leg failed: {exc}")
+    finally:
+        _teardown(proc)
 
 
 def legis_policy_check() -> StepResult:
