@@ -363,3 +363,13 @@ demonstrates = ["loomweave"]
 explanation = "A generated deep-nesting bomb; the python plugin degrades it to parse_status=too_complex and emits LMWV-PY-TOO-COMPLEX instead of crashing."
 expected_tool = "loomweave"
 expected_rule = "LMWV-PY-TOO-COMPLEX"
+
+[[lacuna]]
+id = "lw-duplicate-locator"
+file = "specimen/colliding.py"
+symbol = "colliding"
+category = "archaeology"
+demonstrates = ["loomweave"]
+explanation = "specimen/colliding.py and specimen/colliding/__init__.py both define ShelfMark — an in-run cross-file entity-id collision; LMWV-DUPLICATE-LOCATOR fires (ERROR)."
+expected_tool = "loomweave"
+expected_rule = "LMWV-DUPLICATE-LOCATOR"
