@@ -234,3 +234,13 @@ entries:
   path: specimen/preview_sinks.py
   message: 'specimen.preview_sinks.notify_member: EXTERNAL_RAW (untrusted) data reaches
     the SMTP-send sink smtplib.SMTP.sendmail() at line 78'
+- fingerprint: 88f50ebcfe8007bede5af0f066be6868939442a345be322b6087af8f9a565fa3
+  rule_id: RS-WL-108
+  path: specimen-rs/src/main.rs
+  message: 'Untrusted data selects the program executed by Command::new (constructed
+    at line 17, run at line 17): an attacker controls which executable runs (CWE-78).'
+- fingerprint: 93a7bdb8a7c29c257fafba4ca3fd327bcb632d44fbee006a558d2a070e441631
+  rule_id: RS-WL-112
+  path: specimen-rs/src/main.rs
+  message: 'Untrusted data reaches a shell command line (''sh -c ...'', run at line
+    24): an attacker can inject shell syntax (CWE-78).'

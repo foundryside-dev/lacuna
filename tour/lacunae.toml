@@ -407,3 +407,58 @@ expected_tool = "legis"
 expected_rule = "artifact-missing-findings-rejected"
 expected_kind = "gate-trip"
 scan_target = "specimen_quarantine"
+
+[[lacuna]]
+id = "rs-untrusted-command"
+file = "specimen-rs/src/main.rs"
+symbol = "run_export"
+category = "injection"
+demonstrates = ["wardline"]
+explanation = "Operator input reaches the program slot of Command::new inside a /// @trusted(level=ASSURED) fn — Rust program injection."
+expected_tool = "wardline"
+expected_rule = "RS-WL-108"
+lang = "rust"
+
+[[lacuna]]
+id = "rs-untrusted-shell"
+file = "specimen-rs/src/main.rs"
+symbol = "shell_archive"
+category = "injection"
+demonstrates = ["wardline"]
+explanation = "Operator input reaches a `sh -c` command line — Rust shell injection."
+expected_tool = "wardline"
+expected_rule = "RS-WL-112"
+lang = "rust"
+
+[[lacuna]]
+id = "rs-derives"
+file = "specimen-rs/src/catalog.rs"
+symbol = "Pamphlet"
+category = "archaeology"
+demonstrates = ["loomweave"]
+explanation = "A derive invocation naming the in-project trait Catalogued — the anchored `derives` edge (ontology 0.5.0+), extracted from a cfg-disabled module tree-sitter still sees."
+expected_tool = "loomweave"
+expected_rule = "derives-edge"
+lang = "rust"
+
+[[lacuna]]
+id = "rs-cfg-twin"
+file = "specimen-rs/src/catalog.rs"
+symbol = "Shelf"
+category = "archaeology"
+demonstrates = ["loomweave"]
+explanation = "Two mutually-exclusive #[cfg] impls of Shelf split into @cfg(...) qualname twins (ADR-049 Am.5) instead of colliding."
+expected_tool = "loomweave"
+expected_rule = "cfg-twin"
+lang = "rust"
+
+[[lacuna]]
+id = "rs-path-mount"
+file = "specimen-rs/src/main.rs"
+symbol = "shelving"
+category = "archaeology"
+demonstrates = ["loomweave"]
+explanation = "A #[path = \"shelf_layout.rs\"] module mount; loomweave routes the mounted file under the declaring module (ADR-049 Am.8)."
+expected_tool = "loomweave"
+expected_rule = "path-mount"
+lang = "rust"
