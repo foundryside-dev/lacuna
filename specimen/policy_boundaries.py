@@ -38,7 +38,7 @@ def validated_recovery(payload: dict) -> dict:
     suppresses=("import-allowlist",),
     invariant="plugin imports are pinned to the catalog allowlist",
     test_ref="tests/test_policy_boundaries.py::test_pinned_import_boundary",
-    test_fingerprint="6930d963db51c6a1b18925886e68dc2bf3e0445ca25da3ea915952d9bf6279a5",
+    test_fingerprint="c5ef6f065b1e1c6424ef81ff8e8808d81dd91fb1a186b2e642e2d89407ad9206",
 )
 def pinned_import(name: str) -> str:
     """LACUNA (lg-disabled-boundary-evidence): the evidence test is skip-marked."""
