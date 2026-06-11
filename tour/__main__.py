@@ -28,6 +28,7 @@ def _drive() -> tuple[list, list]:
         steps.loomweave_structure(),
         steps.loomweave_relations(),
         steps.loomweave_navigation(),
+        steps.loomweave_findings(),
         steps.wardline_scan(),
         steps.legis_govern(),
         steps.filigree_findings(),

@@ -119,3 +119,32 @@ def test_navigation_facts_missing_db(tmp_path):
     nf = navigation_facts(tmp_path / "absent.db")
     assert nf.chain_heads == () and nf.hotspots == ()
     assert nf.entry_points == () and nf.subsystem_members == ()
+
+
+def test_loomweave_findings_maps_paths_to_module_qualnames(tmp_path):
+    """The real findings schema carries entity_id (+ JSON evidence), not a
+    file_path column: file-scoped alarms attach to `core:file:<relpath>` and the
+    duplicate-locator attaches to `core:project:*` with the colliding path in
+    evidence metadata — the step must map both shapes to module qualnames."""
+    from tour import steps
+
+    db = tmp_path / "loomweave.db"
+    con = sqlite3.connect(db)
+    con.execute("create table findings (rule_id text, entity_id text, evidence text)")
+    con.execute(
+        "insert into findings values "
+        "('LMWV-PY-TOO-COMPLEX', 'core:file:specimen/nesting_bomb.py', '{}')"
+    )
+    con.execute(
+        "insert into findings values ('LMWV-DUPLICATE-LOCATOR', 'core:project:lacuna', ?)",
+        (
+            '{"metadata": {"first_source_file_path": "'
+            f"{steps.ROOT}/specimen/colliding.py" '"}}',
+        ),
+    )
+    con.commit(); con.close()
+
+    result = steps.loomweave_findings(db_path=db)
+    assert result.ok
+    assert ("LMWV-PY-TOO-COMPLEX", "specimen.nesting_bomb") in result.surfaced
+    assert ("LMWV-DUPLICATE-LOCATOR", "specimen.colliding") in result.surfaced

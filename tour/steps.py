@@ -395,6 +395,68 @@ def loomweave_analyze() -> StepResult:
     )
 
 
+def _finding_qualname(entity_id: str, evidence: str) -> str:
+    """Map a loomweave finding to a module qualname the coverage gate can match.
+
+    File-scoped alarms attach to ``core:file:<relpath>``; the duplicate-locator
+    attaches to ``core:project:*`` and carries the first colliding source path in
+    its evidence metadata. Anything else (e.g. subsystem-scoped facts) yields ""
+    — surfaced but matching no planted symbol.
+    """
+    path = ""
+    if entity_id.startswith("core:file:"):
+        path = entity_id[len("core:file:"):]
+    else:
+        try:
+            meta = json.loads(evidence or "{}").get("metadata", {})
+        except (json.JSONDecodeError, AttributeError):
+            meta = {}
+        if isinstance(meta, dict):
+            path = meta.get("first_source_file_path") or ""
+    if not path:
+        return ""
+    p = Path(path)
+    if p.is_absolute():
+        try:
+            p = p.relative_to(ROOT)
+        except ValueError:
+            return ""
+    return str(p).removesuffix(".py").replace("/", ".")
+
+
+def loomweave_findings(db_path: Path = LOOMWEAVE_DB) -> StepResult:
+    """Surface loomweave's OWN analyzer alarms (LMWV-*) from the index DB.
+
+    Deterministic detail: sorted de-duped rule ids only — counts/paths would flap
+    the byte-for-byte verify lockstep across environments. Never raises (tour
+    contract): a missing/corrupt DB degrades to ok=False / no pairs.
+    """
+    name = "loomweave findings"
+    pairs: list[tuple[str, str]] = []
+    if Path(db_path).exists():
+        try:  # connect() itself can raise (e.g. corrupt DB) — keep the step total
+            con = sqlite3.connect(str(db_path))
+            try:
+                rows = con.execute(
+                    "select rule_id, entity_id, evidence from findings "
+                    "where rule_id like 'LMWV-%'"
+                ).fetchall()
+            finally:
+                con.close()
+        except sqlite3.Error:
+            rows = []
+        for rule, entity_id, evidence in rows:
+            pairs.append((rule, _finding_qualname(entity_id or "", evidence or "")))
+    pairs = list(dict.fromkeys(pairs))
+    rules = sorted({r for r, _ in pairs})
+    return StepResult(
+        name,
+        ok=bool(pairs),
+        detail=f"analyzer alarms: {', '.join(rules) or '(none)'}",
+        surfaced=tuple(pairs),
+    )
+
+
 def wardline_scan() -> StepResult:
     proc = _run([str(BIN / "wardline"), "scan", "."])
     pairs = pairs_from_findings(ROOT / "findings.jsonl")
