@@ -102,6 +102,67 @@ def loomweave_structure() -> StepResult:
     )
 
 
+@dataclass(frozen=True)
+class RelationFacts:
+    inherits: tuple[tuple[str, str], ...]   # (subclass, base) qualname pairs
+    decorates: tuple[tuple[str, str], ...]  # (decorator, decorated) qualname pairs
+
+
+def relation_facts(db_path: Path = LOOMWEAVE_DB) -> RelationFacts:
+    """Read specimen-scoped relation edges (inherits_from / decorates) from the index.
+
+    Python relation edges landed in plugin ontology 0.8.0; ADR-051 pins the edge
+    direction (subclass→base, decorator→decorated). Never raises: a missing or
+    locked DB yields empty facts and the step degrades to not-surfaced.
+    """
+    if not Path(db_path).exists():
+        return RelationFacts(inherits=(), decorates=())
+    try:
+        con = sqlite3.connect(str(db_path))
+    except sqlite3.Error:
+        return RelationFacts(inherits=(), decorates=())
+    try:
+        out: dict[str, tuple[tuple[str, str], ...]] = {}
+        for kind in ("inherits_from", "decorates"):
+            out[kind] = tuple(
+                (frm, to)
+                for frm, to in con.execute(
+                    "select ef.name, et.name from edges e "
+                    "join entities ef on ef.id=e.from_id "
+                    "join entities et on et.id=e.to_id "
+                    "where e.kind=? and ef.name like 'specimen.%' "
+                    "and et.name like 'specimen.%' order by ef.name, et.name",
+                    (kind,),
+                )
+            )
+        return RelationFacts(inherits=out["inherits_from"], decorates=out["decorates"])
+    except sqlite3.Error:
+        return RelationFacts(inherits=(), decorates=())
+    finally:
+        con.close()
+
+
+def loomweave_relations() -> StepResult:
+    """Surface the relation-edge lacunae as (token, qualname) pairs — the
+    inherits-from token carries the subclass, the decorates token the decorator,
+    so coverage matches the planted symbols (InMemoryRepository / audited)."""
+    facts = relation_facts()
+    surfaced = tuple(("inherits-from", sub) for sub, _ in facts.inherits) + tuple(
+        ("decorates", dec) for dec, _ in facts.decorates
+    )
+    inh_short = (
+        ", ".join(f"{s.rsplit('.', 1)[-1]}→{b.rsplit('.', 1)[-1]}" for s, b in facts.inherits)
+        or "(none)"
+    )
+    dec_short = ", ".join(sorted({d.rsplit(".", 1)[-1] for d, _ in facts.decorates})) or "(none)"
+    return StepResult(
+        "loomweave relations",
+        ok=Path(LOOMWEAVE_DB).exists(),
+        detail=f"inheritance: {inh_short}; decorators: {dec_short}",
+        surfaced=surfaced,
+    )
+
+
 # Minimum length (in `calls` edges) for a chain to count as a demonstrable
 # execution path. The planted specimen.pipeline chain is 4 hops deep.
 CHAIN_MIN = 4

@@ -109,6 +109,26 @@ explanation = "Loomweave's clustering groups the related specimen modules into a
 expected_tool = "loomweave"
 expected_rule = "subsystem"
 
+[[lacuna]]
+id = "lw-inheritance"
+file = "specimen/repository.py"
+symbol = "InMemoryRepository"
+category = "navigation"
+demonstrates = ["loomweave"]
+explanation = "specimen.repository.InMemoryRepository inherits from both Repository and TimestampMixin, and BookRepository/UserRepository inherit from it — the Python plugin's inherits_from relation edges (ontology 0.8.0, ADR-051) record the hierarchy, and Loomweave's entity_relation_list walks it both ways (direction=in answers \"what subclasses X\")."
+expected_tool = "loomweave"
+expected_rule = "inherits-from"
+
+[[lacuna]]
+id = "lw-decorator"
+file = "specimen/service.py"
+symbol = "audited"
+category = "navigation"
+demonstrates = ["loomweave"]
+explanation = "specimen.service.audited decorates LibraryService.add_book and register_user — the Python plugin's decorates relation edges anchor decorator→decorated (ADR-051), so entity_relation_list on the decorator enumerates every method it wraps."
+expected_tool = "loomweave"
+expected_rule = "decorates"
+
 # ── Wardline rule-coverage expansion (PY-WL-105..120) ──────────────────────────
 # Planted 2026-06-06 to exercise the 16 Wardline rules not previously demonstrated.
 # Flaws live in specimen/wardline_sinks.py (taint→sink) and

@@ -7,11 +7,19 @@ MANIFEST = Path("/home/john/lacuna/tour/lacunae.toml")
 
 def test_loads_all_lacunae():
     m = load_manifest(MANIFEST)
-    assert len(m.lacunae) == 26
+    assert len(m.lacunae) == 28
     ids = {l.id for l in m.lacunae}
     assert "wl-trust-violation" in ids
-    # the loomweave navigation showcases (call chain, coupling, entry point, subsystem)
-    assert {"lw-call-chain", "lw-coupling-hotspot", "lw-entry-point", "lw-subsystem"} <= ids
+    # the loomweave navigation showcases (call chain, coupling, entry point, subsystem,
+    # and the rc4 relation-edge pair: inheritance + decorator)
+    assert {
+        "lw-call-chain",
+        "lw-coupling-hotspot",
+        "lw-entry-point",
+        "lw-subsystem",
+        "lw-inheritance",
+        "lw-decorator",
+    } <= ids
 
 
 def test_lacuna_fields():

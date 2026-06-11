@@ -26,6 +26,7 @@ def _drive() -> tuple[list, list]:
     results = [
         steps.loomweave_analyze(),
         steps.loomweave_structure(),
+        steps.loomweave_relations(),
         steps.loomweave_navigation(),
         steps.wardline_scan(),
         steps.legis_govern(),
