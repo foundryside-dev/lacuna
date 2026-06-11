@@ -1070,10 +1070,15 @@ make ci                                      # exit 0 — Wave 2 lands green
 
 ### Task 11: pin the wardline Rust trust-marker dialect (verification-first)
 
-- [ ] **Step 1: Find the marker syntax in wardline's own corpus**
+- [x] **Step 1: Find the marker syntax in wardline's own corpus**
 
 Run: `grep -rn "@trusted" /home/john/wardline/tests/ /home/john/wardline/src/wardline/rust/ --include='*.rs' --include='*.py' -l | head` then open the smallest conformance fixture it points to.
 Expected: the exact doc-comment / attribute forms for (a) marking a fn trusted (`/// @trusted` per `src/wardline/rust/analyzer.py`) and (b) marking the untrusted SOURCE (how `RustTrustProvider` seeds external input — e.g. an `@external`-style marker or built-in sources like `std::env::args`). Record both; Task 12's specimen uses them verbatim. **Do not guess** — copy from a fixture that the wardline test suite asserts RS-WL-108 against.
+
+**PINNED DIALECT (verified 2026-06-12 against `/home/john/wardline`):**
+
+- **(a) Trusted-fn marker:** `/// @trusted(level=ASSURED)` (or `GUARDED`) — an outer doc comment whose text *leads* with the directive, on the contiguous doc-comment/attribute run immediately preceding the `fn`. Ground truth: `tests/corpus/rust/command_sink.rs` (every RS-WL-108/112 positive in the corpus carries exactly `/// @trusted(level=ASSURED)`; asserted by `tests/unit/rust/test_corpus.py`) and `src/wardline/rust/provider.py` (`_MARKER = re.compile(r"\s*@trusted\s*\(\s*level\s*=\s*(\w+)\s*\)")`, applied with `re.match` — start-anchored). Pitfalls: a bare `/// @trusted` (no `(level=...)`) does **not** match and is silently ignored, leaving the fn unmarked; an invalid level word raises `ValueError`; only `ASSURED`/`GUARDED` are declarable.
+- **(b) Untrusted source:** there is **no source marker**. `RustTrustProvider` seeds *declared trust only*; taint sources are built-in vocabulary rows in `src/wardline/rust/rust_taint.yaml`: `env::var`, `env::var_os`, `env::args`, `env::vars`, `fs::read_to_string`, `fs::read` → `EXTERNAL_RAW` (matched by trailing path segments, so `std::env::args(...)` qualifies). Use a plain descriptive doc line on the source fn — nothing machine-read.
 
 ### Task 12: `specimen-rs/` crate with five lacunae
 
@@ -1081,7 +1086,7 @@ Expected: the exact doc-comment / attribute forms for (a) marking a fn trusted (
 - Create: `specimen-rs/Cargo.toml`, `specimen-rs/src/main.rs`, `specimen-rs/src/catalog.rs`, `specimen-rs/src/shelf_layout.rs`
 - Modify: `tour/lacunae.toml`, `weft.toml` (if needed: keep `specimen-rs/target` excluded — wardline already skips `target` in rust mode)
 
-- [ ] **Step 1: Create the crate** (markers below are placeholders for Task 11's verbatim findings — substitute before committing):
+- [ ] **Step 1: Create the crate** (trust markers below are Task 11's verified, pinned dialect — use verbatim):
 
 `specimen-rs/Cargo.toml`:
 ```toml
@@ -1102,18 +1107,19 @@ mod catalog;
 #[path = "shelf_layout.rs"]
 mod shelving; // LACUNA (rs-path-mount): #[path] module mount — loomweave routes it (ADR-049 Am.8)
 
-/// <UNTRUSTED-SOURCE MARKER FROM TASK 11>
+/// Untrusted source: no marker exists in the dialect — `std::env::args` is a
+/// built-in EXTERNAL_RAW vocabulary source (wardline `rust_taint.yaml`).
 fn read_operator_arg() -> String {
     std::env::args().nth(1).unwrap_or_default()
 }
 
-/// @trusted
+/// @trusted(level=ASSURED)
 fn run_export(prog: String) {
     // LACUNA (RS-WL-108): operator input reaches the program slot of Command::new.
     Command::new(prog).status().ok();
 }
 
-/// @trusted
+/// @trusted(level=ASSURED)
 fn shell_archive(line: String) {
     // LACUNA (RS-WL-112): operator input reaches a `sh -c` command line.
     Command::new("sh").arg("-c").arg(line).status().ok();
@@ -1202,7 +1208,7 @@ file = "specimen-rs/src/main.rs"
 symbol = "run_export"
 category = "injection"
 demonstrates = ["wardline"]
-explanation = "Operator input reaches the program slot of Command::new inside a /// @trusted fn — Rust program injection."
+explanation = "Operator input reaches the program slot of Command::new inside a /// @trusted(level=ASSURED) fn — Rust program injection."
 expected_tool = "wardline"
 expected_rule = "RS-WL-108"
 lang = "rust"
