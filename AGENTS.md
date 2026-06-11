@@ -1,4 +1,4 @@
-<!-- filigree:instructions:v3.0.0rc6:65e6fb25 -->
+<!-- filigree:instructions:v3.0.0rc10:65e6fb25 -->
 ## Filigree Issue Tracker
 
 `filigree` tracks tasks for this project. Data lives in `.filigree/`. Prefer
@@ -122,7 +122,7 @@ Two failure modes deserve a specific response:
 This project uses **wardline** as its trust-boundary gate. Before handing back code that touches external input, run `wardline scan . --fail-on ERROR` (exit 0 = clean, 1 = gate tripped, 2 = wardline error) and fix findings at the boundary, not the sink. The full scan -> explain -> fix -> rescan loop and the baseline-vs-waiver discipline live in the `wardline-gate` skill and in `docs/agents.md`.
 <!-- /wardline:instructions -->
 
-<!-- loomweave:instructions:v1.1.0-rc3:f142fa70 -->
+<!-- loomweave:instructions:v1.1.0-rc3:5a7788e7 -->
 ## Loomweave (code archaeology)
 
 This repo is indexed by Loomweave: it has pre-extracted the tree into a
@@ -132,6 +132,12 @@ or re-reading the tree to answer "what calls X", "where is X defined", "what
 subsystem owns X", or "find the thing that does Y" — ask Loomweave's MCP tools
 (`mcp__loomweave__*`): `entity_find`, `entity_at`, `entity_callers_list`,
 `entity_neighborhood_get`, `project_status_get`.
+
+`entity_find` is the grep replacement for "find the thing that does Y": it
+matches a concept word by substring over name, summary, and docstring content
+(e.g. `library` finds `LibraryService`), with no embeddings required — reach for
+it before grepping. Semantic *ranking* is the separate, opt-in
+`entity_semantic_search_list`.
 
 Entity IDs are `{plugin}:{kind}:{qualified_name}` (e.g.
 `python:function:pkg.mod.func`); subsystems are `core:subsystem:{hash}`. You
@@ -148,7 +154,7 @@ explains how to enable it.
 Full workflow: the `loomweave-workflow` skill.
 <!-- /loomweave:instructions -->
 
-<!-- legis:instructions:v1.0.0rc4:6604fe0c -->
+<!-- legis:instructions:v1.0.0rc5:6604fe0c -->
 ## Legis (git/CI + governance)
 
 Legis is the git/CI and governance layer of the Weft suite. Reach for it when a policy fires at the CI/git boundary and a change needs a *recordable* override or human sign-off, when you need governance attestations keyed to stable code identity (SEI), or when you need git/CI context — branches, commits, pull requests, check outcomes, and the Loomweave-bound rename feed — around the work. Enforcement is graded: agent-programmable policy cells decide whether a violation self-clears with an audit trail, is judged inline, or escalates to a human; every decision lands in an append-only, SEI-keyed audit trail that survives rename/move.

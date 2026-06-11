@@ -6,7 +6,7 @@
 #   - PY-WL-101/102/103/104 captured from `wardline scan` (Task 2.3).
 #   - dead-entity / circular-import (plus the navigation tokens execution-path /
 #     coupling-hotspot / entry-point / subsystem) are emitted by the tour harness
-#     when it finds the planted structures in `.loomweave/loomweave.db`; they are
+#     when it finds the planted structures in `.weft/loomweave/loomweave.db`; they are
 #     not Wardline rule IDs.
 
 [[lacuna]]
@@ -65,7 +65,7 @@ file = "specimen/cycle_a.py"
 symbol = "cycle_a"
 category = "structure"
 demonstrates = ["loomweave"]
-explanation = "specimen.cycle_a and specimen.cycle_b import each other — Loomweave's import graph (module_circular_import_list) contains a 2-cycle the harness surfaces from .loomweave/loomweave.db."
+explanation = "specimen.cycle_a and specimen.cycle_b import each other — Loomweave's import graph (module_circular_import_list) contains a 2-cycle the harness surfaces from .weft/loomweave/loomweave.db."
 expected_tool = "loomweave"
 expected_rule = "circular-import"
 

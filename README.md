@@ -1,11 +1,11 @@
 # Lacuna
 
-**The MissingNo of the [Loom](https://github.com/tachyon-beep) suite** — a
+**The MissingNo of the Weft suite** — a
 deliberately-flawed reference application the suite is demonstrated against.
 
-Where Loom's other members are instruments, Lacuna is the *specimen*: a
+Where Weft's other members are instruments, Lacuna is the *specimen*: a
 clean-cored library app seeded with documented **lacunae** (planted flaws), each
-one placed to make a specific Loom tool or tool-combination light up. Point the
+one placed to make a specific Weft tool or tool-combination light up. Point the
 suite at Lacuna and watch it work.
 
 ## What's here
@@ -38,14 +38,26 @@ interpolates `${WEFT_FEDERATION_TOKEN}` from the environment, not from `.env`:
 export WEFT_FEDERATION_TOKEN="$(cat ~/.config/filigree/federation_token)"
 ```
 
+Likewise for the **legis binding ledger / closure gate**: `make setup` generates
+`LEGIS_HMAC_KEY` into `.env`, but the standing legis MCP server reads it from the
+shell env (not `.mcp.json` — never put the secret there). Export it before
+launching Claude Code so the gate is enabled:
+
+```bash
+set -a; . ./.env; set +a        # export everything in .env (incl. LEGIS_HMAC_KEY)
+# or, just the one key:  export LEGIS_HMAC_KEY=...
+```
+
+Without it, the closure gate stays honestly disabled (`CELL_NOT_ENABLED`).
+
 ## Run the tour
 
 ```bash
-make tour     # drive every live Loom tool against the specimen; regenerate docs
+make tour     # drive every live Weft tool against the specimen; regenerate docs
 make verify   # assert every live lacuna is surfaced and the narrative is in lockstep
 ```
 
-The tour detects which Loom tools are runnable and **degrades honestly** —
+The tour detects which Weft tools are runnable and **degrades honestly** —
 design-only members (Legis, Charter) are labelled, never faked.
 
 ## The lacunae
@@ -56,15 +68,15 @@ removed lacuna fails `make verify`. New, *un*-catalogued findings are bugs, not
 features: Wardline's gate stays green on the baselined lacunae and trips on
 anything new.
 
-## Part of Loom
+## Part of Weft
 
-Loom models a codebase as **entities**, each carrying typed facts from different
+Weft models a codebase as **entities**, each carrying typed facts from different
 tools, keyed on one durable identity (SEI), read in one call. Lacuna is the
 shared specimen that demonstrates the whole matrix.
 
-The Loom federation hub at `~/loom` is the authoritative source for the
-federation narrative and roster — see `~/loom/doctrine.md` for the axiom and the
-member roster, and `~/loom/members/lacuna.md` for Lacuna's place in the suite as
+The Weft federation hub at `~/weft` is the authoritative source for the
+federation narrative and roster — see `~/weft/doctrine.md` for the axiom and the
+member roster, and `~/weft/members/lacuna.md` for Lacuna's place in the suite as
 the demonstration specimen (it is **not** a roster member). This README does not
 restate the roster; the hub owns it. Lacuna owns its own specimen, planted-flaw
 manifest, and tour, as described above.

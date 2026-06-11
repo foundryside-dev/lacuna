@@ -23,3 +23,7 @@ legis.yaml
 
 # Filigree issue tracker
 .weft/
+
+# Migration / local artifacts (the .weft/ store cut-over)
+.filigree.conf.imported
+.weft-backup-*.tgz

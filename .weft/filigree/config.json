@@ -1,6 +1,12 @@
 {
   "prefix": "lacuna",
-  "name": "lacuna",
   "version": 1,
+  "enabled_packs": [
+    "core",
+    "planning",
+    "release"
+  ],
+  "registry_backend": "local",
+  "name": "lacuna",
   "mode": "server"
 }

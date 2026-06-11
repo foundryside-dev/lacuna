@@ -1,191 +1,192 @@
+fingerprint_scheme: wlfp2
 version: 1
 entries:
-- fingerprint: 9106311646af1d6b7a39a6618177ffaec3a4de212104ed874674d0e2415c377a
+- fingerprint: 08a4f7161c50761247ee6e9cf987d41660673f16504bfb86a3cd3ef5b11467a9
   rule_id: PY-WL-101
   path: specimen/exception_flow.py
   message: specimen.exception_flow.swallowed_error declares return trust ASSURED but
     actually returns EXTERNAL_RAW (less trusted) — untrusted data reaches a trusted
     producer
-- fingerprint: fc89f7f04b5f244c5620b30e852a9c3cd9831eba2e91e3818333dc6ce98c480b
+- fingerprint: be52b367251b6fbad5da7d109925c57eea61eddebf0b41dd9b0a9671472ba857
   rule_id: PY-WL-101
   path: specimen/exception_flow.py
   message: specimen.exception_flow.broad_handler declares return trust ASSURED but
     actually returns EXTERNAL_RAW (less trusted) — untrusted data reaches a trusted
     producer
-- fingerprint: d69e7592600fe46be9d6c5351ce80423e5ebe822f7122b75c9cb91e37d9006a0
+- fingerprint: dee6eef0ccc989cb7c78dc930feff2a63c1eac1d175e03a29c175ac6e58e959c
   rule_id: PY-WL-101
   path: specimen/trust_flow.py
   message: specimen.trust_flow.unsafe_account_key declares return trust ASSURED but
     actually returns EXTERNAL_RAW (less trusted) — untrusted data reaches a trusted
     producer
-- fingerprint: 8810f3531c3ac2a4c8f5dff85bfa7f29d8227fe85d93c06a13a4199fc486f3bd
-  rule_id: PY-WL-101
-  path: specimen/wardline_boundaries.py
-  message: specimen.wardline_boundaries.load_member_record declares return trust ASSURED
-    but actually returns EXTERNAL_RAW (less trusted) — untrusted data reaches a trusted
-    producer
-- fingerprint: dc86c858b8ba789f2561f5f3edab758b7c849b0e5df40a292aaad173f9822636
+- fingerprint: 011474d3cd123b8197823d9f953c04456695265dd71a1b7999a615985d22a0ba
   rule_id: PY-WL-101
   path: specimen/wardline_boundaries.py
   message: specimen.wardline_boundaries.persist_member declares return trust ASSURED
     but actually returns EXTERNAL_RAW (less trusted) — untrusted data reaches a trusted
     producer
-- fingerprint: 0dd78359744f25f16932d0c2be3da0a3b59d228e1357a1e28fc21afb8842111e
+- fingerprint: 55258486dd7cb2e01678f0bbb9373f42affe9dc4b8681d010fea21b1fc54fe7b
+  rule_id: PY-WL-101
+  path: specimen/wardline_boundaries.py
+  message: specimen.wardline_boundaries.load_member_record declares return trust ASSURED
+    but actually returns EXTERNAL_RAW (less trusted) — untrusted data reaches a trusted
+    producer
+- fingerprint: 0a4a4113f40a269de8f86641ce6914b0d3022df350ecc02de4e6d9aadd3495f3
   rule_id: PY-WL-101
   path: specimen/wardline_sinks.py
   message: specimen.wardline_sinks.shell_archive declares return trust ASSURED but
     actually returns UNKNOWN_RAW (less trusted) — untrusted data reaches a trusted
     producer
-- fingerprint: 1f887aa2e09dad0b5cc87e7fdd89cd70c8121254f491e46bf833644f167533a1
-  rule_id: PY-WL-101
-  path: specimen/wardline_sinks.py
-  message: specimen.wardline_sinks.lookup_member declares return trust ASSURED but
-    actually returns EXTERNAL_RAW (less trusted) — untrusted data reaches a trusted
-    producer
-- fingerprint: 340146273eb76f517a33da3f48559604db57da3d768ca5ba286725294b249a05
-  rule_id: PY-WL-101
-  path: specimen/wardline_sinks.py
-  message: specimen.wardline_sinks.import_catalog_blob declares return trust ASSURED
-    but actually returns UNKNOWN_RAW (less trusted) — untrusted data reaches a trusted
-    producer
-- fingerprint: 6c3bf57b8af09359d51c5b5bc7919183af5fa7ce32eacb088d400dc03541d12e
-  rule_id: PY-WL-101
-  path: specimen/wardline_sinks.py
-  message: specimen.wardline_sinks.open_catalog_file declares return trust ASSURED
-    but actually returns EXTERNAL_RAW (less trusted) — untrusted data reaches a trusted
-    producer
-- fingerprint: 77a75ea4eea8a5b3f01a1dc1e0b54d68da876b6ba9e6d61048972f87fea73d17
-  rule_id: PY-WL-101
-  path: specimen/wardline_sinks.py
-  message: specimen.wardline_sinks.run_export_command declares return trust ASSURED
-    but actually returns UNKNOWN_RAW (less trusted) — untrusted data reaches a trusted
-    producer
-- fingerprint: ad88e00805af1883e669f0787509b653fd7389b7ea7a3a63472cb9d2fbaa635d
+- fingerprint: 2702d387e9c215ff27716053893d44fa14487a70b8c0927b6e3b39b4ab17298e
   rule_id: PY-WL-101
   path: specimen/wardline_sinks.py
   message: specimen.wardline_sinks.load_report_plugin declares return trust ASSURED
     but actually returns UNKNOWN_RAW (less trusted) — untrusted data reaches a trusted
     producer
-- fingerprint: 9ab5d6725f58711c2be986f9884c590c1e1c13b723db6722be674e8626962238
+- fingerprint: 4e0bd29e576b91c1cd476ba7d6146498be2cae8c1306cdc8ac68ff8a74b239db
+  rule_id: PY-WL-101
+  path: specimen/wardline_sinks.py
+  message: specimen.wardline_sinks.import_catalog_blob declares return trust ASSURED
+    but actually returns UNKNOWN_RAW (less trusted) — untrusted data reaches a trusted
+    producer
+- fingerprint: 61dc49764e7fbbc70b8dedf54d97499e2b5f4bc3f63b2173f2948260f3d373cb
+  rule_id: PY-WL-101
+  path: specimen/wardline_sinks.py
+  message: specimen.wardline_sinks.lookup_member declares return trust ASSURED but
+    actually returns EXTERNAL_RAW (less trusted) — untrusted data reaches a trusted
+    producer
+- fingerprint: 68f7309b849db68e956fd435e9b685c5a9653be9a98c716b325b556d512d2cf5
+  rule_id: PY-WL-101
+  path: specimen/wardline_sinks.py
+  message: specimen.wardline_sinks.run_export_command declares return trust ASSURED
+    but actually returns UNKNOWN_RAW (less trusted) — untrusted data reaches a trusted
+    producer
+- fingerprint: 8a05e2bf06c25eb93a8e3f843b8d7010c6115304e1299e4f10f4153204251bbf
+  rule_id: PY-WL-101
+  path: specimen/wardline_sinks.py
+  message: specimen.wardline_sinks.eval_report_formula declares return trust ASSURED
+    but actually returns EXTERNAL_RAW (less trusted) — untrusted data reaches a trusted
+    producer
+- fingerprint: fc357d38e34e919c1971054612eef0ea9eed66d14c9bab773d14cc68bd9f6d66
+  rule_id: PY-WL-101
+  path: specimen/wardline_sinks.py
+  message: specimen.wardline_sinks.open_catalog_file declares return trust ASSURED
+    but actually returns EXTERNAL_RAW (less trusted) — untrusted data reaches a trusted
+    producer
+- fingerprint: a46e1b612d66c184d1601c7c4c8a573d095a07d6c3af40e3319419d4eaf7fc3b
   rule_id: PY-WL-102
   path: specimen/exception_flow.py
   message: specimen.exception_flow.non_rejecting_boundary declares a trust boundary
     (EXTERNAL_RAW -> ASSURED) but has no rejection path (no raise / no falsy return)
     — it cannot validate
-- fingerprint: 0da910e2f521eb7bea4d5e3f02bbd0197b01ce01914d5c4cd55b7330d78961fe
-  rule_id: PY-WL-102
-  path: specimen/wardline_boundaries.py
-  message: specimen.wardline_boundaries.degenerate_member declares a trust boundary
-    (EXTERNAL_RAW -> ASSURED) but has no rejection path (no raise / no falsy return)
-    — it cannot validate
-- fingerprint: 3b0779cf9f925cec0c285cbcbbe84f4bcc8b8b1d3b9e05f573cd9f44fbfcf68d
+- fingerprint: 4e5392d710085b502027b1fbf24cfb50fd9075738393c610637c5f8634970209
   rule_id: PY-WL-105
   path: specimen/wardline_boundaries.py
   message: 'specimen.wardline_boundaries.register_member: EXTERNAL_RAW (untrusted)
     data passed to trusted producer specimen.wardline_boundaries.persist_member()
     at line 39'
-- fingerprint: 40c89aea2ce3985a0c5ad3dc01661bd26145437faaa89883069adf5d07403f20
+- fingerprint: 235ad0801f2e20ae2a06637cd22f2026165c39a4e6b8f86de337f12c248b444c
+  rule_id: PY-WL-108
+  path: specimen/wardline_sinks.py
+  message: 'specimen.wardline_sinks.run_export_command: EXTERNAL_RAW (untrusted) data
+    reaches the OS-command sink os.system() at line 51'
+- fingerprint: 133d97499ed38b2dc8d2790db0fd5c918e5ac808704839a32fd61ba2e8221ce8
   rule_id: PY-WL-111
   path: specimen/wardline_boundaries.py
   message: specimen.wardline_boundaries.assert_only_member declares a trust boundary
     (EXTERNAL_RAW -> ASSURED) but its only rejection path is assert — stripped under
     python -O, so the validation vanishes in production
-- fingerprint: 8544329f090c0d614a84864c4505a4916a352e9dcf760d2b9abb2029f0ff591e
+- fingerprint: cca2b782d572b5e59cb718d5753f7a92edcf6f8b2409096a223a563e191cecb7
+  rule_id: PY-WL-112
+  path: specimen/wardline_sinks.py
+  message: 'specimen.wardline_sinks.shell_archive: EXTERNAL_RAW (untrusted) data reaches
+    the shell=True subprocess sink subprocess.call() at line 58'
+- fingerprint: 2df9db0f2f66f044e4117d0f9ddcb532a3c48dd32c00b3b1e4fcee7b3e1940f0
   rule_id: PY-WL-113
   path: specimen/wardline_boundaries.py
   message: specimen.wardline_boundaries.failopen_member declares a trust boundary
     (EXTERNAL_RAW -> ASSURED) but an except handler swallows the failure and returns
     a substitute value instead of re-raising — it fails open, so the boundary is bypassable
-- fingerprint: d80d763356545d87b7b01f224f47c86394a1c25ebcd783f764c16daead8d9e71
+- fingerprint: f9fa242cbdb874ec66f6f4a4acc882502e9e72482ef4667b0df8b0c5d1fef17d
   rule_id: PY-WL-114
   path: specimen/wardline_boundaries.py
   message: specimen.wardline_boundaries.invalid_level_member has an invalid or out-of-range
     trust level 'SUPERUSER' on decorator @trusted
-- fingerprint: b779ee31c3c4bb8f03e38f084fa5340b19543f03785036d359c32634d08e3aac
+- fingerprint: 8d7d22e4ec9cae4acca561fbc2923355d584d6a29bf5d1e9bc929ce40f12ba94
   rule_id: PY-WL-118
   path: specimen/wardline_sinks.py
   message: 'specimen.wardline_sinks.lookup_member: EXTERNAL_RAW (untrusted) data reaches
     the SQL-injection sink execute() at line 89'
-- fingerprint: 300909e20404a770e0279c50296915d91aa3e0de56b498fac5f3871b2875c472
+- fingerprint: 4a6a70dba8c01c351097479aa763fb2ab277183fc5b91cf3e2b450eb70d1ca54
   rule_id: PY-WL-119
   path: specimen/wardline_boundaries.py
   message: specimen.wardline_boundaries.degenerate_member declares a trust boundary
     (EXTERNAL_RAW -> ASSURED) but returns the input directly without validation (degenerate
     boundary)
-- fingerprint: 559ca4a912ab136c1e554ec665a5d7dad9619142c9f0882c418db012acbb723b
+- fingerprint: 0b7f9b7ab0cc7c3c3d9fe30077f8026480fca271a3de7992bedd79bd69faafb1
   rule_id: PY-WL-120
   path: specimen/wardline_boundaries.py
   message: specimen.wardline_boundaries.load_member_record returns stored/persisted
     data (EXTERNAL_RAW) without validation at line 114
-- fingerprint: 3df2b32eef3503ac1f217bba994f67c42c8f8337428e057ed812191f056109fa
-  rule_id: PY-WL-120
-  path: specimen/wardline_sinks.py
-  message: specimen.wardline_sinks.lookup_member returns stored/persisted data (EXTERNAL_RAW)
-    without validation at line 90
-- fingerprint: d72ffe6206ca75e090417343ea8be964f64bca74673ce071db752a5956cc9190
+- fingerprint: 14a25c4f0eb980df3ad61bb4e1a6a9dc9b675a0d1715ed88728b0389eb72697d
   rule_id: PY-WL-120
   path: specimen/wardline_sinks.py
   message: specimen.wardline_sinks.open_catalog_file returns stored/persisted data
     (EXTERNAL_RAW) without validation at line 73
-- fingerprint: 1820c0b3bd5943ac860bdeab4fe14cfaa9bf4f30f76731dbfa97fa2195d75ec8
+- fingerprint: dffcb29066724d55d4e667a471835226e3c67698b41a08e7f2021214a4395f55
+  rule_id: PY-WL-120
+  path: specimen/wardline_sinks.py
+  message: specimen.wardline_sinks.lookup_member returns stored/persisted data (EXTERNAL_RAW)
+    without validation at line 90
+- fingerprint: 229bf58d7f3192a918945abb570e0d60da5253c3b5a7702155189ff1e7a15c73
   rule_id: PY-WL-103
   path: specimen/exception_flow.py
   message: 'specimen.exception_flow.broad_handler: broad exception handler at line
     32'
-- fingerprint: 71140fa8c4fd37d3eaaf820032baaf853b3a2a3cc059d99aba46d49fb71030a5
+- fingerprint: 2cc66830b179fd5bd331dd3aedd0c1bddb24b08b05d2a0c0f168abecd4193897
   rule_id: PY-WL-104
   path: specimen/exception_flow.py
   message: 'specimen.exception_flow.swallowed_error: exception silently swallowed
     at line 43'
-- fingerprint: 7ab8389a993735728242584ed3de4ed94936202e26c34ce0985528ddef57b2df
+- fingerprint: e5862ef1f64848e3105c1c95fcc6a4815f0dd97ea2da8c8056ea382b670591c3
   rule_id: PY-WL-106
   path: specimen/wardline_sinks.py
   message: 'specimen.wardline_sinks.import_catalog_blob: EXTERNAL_RAW (untrusted)
     data reaches the deserialization sink pickle.loads() at line 37'
-- fingerprint: 4676ea468969944ef66026bbeb1ab10fd72fd4d811469d8502a4b816aff91c44
+- fingerprint: e4bf830494016a1781d430b063797453189edfcbb98a63b03f991e907e9d9aa7
   rule_id: PY-WL-107
   path: specimen/wardline_sinks.py
   message: 'specimen.wardline_sinks.eval_report_formula: EXTERNAL_RAW (untrusted)
     data reaches the dynamic-code-execution sink eval() at line 44'
-- fingerprint: 3de911dbe41576e120b1cd7a8e88fb26f783bea304ffdfb9196f9d2fb3032af8
-  rule_id: PY-WL-108
-  path: specimen/wardline_sinks.py
-  message: 'specimen.wardline_sinks.run_export_command: EXTERNAL_RAW (untrusted) data
-    reaches the OS-command sink os.system() at line 51'
-- fingerprint: 5fa9ff6643c541751b35349a1e1bff4eb549c33cc457dc04c96e7e986dc290f1
+- fingerprint: f962aa0351f2f6efba7ad8f4f2509ca474ae6d62998c2dcc2ad5b29740cfc64c
   rule_id: PY-WL-109
   path: specimen/wardline_boundaries.py
   message: specimen.wardline_boundaries.renewal_count declares trusted return ASSURED
     but a path returns None (bare return / return None) — None leaks from a trusted
     producer
-- fingerprint: 08d17243f696644126835a911ffb44e6b6474d5fb79f7dd06b79fc0f208f26cd
-  rule_id: PY-WL-110
-  path: specimen/wardline_boundaries.py
-  message: specimen.wardline_boundaries.contradictory_member carries contradictory
-    trust markers (external_boundary+trusted); the engine resolves the clash to the
-    least-trusted seed, silently ignoring the rest
-- fingerprint: 8f9526d8c2bbceddc5d261dd6f2564062717479e24719a379ee3dc9c72500733
+- fingerprint: 49ddf3bee060b88cc07d6eca71a2ea17ff22e76a98fd5c8c697abadd06e75842
   rule_id: PY-WL-110
   path: specimen/wardline_boundaries.py
   message: specimen.wardline_boundaries.contradictory_member_gap carries contradictory
     trust markers (external_boundary+trusted); the engine resolves the clash to the
     least-trusted seed, silently ignoring the rest
-- fingerprint: 9ca6bca51a3c58f5285425c7e891306460df9929c88758ca1112faabc1d5ac2e
-  rule_id: PY-WL-112
-  path: specimen/wardline_sinks.py
-  message: 'specimen.wardline_sinks.shell_archive: EXTERNAL_RAW (untrusted) data reaches
-    the shell=True subprocess sink subprocess.call() at line 58'
-- fingerprint: 391371cba8a67e8b8756a83e90f85fdfb73747b9e3786d54e25c8a89ad859cea
+- fingerprint: a1408259227f72f5739592f5c01699b000d5e4787067d19f4abc9de0558bbb00
+  rule_id: PY-WL-110
+  path: specimen/wardline_boundaries.py
+  message: specimen.wardline_boundaries.contradictory_member carries contradictory
+    trust markers (external_boundary+trusted); the engine resolves the clash to the
+    least-trusted seed, silently ignoring the rest
+- fingerprint: ee2376058ad0c2507ee11821d2aed2bb0aba55360931c87b7a2e1cf52db90636
   rule_id: PY-WL-115
   path: specimen/wardline_sinks.py
   message: 'specimen.wardline_sinks.load_report_plugin: EXTERNAL_RAW (untrusted) data
     reaches the dynamic import sink importlib.import_module() at line 65'
-- fingerprint: f97030679ff56cc9a6a4e21b871f034ecf32adcd8664e4adbc30476427f8431e
+- fingerprint: 3273c67a331a01ef5241666ca54086fdc16b853e03ebe49a85178690f6c1b4dd
   rule_id: PY-WL-116
   path: specimen/wardline_sinks.py
   message: 'specimen.wardline_sinks.open_catalog_file: EXTERNAL_RAW (untrusted) data
     reaches the path-traversal sink open() at line 72'
-- fingerprint: 609d63fd38063fca9b793b0f0427c7ad0acc6069b02ac43e031650fff0deadd1
+- fingerprint: d60f08602ae4c65bf5837a7d49d8b355758d443d6f5ed9d1fc6dc29031c74d30
   rule_id: PY-WL-117
   path: specimen/wardline_sinks.py
   message: 'specimen.wardline_sinks.fetch_cover_image: EXTERNAL_RAW (untrusted) data

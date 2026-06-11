@@ -1,4 +1,4 @@
-"""Drive each live Loom tool against the specimen. Steps never raise."""
+"""Drive each live Weft tool against the specimen. Steps never raise."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from tour.report import StepResult
 
 ROOT = Path("/home/john/lacuna")
 BIN = Path("/home/john/.local/bin")
-LOOMWEAVE_DB = ROOT / ".loomweave" / "loomweave.db"
+LOOMWEAVE_DB = ROOT / ".weft" / "loomweave" / "loomweave.db"
 
 
 def _run(cmd: list[str], cwd: Path = ROOT) -> subprocess.CompletedProcess[str]:
@@ -346,12 +346,14 @@ def filigree_findings() -> StepResult:
     count — the `.filigree/` DB is gitignored and mutates as scans emit findings,
     so embedding its count would make the byte-for-byte `make verify` lockstep flap
     between runs/environments. The Wardline→Filigree dataflow itself is exercised by
-    `wardline scan` posting to the scan-results endpoint configured in wardline.yaml.
+    `wardline scan` posting to the scan-results endpoint (the Wardline→Filigree
+    bridge — the CLI uses its built-in default; the agent MCP surface is wired in
+    `.mcp.json`).
     """
     proc = _run([str(BIN / "filigree"), "list", "--json"])
     ok = proc.returncode == 0
     detail = (
-        "live — Wardline findings POST to the filigree scan-results bridge (wardline.yaml)"
+        "live — Wardline findings POST to the filigree scan-results bridge"
         if ok
         else "filigree CLI not reachable"
     )

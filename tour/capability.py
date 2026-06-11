@@ -1,4 +1,4 @@
-"""Detect which Loom tools are runnable. Degrade honestly — never fake a tool."""
+"""Detect which Weft tools are runnable. Degrade honestly — never fake a tool."""
 
 from __future__ import annotations
 

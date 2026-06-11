@@ -1,9 +1,9 @@
 [project]
 name = "lacuna"
 version = "0.1.0"
-description = "The MissingNo of the Loom suite — the deliberately-flawed reference specimen the suite is demonstrated against."
+description = "The MissingNo of the Weft suite — the deliberately-flawed reference specimen the suite is demonstrated against."
 requires-python = ">=3.12"
-# NOTE: the specimen's runtime trust markers come from `loom-markers`, and the
+# NOTE: the specimen's runtime trust markers come from `weft-markers`, and the
 # scanner from `wardline`. Both are UNPUBLISHED (they live in /home/john/wardline)
 # so they are installed editable-from-path in Step 2, NOT listed as registry deps.
 dependencies = []
