@@ -18,9 +18,9 @@ execution paths: _add_book (depth 4), _register (depth 4), ingest (depth 4); cou
 
 surfaced rules: PY-WL-101, PY-WL-102, PY-WL-103, PY-WL-104, PY-WL-105, PY-WL-106, PY-WL-107, PY-WL-108, PY-WL-109, PY-WL-110, PY-WL-111, PY-WL-112, PY-WL-113, PY-WL-114, PY-WL-115, PY-WL-116, PY-WL-117, PY-WL-118, PY-WL-119, PY-WL-120, WLN-ENGINE-FLOW-INSENSITIVE-FALLBACK, WLN-ENGINE-METRICS, WLN-L3-LOW-RESOLUTION
 
-## ✅ legis govern
+## ⚠️ legis govern
 
-governed 34 active defects → surface_override
+wardline refused to sign the legis artifact: dirty working tree (uncommitted changes) — commit first, then re-run (the signed Wardline→Legis handshake requires a clean tree)
 
 ## ✅ filigree list
 
