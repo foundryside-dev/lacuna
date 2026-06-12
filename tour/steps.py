@@ -469,6 +469,96 @@ def wardline_scan() -> StepResult:
     )
 
 
+def rust_scan() -> StepResult:
+    """Wardline's Rust frontend over the same tree (`--lang rust`).
+
+    The clean Python scan and the Rust scan are two passes of one tool over one
+    repo — the multi-language headline. Surfaces the RS-WL-* taint rules
+    (specimen-rs/src/main.rs). Never raises (tour contract).
+    """
+    name = "wardline scan (rust)"
+    wardline = _tool("wardline")
+    if not wardline:
+        return StepResult(name, ok=False, detail="wardline not installed")
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "rust.jsonl"
+        proc = subprocess.run(
+            [wardline, "scan", ".", "--lang", "rust", "--output", str(out)],
+            cwd=ROOT, capture_output=True, text=True, check=False,
+        )
+        pairs = pairs_from_findings(out)
+    rules = sorted({r for r, _ in pairs})
+    return StepResult(
+        name,
+        ok=proc.returncode in (0, 1) and bool(pairs),
+        detail=f"surfaced rules: {', '.join(rules) or '(none)'}",
+        surfaced=pairs,
+    )
+
+
+def _cfg_twin_base(impl_name: str) -> str:
+    """Reduce an @cfg impl entity name to the type it twins on. The rust plugin
+    names cfg-split impls ``…<Type>.impl#<>@cfg(<pred>)`` — strip from ``.impl#``
+    so both predicates collapse to the same ``specimen_rs.catalog.Shelf`` base."""
+    return impl_name.split(".impl#", 1)[0]
+
+
+def rust_archaeology(db_path: Path = LOOMWEAVE_DB) -> StepResult:
+    """Rust index facts as harness tokens (like ``dead-entity``): the @cfg impl
+    twins, the ``#[path]``-mounted module, the in-project derives edge, and a
+    pasted ``::``-path resolved the way ``entity_resolve`` normalizes it.
+
+    Deterministic detail: sorted token names only. Never raises (tour contract).
+    Schema (live-pinned 2026-06-12): ``entities(id, kind, name, …)`` — ``name`` is
+    the qualname; ``edges(kind, from_id, to_id)`` joined back to entities.
+    """
+    name = "loomweave rust archaeology"
+    pairs: list[tuple[str, str]] = []
+    if Path(db_path).exists():
+        try:  # connect() itself can raise (e.g. corrupt DB) — keep the step total
+            con = sqlite3.connect(str(db_path))
+            try:
+                twins = con.execute(
+                    "select name from entities "
+                    "where kind = 'impl' and name like 'specimen_rs%@cfg%'"
+                ).fetchall()
+                mounted = con.execute(
+                    "select count(*) from entities where name = 'specimen_rs.shelving'"
+                ).fetchone()[0]
+                derive_edges = con.execute(
+                    "select ef.name from edges e "
+                    "join entities ef on ef.id = e.from_id "
+                    "where e.kind = 'derives' and ef.name like 'specimen_rs%'"
+                ).fetchall()
+                # ::-dialect demo: a pasted Rust path resolves once normalized
+                # `::` -> `.` (what entity_resolve does before lookup).
+                pasted = "specimen_rs::shelving::label"
+                colon_hit = con.execute(
+                    "select count(*) from entities where name = ?",
+                    (pasted.replace("::", "."),),
+                ).fetchone()[0]
+            finally:
+                con.close()
+        except sqlite3.Error:
+            twins, mounted, derive_edges, colon_hit = [], 0, [], 0
+        if len(twins) >= 2:
+            pairs.append(("cfg-twin", _cfg_twin_base(twins[0][0])))
+        if mounted:
+            pairs.append(("path-mount", "specimen_rs.shelving"))
+        for (src,) in derive_edges:
+            pairs.append(("derives-edge", src))
+        if colon_hit:
+            pairs.append(("colon-path-resolved", "specimen_rs.shelving.label"))
+    pairs = list(dict.fromkeys(pairs))
+    tokens = sorted({t for t, _ in pairs})
+    return StepResult(
+        name,
+        ok=len(pairs) >= 3,
+        detail=f"rust index facts: {', '.join(tokens) or '(none)'}",
+        surfaced=tuple(pairs),
+    )
+
+
 def wardline_fail_closed() -> StepResult:
     """Scan the quarantine dir expecting the gate to TRIP (fail-closed analyzer).
 

@@ -206,3 +206,74 @@ class _FakeTmp:
         return str(self.p)
     def __exit__(self, *exc):
         return False
+
+
+def test_rust_archaeology_emits_harness_tokens(tmp_path):
+    # Schema mirrors the live loomweave DB (entities.name is the qualname; edges
+    # join via from_id/to_id) and the REAL @cfg impl naming pinned in Task 12.
+    db = tmp_path / "loomweave.db"
+    con = sqlite3.connect(db)
+    con.execute("create table entities (id text, kind text, name text, parent_id text)")
+    con.execute("create table edges (kind text, from_id text, to_id text)")
+    con.executemany("insert into entities values (?,?,?,?)", [
+        ("i1", "impl", 'specimen_rs.catalog.Shelf.impl#<>@cfg(feature="metric")', None),
+        ("i2", "impl", 'specimen_rs.catalog.Shelf.impl#<>@cfg(not(feature="metric"))', None),
+        ("m1", "module", "specimen_rs.shelving", None),
+        ("f1", "function", "specimen_rs.shelving.label", None),
+        ("p1", "struct", "specimen_rs.catalog.derive_demo.Pamphlet", None),
+        ("t1", "trait", "specimen_rs.catalog.Catalogued", None),
+    ])
+    con.execute("insert into edges values ('derives', 'p1', 't1')")
+    con.commit(); con.close()
+
+    from tour import steps
+    r = steps.rust_archaeology(db_path=db)
+    assert r.ok
+    assert ("cfg-twin", "specimen_rs.catalog.Shelf") in r.surfaced
+    assert ("path-mount", "specimen_rs.shelving") in r.surfaced
+    assert ("derives-edge", "specimen_rs.catalog.derive_demo.Pamphlet") in r.surfaced
+    assert ("colon-path-resolved", "specimen_rs.shelving.label") in r.surfaced
+
+
+def test_rust_archaeology_needs_two_twins_for_cfg_token(tmp_path):
+    # A single impl (no twin) must NOT mint a cfg-twin token — the lacuna is the
+    # SPLIT, so one impl alone is not the demonstrated fact.
+    db = tmp_path / "loomweave.db"
+    con = sqlite3.connect(db)
+    con.execute("create table entities (id text, kind text, name text, parent_id text)")
+    con.execute("create table edges (kind text, from_id text, to_id text)")
+    con.execute(
+        "insert into entities values "
+        "('i1','impl','specimen_rs.catalog.Shelf.impl#<>@cfg(feature=\"metric\")',null)"
+    )
+    con.commit(); con.close()
+
+    from tour import steps
+    r = steps.rust_archaeology(db_path=db)
+    assert all(tok != "cfg-twin" for tok, _ in r.surfaced)
+
+
+def test_rust_scan_surfaces_rs_rules(monkeypatch, tmp_path):
+    from tour import steps
+
+    out_lines = (
+        '{"rule_id": "RS-WL-108", "qualname": "specimen_rs.run_export"}\n'
+        '{"rule_id": "RS-WL-112", "qualname": "specimen_rs.shell_archive"}\n'
+    )
+
+    class P:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    def fake_run(cmd, **kw):
+        idx = cmd.index("--output")
+        steps.Path(cmd[idx + 1]).write_text(out_lines)
+        return P()
+
+    monkeypatch.setattr(steps, "_tool", lambda name: "/fake/wardline")
+    monkeypatch.setattr(steps.subprocess, "run", fake_run)
+    r = steps.rust_scan()
+    assert r.ok
+    assert ("RS-WL-108", "specimen_rs.run_export") in r.surfaced
+    assert ("RS-WL-112", "specimen_rs.shell_archive") in r.surfaced
