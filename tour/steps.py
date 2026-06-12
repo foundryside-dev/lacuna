@@ -424,22 +424,35 @@ def _finding_qualname(entity_id: str, evidence: str) -> str:
     return str(p).removesuffix(".py").replace("/", ".")
 
 
-def loomweave_findings(db_path: Path = LOOMWEAVE_DB) -> StepResult:
-    """Surface loomweave's OWN analyzer alarms (LMWV-*) from the index DB.
+# The loomweave analyzer alarms the tour DEMONSTRATES (planted lacunae). The
+# index also carries incidental, environment/history-dependent FACT-class
+# findings — LMWV-FACT-ENTITY-DELETED (incremental-churn deletion tracking),
+# LMWV-FACT-CLUSTERING-WEAK-MODULARITY, LMWV-SEC-SECRET-DETECTED,
+# LMWV-PY-SYNTAX-ERROR — which come and go with git/index state and would flap
+# the byte-for-byte verify lockstep. Scope to the planted set so the narrative
+# is deterministic.
+PLANTED_LOOMWEAVE_ALARMS = ("LMWV-PY-TOO-COMPLEX", "LMWV-DUPLICATE-LOCATOR")
 
-    Deterministic detail: sorted de-duped rule ids only — counts/paths would flap
-    the byte-for-byte verify lockstep across environments. Never raises (tour
-    contract): a missing/corrupt DB degrades to ok=False / no pairs.
+
+def loomweave_findings(db_path: Path = LOOMWEAVE_DB) -> StepResult:
+    """Surface the PLANTED loomweave analyzer alarms (LMWV-*) from the index DB.
+
+    Deterministic detail: sorted de-duped rule ids of the demonstrated alarms
+    only — incidental churn/secret/syntax FACTs are excluded (see
+    PLANTED_LOOMWEAVE_ALARMS). Never raises (tour contract): a missing/corrupt DB
+    degrades to ok=False / no pairs.
     """
     name = "loomweave findings"
     pairs: list[tuple[str, str]] = []
     if Path(db_path).exists():
+        placeholders = ",".join("?" for _ in PLANTED_LOOMWEAVE_ALARMS)
         try:  # connect() itself can raise (e.g. corrupt DB) — keep the step total
             con = sqlite3.connect(str(db_path))
             try:
                 rows = con.execute(
                     "select rule_id, entity_id, evidence from findings "
-                    "where rule_id like 'LMWV-%'"
+                    f"where rule_id in ({placeholders})",
+                    PLANTED_LOOMWEAVE_ALARMS,
                 ).fetchall()
             finally:
                 con.close()

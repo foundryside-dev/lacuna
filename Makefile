@@ -1,7 +1,7 @@
 PY := .venv/bin/python
 WARDLINE := /home/john/.local/bin/wardline
 
-.PHONY: setup tour verify test scan docs ci
+.PHONY: setup tour verify test scan cargo-check docs ci
 
 # Provision the demo's gitignored secrets so a fresh clone "just goes".
 # Idempotent: only generates .env when absent — never clobbers a hand-edited one.
@@ -45,8 +45,22 @@ scan:
 	# specimen flaws) is allowed to clear the gate. CI-on-PR should instead
 	# scope to new findings with `--new-since <merge-base>`.
 	$(WARDLINE) scan . --fail-on ERROR --trust-suppressions
+	# Second pass: the Rust frontend over the same tree. Routed to a separate
+	# (gitignored) output so it never clobbers the Python findings.jsonl.
+	$(WARDLINE) scan . --lang rust --fail-on ERROR --trust-suppressions --output findings-rust.jsonl
+
+# Compile gate for the Rust specimen — capability-gated: runs when a Rust
+# toolchain is present, degrades with an honest note when not (mirrors the
+# tour's tool detection). The crate is genuinely clean-cored; only the planted
+# taint/archaeology lacunae are intentional.
+cargo-check:
+	@if command -v cargo >/dev/null 2>&1; then \
+	  (cd specimen-rs && cargo check -q) && echo "✓ specimen-rs compiles (cargo check)"; \
+	else \
+	  echo "⚠ cargo not found — Rust compile check skipped (honest degrade)"; \
+	fi
 
 docs:
 	$(PY) -m tour.docs_gen
 
-ci: test scan verify
+ci: test scan verify cargo-check

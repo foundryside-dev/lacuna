@@ -142,12 +142,21 @@ def test_loomweave_findings_maps_paths_to_module_qualnames(tmp_path):
             f"{steps.ROOT}/specimen/colliding.py" '"}}',
         ),
     )
+    # An incidental, history-dependent FACT alarm that must NOT enter the
+    # deterministic narrative (it flaps with git/index churn — the regression
+    # this scoping fixes).
+    con.execute(
+        "insert into findings values "
+        "('LMWV-FACT-ENTITY-DELETED', 'rust:function:specimen_rs.catalog.shelf_of', '{}')"
+    )
     con.commit(); con.close()
 
     result = steps.loomweave_findings(db_path=db)
     assert result.ok
     assert ("LMWV-PY-TOO-COMPLEX", "specimen.nesting_bomb") in result.surfaced
     assert ("LMWV-DUPLICATE-LOCATOR", "specimen.colliding") in result.surfaced
+    # The churn FACT is excluded — surfaced tokens are only the planted alarms.
+    assert all(not rule.startswith("LMWV-FACT-") for rule, _ in result.surfaced)
 
 
 def test_filigree_work_cycle_detail_is_deterministic(monkeypatch):
