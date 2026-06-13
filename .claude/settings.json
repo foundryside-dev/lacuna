@@ -38,9 +38,18 @@
       {
         "hooks": [
           {
-            "type": "command",
             "command": "/home/john/.local/bin/legis session-context",
-            "timeout": 5000
+            "timeout": 5000,
+            "type": "command"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "command": "/home/john/.local/bin/warpline session-context --repo '/home/john/lacuna'",
+            "timeout": 5000,
+            "type": "command"
           }
         ]
       }
