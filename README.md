@@ -73,6 +73,12 @@ anything new.
 > filigree tour leg promotes and work-cycles exactly this finding. The scan
 > summary showing `1 active` is correct, not drift. Do not baseline it.
 
+> **Warpline entries are capability demos, not flaws.** `wp-blast-radius`,
+> `wp-reverify`, `wp-churn`, and `wp-timeline` (all on `specimen/cli.py::_add_book`)
+> assert warpline's change-impact *correctness*, not a defect — warpline is
+> advisory/enrich-only and never gates. `_add_book` carries no `LACUNA` docstring
+> by design. Do not "fix" them; the catalogue holds the intent.
+
 ## Part of Weft
 
 Weft models a codebase as **entities**, each carrying typed facts from different

@@ -34,3 +34,12 @@ def test_legis_absent_reports_unavailable_not_design_only(monkeypatch):
     caps = {c.name: c for c in detect(_fake_which({"loomweave", "filigree", "wardline"}))}
     assert caps["legis"].available is False
     assert "design-only" not in caps["legis"].detail
+
+
+def test_warpline_is_a_detectable_live_member_when_installed():
+    # warpline must be a RUNNABLE capability so verify's coverage gate actually
+    # asserts the wp-* entries (`expected_tool in live`); without this the leg
+    # could degrade silently. NOT design-only — warpline ships a runnable CLI.
+    caps = {c.name: c for c in detect(_fake_which({"loomweave", "filigree", "wardline", "legis", "warpline"}))}
+    assert "warpline" in caps
+    assert caps["warpline"].available is True

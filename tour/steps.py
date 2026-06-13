@@ -470,6 +470,158 @@ def loomweave_findings(db_path: Path = LOOMWEAVE_DB) -> StepResult:
     )
 
 
+# --- warpline: change-impact correctness (advisory, never gates) ---------------
+
+WARPLINE_ANCHOR_LOCATOR = "python:function:specimen/cli.py::_add_book"
+# The commit at which warpline first records the specimen-path locator (the
+# sampleapp -> specimen rename). Warpline does not follow renames, so this is where
+# `_add_book` is "added" in warpline's timeline. A minimal pinned rev-range
+# (COMMIT~1..COMMIT) always contains it, so runtime key_id resolution never
+# depends on a moving HEAD.
+WARPLINE_ANCHOR_COMMIT = "fb01a0138d58fa5326fb855d8dd15687f1960af7"
+# The frozen expected downstream: the service method the CLI flow delegates to.
+WARPLINE_EXPECTED_DOWNSTREAM = "python:function:specimen/service.py::LibraryService.add_book"
+
+
+def _warpline_json(args: list[str]) -> dict | None:
+    """Run `warpline <args> --json` and parse stdout. None on any failure.
+
+    The single mockable seam for the warpline leg (tests monkeypatch this).
+    Never raises (tour contract).
+    """
+    warpline = _tool("warpline")
+    if not warpline:
+        return None
+    proc = _run([warpline, *args, "--json"])
+    try:
+        return json.loads(proc.stdout)
+    except (json.JSONDecodeError, TypeError):
+        return None
+
+
+def _warpline_data(payload: dict | None) -> dict:
+    if isinstance(payload, dict):
+        data = payload.get("data")
+        if isinstance(data, dict):
+            return data
+    return {}
+
+
+def _warpline_items(payload: dict | None) -> list[dict]:
+    items = _warpline_data(payload).get("items")
+    return items if isinstance(items, list) else []
+
+
+def _locator_to_qualname(locator: str) -> str:
+    """`python:function:specimen/cli.py::_add_book` -> `specimen.cli._add_book`.
+
+    Strips the `{plugin}:{kind}:` prefix, then maps the `path::tail` body to a
+    dotted qualname so `report.py::_symbol_matches` credits the planted symbol.
+    """
+    body = locator.split(":", 2)[-1]
+    if "::" in body:
+        path, _, tail = body.partition("::")
+        module = path.removesuffix(".py").replace("/", ".")
+        return f"{module}.{tail}"
+    return body.removesuffix(".py").replace("/", ".")
+
+
+def warpline_change_impact() -> StepResult:
+    """Demonstrate warpline's change-impact authority over a FROZEN anchor.
+
+    Warpline has no flaw rules — it is advisory/enrich-only and never gates. This
+    leg asserts change-impact CORRECTNESS: touching the add-a-book CLI flow
+    (`specimen/cli.py::_add_book`) must surface its downstream service method in
+    both the blast-radius and the reverify worklist, and warpline must carry the
+    anchor's change history (churn + timeline).
+
+    Self-populates a COLD warpline DB first (it is gitignored, so CI / a fresh
+    clone start empty): `backfill` rebuilds the git-history tables that
+    changed/churn/timeline read, then `capture-snapshot` rebuilds the loomweave
+    edge graph that blast-radius/reverify traverse. capture-snapshot ALONE is
+    insufficient — it does not populate git history.
+
+    Two ordering/availability dependencies are load-bearing for the edge graph:
+    (1) a freshly-analyzed loomweave index must exist — `_drive()` runs
+    `loomweave_analyze` before this leg; (2) `capture-snapshot` shells the
+    loomweave CLI, so we pin it BIN-first via `--loomweave-command` exactly as
+    `capability._locate` pins every tool (warpline's default is bare-$PATH).
+    `make ci` runs via `make` with ~/.local/bin on $PATH, so the edge build
+    succeeds there. NOTE: pinning fixes warpline's command *resolution*, but
+    loomweave's own plugin loading can still degrade if ~/.local/bin is wholly
+    off $PATH (e.g. a hand-run `python -m tour verify` in a stripped shell),
+    yielding a SKIPPED snapshot — an upstream loomweave/warpline limitation. In
+    that case the leg degrades to ok=False (fail-loud), never a silent pass.
+
+    Determinism (`make verify` is byte-for-byte): the affected SET is snapshot-
+    state dependent and key_ids renumber on re-ingest, so `detail` is FROZEN
+    prose and `surfaced` carries only stable (token, qualname) pairs — never
+    counts, key_ids, timestamps, or set sizes. Never raises (tour contract).
+    """
+    name = "warpline change impact"
+    if not _tool("warpline"):
+        return StepResult(name, ok=False, detail="warpline not installed")
+
+    # 1. Self-populate a cold DB (writes .weft/warpline/ only). backfill BEFORE
+    #    capture-snapshot — the temporal reads need git history, not just edges.
+    #    Pin loomweave BIN-first (warpline's default loomweave resolution is
+    #    bare-$PATH; ~/.local/bin may be off a subagent's $PATH).
+    loomweave = _tool("loomweave") or "loomweave"
+    _warpline_json(["backfill", "--no-resolve-sei"])
+    _warpline_json(["capture-snapshot", "--loomweave-command", loomweave])
+
+    anchor_q = _locator_to_qualname(WARPLINE_ANCHOR_LOCATOR)
+    want = WARPLINE_EXPECTED_DOWNSTREAM
+
+    # 2. Resolve the anchor's key_id at runtime from a PINNED rev-range that
+    #    always contains the anchor's first-seen commit (never hardcode it).
+    key_id = None
+    rng = f"{WARPLINE_ANCHOR_COMMIT}~1..{WARPLINE_ANCHOR_COMMIT}"
+    for item in _warpline_items(_warpline_json(["changed", "--rev-range", rng])):
+        entity = item.get("entity", {})
+        if entity.get("locator") == WARPLINE_ANCHOR_LOCATOR:
+            key_id = entity.get("warpline_entity_key_id")
+            break
+
+    blast_ok = reverify_ok = False
+    if key_id is not None:
+        blast = _warpline_json(["blast-radius", "--changed-entity-key-id", str(key_id), "--depth", "2"])
+        blast_ok = any(
+            a.get("entity", {}).get("locator") == want
+            for a in (_warpline_data(blast).get("affected") or [])
+        )
+        rev = _warpline_json(["reverify", "--changed-entity-key-id", str(key_id), "--depth", "2"])
+        reverify_ok = any(
+            it.get("entity", {}).get("locator") == want and it.get("reason") == "downstream"
+            for it in _warpline_items(rev)
+        )
+
+    # 3. Temporal facts: the anchor carries tracked change history.
+    churn_ok = any(
+        int(it.get("churn_count", 0)) >= 1
+        for it in _warpline_items(_warpline_json(["churn", "--locator", WARPLINE_ANCHOR_LOCATOR]))
+    )
+    timeline_ok = len(_warpline_items(_warpline_json(["timeline", "--entity", WARPLINE_ANCHOR_LOCATOR]))) >= 1
+
+    ok = blast_ok and reverify_ok and churn_ok and timeline_ok
+    surfaced = (
+        ("wp-blast-radius", anchor_q),
+        ("wp-reverify", anchor_q),
+        ("wp-churn", anchor_q),
+        ("wp-timeline", anchor_q),
+    ) if ok else ()
+    return StepResult(
+        name,
+        ok=ok,
+        detail=(
+            "touching _add_book surfaces downstream service.add_book in "
+            "blast-radius + reverify worklist (edge-provenanced); change history "
+            "tracked via churn + timeline — advisory, never gates"
+        ),
+        surfaced=surfaced,
+    )
+
+
 def wardline_scan() -> StepResult:
     proc = _run([str(BIN / "wardline"), "scan", "."])
     pairs = pairs_from_findings(ROOT / "findings.jsonl")

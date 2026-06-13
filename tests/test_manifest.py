@@ -7,9 +7,11 @@ MANIFEST = Path("/home/john/lacuna/tour/lacunae.toml")
 
 def test_loads_all_lacunae():
     m = load_manifest(MANIFEST)
-    assert len(m.lacunae) == 44
+    assert len(m.lacunae) == 48
     ids = {l.id for l in m.lacunae}
     assert "wl-trust-violation" in ids
+    # the warpline change-impact wing (advisory, never gates)
+    assert {"wp-blast-radius", "wp-reverify", "wp-churn", "wp-timeline"} <= ids
     # the loomweave navigation showcases (call chain, coupling, entry point, subsystem,
     # and the rc4 relation-edge pair: inheritance + decorator)
     assert {

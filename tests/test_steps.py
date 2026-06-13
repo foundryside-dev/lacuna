@@ -286,3 +286,75 @@ def test_rust_scan_surfaces_rs_rules(monkeypatch, tmp_path):
     assert r.ok
     assert ("RS-WL-108", "specimen_rs.run_export") in r.surfaced
     assert ("RS-WL-112", "specimen_rs.shell_archive") in r.surfaced
+
+
+def test_locator_to_qualname_forms():
+    from tour.steps import _locator_to_qualname
+
+    assert _locator_to_qualname("python:function:specimen/cli.py::_add_book") == "specimen.cli._add_book"
+    assert _locator_to_qualname("python:class:specimen/models.py::Book") == "specimen.models.Book"
+    assert _locator_to_qualname("python:module:specimen.cli") == "specimen.cli"
+
+
+def _fake_warpline_json(args):
+    sub = args[0]
+    if sub in ("backfill", "capture-snapshot"):
+        return {"ok": True, "data": {}, "meta": {"peer_side_effects": [], "local_only": True}}
+    if sub == "changed":
+        return {"data": {"items": [
+            {"entity": {"locator": "python:function:specimen/cli.py::_add_book",
+                        "warpline_entity_key_id": 128}}
+        ]}}
+    if sub == "blast-radius":
+        return {"data": {"affected": [
+            {"depth": 1, "entity": {"locator": "python:function:specimen/service.py::LibraryService.add_book"}}
+        ]}}
+    if sub == "reverify":
+        return {"data": {"items": [
+            {"depth": 1, "reason": "downstream",
+             "entity": {"locator": "python:function:specimen/service.py::LibraryService.add_book"}}
+        ]}}
+    if sub == "churn":
+        return {"data": {"items": [{"churn_count": 1}]}}
+    if sub == "timeline":
+        return {"data": {"items": [{"commit": "fb01a013"}]}}
+    raise AssertionError(args)
+
+
+def test_warpline_change_impact_detail_is_deterministic(monkeypatch):
+    from tour import steps
+
+    monkeypatch.setattr(steps, "_tool", lambda name: "/fake/warpline")
+    monkeypatch.setattr(steps, "_warpline_json", _fake_warpline_json)
+    r = steps.warpline_change_impact()
+
+    assert r.ok
+    # frozen prose — no live numbers/ids may leak into the byte-compared detail
+    assert not any(ch.isdigit() for ch in r.detail)
+    assert "128" not in r.detail
+    for token in ("wp-blast-radius", "wp-reverify", "wp-churn", "wp-timeline"):
+        assert (token, "specimen.cli._add_book") in r.surfaced
+
+
+def test_warpline_change_impact_missing_tool(monkeypatch):
+    from tour import steps
+
+    monkeypatch.setattr(steps, "_tool", lambda name: None)
+    r = steps.warpline_change_impact()
+    assert not r.ok
+    assert r.surfaced == ()
+
+
+def test_warpline_change_impact_requires_all_four(monkeypatch):
+    from tour import steps
+
+    def missing_downstream(args):
+        if args[0] == "blast-radius":
+            return {"data": {"affected": []}}  # downstream absent -> blast fails
+        return _fake_warpline_json(args)
+
+    monkeypatch.setattr(steps, "_tool", lambda name: "/fake/warpline")
+    monkeypatch.setattr(steps, "_warpline_json", missing_downstream)
+    r = steps.warpline_change_impact()
+    assert not r.ok
+    assert r.surfaced == ()

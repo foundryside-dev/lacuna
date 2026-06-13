@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # Tools that ship a runnable CLI today.
-RUNNABLE = ("loomweave", "filigree", "wardline", "legis")
+RUNNABLE = ("loomweave", "filigree", "wardline", "legis", "warpline")
 # Members that exist in the suite but are not yet first-class here.
 DESIGN_ONLY = ("charter",)
 # Known install dir — the tools live here whether or not it is on $PATH.

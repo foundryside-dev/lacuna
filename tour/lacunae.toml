@@ -462,3 +462,43 @@ explanation = "A #[path = \"shelf_layout.rs\"] module mount; loomweave routes th
 expected_tool = "loomweave"
 expected_rule = "path-mount"
 lang = "rust"
+
+[[lacuna]]
+id = "wp-blast-radius"
+file = "specimen/cli.py"
+symbol = "_add_book"
+category = "change-impact"
+demonstrates = ["warpline"]
+explanation = "NOT A FLAW — a positive warpline capability demo. Touching the add-a-book CLI flow (_add_book), warpline's blast-radius surfaces the downstream LibraryService.add_book it delegates to, with edge provenance. Warpline is advisory/enrich-only and never gates."
+expected_tool = "warpline"
+expected_rule = "wp-blast-radius"
+
+[[lacuna]]
+id = "wp-reverify"
+file = "specimen/cli.py"
+symbol = "_add_book"
+category = "change-impact"
+demonstrates = ["warpline"]
+explanation = "NOT A FLAW — a positive warpline capability demo. warpline's reverify worklist for a change to _add_book lists LibraryService.add_book as reason=downstream, the 'what must I re-verify' surface. Advisory, never gates."
+expected_tool = "warpline"
+expected_rule = "wp-reverify"
+
+[[lacuna]]
+id = "wp-churn"
+file = "specimen/cli.py"
+symbol = "_add_book"
+category = "change-impact"
+demonstrates = ["warpline"]
+explanation = "NOT A FLAW — a positive warpline capability demo. warpline tracks _add_book's change history (churn_count >= 1) from ingested commits — the temporal-churn surface. Advisory, never gates."
+expected_tool = "warpline"
+expected_rule = "wp-churn"
+
+[[lacuna]]
+id = "wp-timeline"
+file = "specimen/cli.py"
+symbol = "_add_book"
+category = "change-impact"
+demonstrates = ["warpline"]
+explanation = "NOT A FLAW — a positive warpline capability demo. warpline's timeline for _add_book returns its per-entity change history (>= 1 entry). Advisory, never gates."
+expected_tool = "warpline"
+expected_rule = "wp-timeline"
