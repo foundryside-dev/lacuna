@@ -6,6 +6,27 @@
 
 ---
 
+> ## ⚠️ CORRECTION (PM, 2026-06-14) — the two "MCP blockers" below are DISPATCH ARTIFACTS, not lacuna defects
+>
+> This run was executed by a **subagent dispatched from the weft-hub session**, which
+> inherits the **hub's** MCP wiring — NOT lacuna's `.mcp.json`. Verified after the fact:
+> - **"Filigree MCP connected to the wrong project DB"** — the subagent used the *hub's*
+>   filigree MCP (`project_root: /home/john/weft`). A session launched *in* `~/lacuna`
+>   binds `filigree?project=lacuna` correctly. Not a lacuna/Filigree bug.
+> - **"Loomweave MCP tools not available"** — loomweave MCP isn't connected to the hub
+>   session at all; lacuna's `.mcp.json` *does* wire it. A lacuna-rooted session has it.
+> - **Legis `CELL_NOT_ENABLED`** — `LEGIS_HMAC_KEY` wasn't exported in the dispatching
+>   env; an honest-disabled state, not a defect.
+>
+> **Valid, kept findings:** the **CLI/HTTP** surface (it resolves by cwd, so it was
+> exercised correctly) — Wardline taint scan + emit, SEI keying, entity-association
+> round-trip, and the **26/30 in-scope CLI pass rate**. The **MCP-surface verdicts below
+> are NOT a valid measurement** and must not be read as launch blockers. A valid MCP
+> dogfood requires a Claude Code session rooted in `~/lacuna`. See the companion
+> CLI-only run for the artifact-free measurement.
+
+---
+
 ## Summary Verdict
 
 The Wardline taint-scan pipeline works and emits findings to Filigree, but the agent MCP surface has two hard blockers: (1) the Filigree MCP is connected to the wrong project DB (weft hub, not lacuna), making `finding_list`, `entity_association_list`, and all related MCP write tools silently operate on the wrong project; (2) the Loomweave MCP tools (`mcp__loomweave__*`) are simply not available in a Claude Code session launched from this repo — the stdio MCP server appears in `.mcp.json` but none of its tools appear in the deferred tool registry. Every Loomweave lacuna therefore required direct SQLite inspection (grep fallback). The Legis closure gate is `CELL_NOT_ENABLED` (operator configuration gap, honest disabled state). Net: a competent agent using only the MCP surface would surface 26/39 in-scope lacunae and track 26 of them — but only if they use the CLI or HTTP API workarounds for the Filigree project-routing bug.
