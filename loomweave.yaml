@@ -25,19 +25,19 @@ llm_policy:
     timeout_seconds: 300
   enabled: true
   max_inferred_edges_per_caller: 8
-  model_id: anthropic/claude-sonnet-4.6
+  model_id: codex-cli-default
   openrouter:
     api_key_env: OPENROUTER_API_KEY
     attribution:
       referer: https://github.com/foundryside-dev/loomweave
       title: Loomweave
     endpoint_url: https://openrouter.ai/api/v1
-  provider: claude_cli
+  provider: codex_cli
   session_token_ceiling: 1000000
 serve:
   http:
     enabled: true
     wardline_taint_write: true
   mcp:
-    enable_write_tools: false
+    enable_write_tools: true
 version: 1
