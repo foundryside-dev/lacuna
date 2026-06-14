@@ -57,8 +57,11 @@ make tour     # drive every live Weft tool against the specimen; regenerate docs
 make verify   # assert every live lacuna is surfaced and the narrative is in lockstep
 ```
 
-The tour detects which Weft tools are runnable and **degrades honestly** —
-design-only members (Legis, Charter) are labelled, never faked.
+The tour detects which Weft tools are runnable and **degrades honestly**. Legis
+runs live in the tour (three passing legs — govern, policy-boundary-check, and
+malformed-artifact rejection — plus two live `legis` lacunae entries). Charter
+is the only member still design-only/planned, and is labelled as such, never
+faked.
 
 ## The lacunae
 
@@ -85,9 +88,17 @@ Weft models a codebase as **entities**, each carrying typed facts from different
 tools, keyed on one durable identity (SEI), read in one call. Lacuna is the
 shared specimen that demonstrates the whole matrix.
 
-The Weft federation hub at `~/weft` is the authoritative source for the
-federation narrative and roster — see `~/weft/doctrine.md` for the axiom and the
-member roster, and `~/weft/members/lacuna.md` for Lacuna's place in the suite as
-the demonstration specimen (it is **not** a roster member). This README does not
-restate the roster; the hub owns it. Lacuna owns its own specimen, planted-flaw
-manifest, and tour, as described above.
+The Weft federation hub is the authoritative source for the federation
+narrative and roster — see
+[the doctrine](https://weft.foundryside.dev/#doctrine) for the axiom and the
+member roster, and
+[`members/lacuna.md`](https://github.com/foundryside-dev/weft/blob/main/members/lacuna.md)
+for Lacuna's place in the suite as the demonstration specimen (it is **not** a
+roster member). This README does not restate the roster; the hub owns it.
+Lacuna owns its own specimen, planted-flaw manifest, and tour, as described
+above.
+
+Two complementary roles share Loomweave's analysis surface: Lacuna is the
+showcase specimen (this small, deliberately-flawed app), while **elspeth**
+(~425k LOC of real Python) is Loomweave's first-customer scale target — the
+showcase versus the scale proof.
