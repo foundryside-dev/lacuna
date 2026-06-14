@@ -123,7 +123,8 @@ Two failure modes deserve a specific response:
 This project uses **wardline** as its trust-boundary gate. Before handing back code that touches external input, run `wardline scan . --fail-on ERROR` (exit 0 = clean, 1 = gate tripped, 2 = wardline error) and fix findings at the boundary, not the sink. The full scan -> explain -> fix -> rescan loop and the baseline-vs-waiver discipline live in the `wardline-gate` skill and in `docs/agents.md`.
 <!-- /wardline:instructions -->
 
-<!-- loomweave:instructions:v1.1.0-rc4:0f47ea4d -->
+<!-- loomweave:instructions:v1.1.0-rc5:ca999d34 -->
+<!-- loomweave:last-writer:loomweave install -->
 ## Loomweave (code archaeology)
 
 This repo is indexed by Loomweave: it has pre-extracted the tree into a
