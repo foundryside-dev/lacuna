@@ -42,9 +42,9 @@ unparseable specimen trips the gate: WLN-ENGINE-PARSE-ERROR, exit 1 (fail-closed
 
 surfaced rules: RS-WL-108, RS-WL-112, WLN-RUST-COVERAGE
 
-## [WARN] legis govern
+## [PASS] legis govern
 
-wardline refused to sign the legis artifact: dirty working tree (uncommitted changes) — commit first, then re-run (the signed Wardline→Legis handshake requires a clean tree)
+governed 43 active defects → surface_override
 
 ## [PASS] legis policy-boundary-check
 
