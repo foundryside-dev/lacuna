@@ -1,0 +1,445 @@
+---
+// ============================================================
+// lacuna.foundryside.dev — the demonstration specimen.
+//
+// Showcase template (IA §5.3), NOT the member template (§5.1):
+//   Hero(ash) → What/why (seeded issues) → The tour (terminal,
+//   make targets, ExitCode) → Matrix-made-runnable (specimen-grounded
+//   pairing cards) → Honest scope (not-a-member, Charter planned,
+//   elspeth) → Links/CTA → Footer.
+//
+// Lacuna is analyzed *by* the suite, not a member *of* it — so its
+// "composes" block is the whole matrix grounded in one project, and
+// it is NOT in ROSTER (it is the separate LACUNA export, ash thread).
+//
+// Every cross-subdomain link and the matrix come from the shared
+// @weft/site-kit data (MATRIX / memberUrl / LACUNA) so this site and
+// the hub cannot drift (IA §1.3, §2.2, §3). No member is hardcoded.
+//
+// Honest to a fault (voice source: design-system readme.md §2): the
+// page shows make verify clean (exit 0) but ALSO the live-by-design
+// `1 active` sentinel and a deliberately fail-closed leg (exit 1); the
+// dossier slice mixes present / absent / unavailable peers on purpose;
+// partial pairings are never rendered as live. No emoji; machine facts
+// in mono.
+// ============================================================
+import Layout from '@weft/site-kit/layouts/Layout.astro';
+import { Button, Badge, Tag, Banner } from '@weft/site-kit/components';
+import { SeiTag, EnrichmentChip, ExitCode, StateBadge } from '@weft/site-kit/components';
+import {
+  LACUNA,
+  MATRIX,
+  SEI_SPINE,
+  memberUrl,
+  repoUrl,
+} from '@weft/site-kit/data';
+
+// Cross-subdomain + repo links, all from the shared data (never hand-typed).
+const REPO = LACUNA.repo;
+const HUB_DOCTRINE = 'https://weft.foundryside.dev/#doctrine';
+const HUB_SPINE = SEI_SPINE.hubAnchor;
+
+// The specimen's seeded-issue catalogue — counts are Lacuna's own facts
+// (sourced from tour/lacunae.toml: 48 catalogued lacunae). These are this
+// repo's surface facts, so they carry a pointer to the manifest, not a
+// restated federation number (IA authority model).
+const LACUNAE_TOTAL = 48;
+const SEEDED = [
+  { tool: 'wardline', label: 'trust-boundary rules', count: '28', note: 'PY-WL-101..126 (Python) · RS-WL-108, RS-WL-112 (Rust)' },
+  { tool: 'loomweave', label: 'structural findings', count: '13', note: 'dead entity · circular import · duplicate locator · too-complex' },
+  { tool: 'warpline', label: 'change-impact demos', count: '4', note: 'blast-radius · reverify · churn · timeline (advisory, not flaws)' },
+  { tool: 'legis', label: 'governance entries', count: '2', note: 'disabled boundary-evidence · zero-under-green' },
+];
+
+// The operator path, exactly as the README/Makefile document it.
+const TOUR = [
+  { cmd: 'make setup', desc: 'provision the demo’s gitignored secrets (idempotent) — fresh HMAC for the Wardline→Legis signed handshake' },
+  { cmd: 'make tour', desc: 'drive every live Weft tool against the specimen; regenerate the narrative + matrix docs' },
+  { cmd: 'make verify', desc: 'assert every live lacuna is surfaced and the narrative is in lockstep' },
+];
+
+// The matrix, made runnable: the FULL grid from the shared data, grounded in
+// the specimen. We render every pairing (the cross-link spine, IA §2.2/§4.3);
+// pairings the specimen actually exercises are annotated, the rest stay honest.
+// Cells the tour drives end-to-end against this specimen (docs/matrix.md).
+const EXERCISED = new Set(['wardline+loomweave', 'wardline+filigree', 'wardline+legis']);
+const pairKey = (p) => `${p.a}+${p.b}`;
+const isExercised = (p) => EXERCISED.has(pairKey(p)) || EXERCISED.has(`${p.b}+${p.a}`);
+
+// Map a matrix pairing status to a Badge tone — honest, never rounded up
+// ('partial'/'planned' are NEVER styled as 'live'; IA §2.2, §3.2).
+const statusTone = (s) => (s === 'live' ? 'ok' : s === 'partial' ? 'warn' : 'neutral');
+
+const ASH = LACUNA.threadHex;
+---
+
+<Layout
+  member="lacuna"
+  breadcrumb
+  repo={REPO}
+  title="Lacuna — a small app with catalogued flaws, analyzed by the whole federation"
+  description="Lacuna is the Weft demonstration specimen: a clean-cored app seeded with 48 catalogued, permanent flaws — so you can watch every member of the federation analyze one project at once. make tour, then make verify."
+>
+  {/* ---------------------------------------------------------------- */}
+  {/* 1 · Hero — ash thread, the honesty premise                        */}
+  {/* ---------------------------------------------------------------- */}
+  <section class="hero" style={`--accent:${ASH}`}>
+    <div class="wrap">
+      <p class="eyebrow">Lacuna · the demonstration specimen</p>
+      <h1 class="hero__title">A small app with catalogued flaws — so you can watch the whole federation analyze it at once.</h1>
+      <p class="hero__sub">
+        Lacuna’s issues are intentional and permanent, baselined so the demo stays
+        repeatable: catalogued issues pass, genuinely new violations fail.
+        <strong> Removing a seeded issue <code>fails</code> <code>make verify</code></strong> —
+        the specimen is not a thing to fix, it is a thing to be analyzed.
+      </p>
+      <div class="hero__cta">
+        <Button client:idle as="a" href="#tour">Run the tour →</Button>
+        <Button client:idle as="a" variant="secondary" href={REPO} rel="noopener">View the repo →</Button>
+      </div>
+
+      {/* dossier terminal — a real slice from the specimen: one SEI, typed
+          facts from present peers. The brand refuses to show an all-green
+          dossier: this mixes present / absent / unavailable on purpose. */}
+      <div class="terminal">
+        <div class="terminal__lines">
+          <div><span class="terminal__prompt">$</span> weft dossier <span class="terminal__arg">specimen/service.py::add_book</span></div>
+          <div class="terminal__dim">resolving entity → one SEI, typed facts from every present peer…</div>
+        </div>
+        <div class="terminal__chips">
+          <SeiTag client:visible value={SEI_SPINE.sampleSei} copyable />
+          <EnrichmentChip client:visible state="present" peer="loomweave" />
+          <EnrichmentChip client:visible state="present" peer="wardline" />
+          <EnrichmentChip client:visible state="present" peer="warpline" />
+          <EnrichmentChip client:visible state="absent" peer="legis" />
+          <EnrichmentChip client:visible state="unavailable" peer="charter" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* ---------------------------------------------------------------- */}
+  {/* 2 · What it is / why it exists — the seeded-issue catalogue       */}
+  {/* ---------------------------------------------------------------- */}
+  <section id="what" class="band">
+    <div class="wrap">
+      <p class="eyebrow">What it is · why it exists</p>
+      <h2 class="h2">A clean core, seeded with deliberate lacunae — one per tool to light up.</h2>
+      <p class="lede">
+        Where Weft’s members are instruments, Lacuna is the <strong>specimen</strong>:
+        a clean-cored library app seeded with documented <em>lacunae</em> (planted
+        flaws), each one placed to make a specific Weft tool or tool-combination
+        light up. <code>tour/lacunae.toml</code> is the single source of truth; the
+        catalogue currently holds <strong>{LACUNAE_TOTAL} planted lacunae</strong>.
+      </p>
+
+      <div class="grid grid--4 seeded">
+        {SEEDED.map((s) => (
+          <article class="card card--seed">
+            <div class="seed__head">
+              <span class="seed__dot" style={`background:var(--member-${s.tool})`}></span>
+              <span class="seed__tool">{s.tool}</span>
+              <span class="seed__count">{s.count}</span>
+            </div>
+            <p class="seed__label">{s.label}</p>
+            <p class="seed__note">{s.note}</p>
+          </article>
+        ))}
+      </div>
+
+      <Banner client:visible tone="info" title="Catalogued, permanent, baselined — not bugs to fix.">
+        Each planted flaw is permanent and intentional. Wardline’s gate stays green
+        on the baselined lacunae and trips on anything new — a removed lacuna
+        <em> fails</em> <code>make verify</code>. One sentinel is deliberately left
+        unbaselined: <code>wl-log-injection</code> (PY-WL-125) is a preview rule, so
+        the scan summary showing <code>1 active</code> is correct, not drift — the
+        Filigree leg promotes and work-cycles exactly that finding.
+      </Banner>
+    </div>
+  </section>
+
+  {/* ---------------------------------------------------------------- */}
+  {/* 3 · The tour (the centerpiece) — make targets + ExitCode         */}
+  {/* ---------------------------------------------------------------- */}
+  <section id="tour" class="section">
+    <div class="wrap">
+      <p class="eyebrow">The tour · run it yourself</p>
+      <h2 class="h2">Three targets. The suite detects what’s runnable and degrades honestly.</h2>
+      <p class="lede">
+        Point the federation at the specimen and watch it work. The tour runs every
+        live Weft tool, regenerates the narrative, and asserts it. Legis runs
+        <strong> live</strong> here (three passing legs); Charter is the only member
+        still design-only, and it is labelled as such — never faked.
+      </p>
+
+      <div class="terminal terminal--tour">
+        {TOUR.map((t) => (
+          <div class="tourline">
+            <code class="tourline__cmd"><span class="terminal__prompt">$</span> {t.cmd}</code>
+            <span class="tourline__desc">{t.desc}</span>
+          </div>
+        ))}
+        <div class="terminal__exits">
+          <ExitCode client:visible code={0} />
+          <span class="exits__sep">a clean verify</span>
+          <ExitCode client:visible code={1} />
+          <span class="exits__sep">the fail-closed leg: an unparseable specimen trips the gate, not silence</span>
+        </div>
+      </div>
+
+      <Banner client:visible tone="warn" title="make verify records the Legis signing state only on a clean tree.">
+        The signed Wardline→Legis handshake requires a committed working tree; with
+        a dirty tree the <code>legis govern</code> leg degrades honestly to a
+        <code> [WARN]</code> (“commit first, then re-run”) rather than faking a
+        signature. Honest degradation is the point — silence would be the bug.
+      </Banner>
+    </div>
+  </section>
+
+  {/* ---------------------------------------------------------------- */}
+  {/* 4 · The matrix, made runnable — specimen-grounded pairing cards   */}
+  {/* ---------------------------------------------------------------- */}
+  <section id="matrix" class="band">
+    <div class="wrap">
+      <p class="eyebrow">The combination matrix · made runnable</p>
+      <h2 class="h2">Each pair, grounded in one project you can actually run.</h2>
+      <p class="lede">
+        The hub’s matrix is the federation’s value proposition; here it is exercised
+        against a single specimen. Pairings the tour drives end-to-end are marked
+        <strong> exercised</strong>; the rest are shown with their honest status —
+        a <code>partial</code> or <code>planned</code> pair is never rendered as
+        <code> live</code>. Each member links to its own subdomain.
+      </p>
+
+      <div class="grid grid--2">
+        {MATRIX.map((p) => {
+          // The MemberMark links are the sanctioned cross-link channel (IA §2.2).
+          const aUrl = memberUrl(p.a);
+          const bUrl = memberUrl(p.b);
+          const exercised = isExercised(p);
+          return (
+            <article class={`card card--pair${exercised ? ' is-exercised' : ''}`}>
+              <div class="pair__head">
+                <a class="pair__mark" href={aUrl}>
+                  <span class="pair__dot" style={`background:var(--member-${p.a})`}></span>{p.a}
+                </a>
+                <span class="pair__plus" aria-hidden="true">+</span>
+                <a class="pair__mark" href={bUrl}>
+                  <span class="pair__dot" style={`background:var(--member-${p.b})`}></span>{p.b}
+                </a>
+                <span class="pair__status">
+                  <Badge client:visible tone={statusTone(p.status)} dot>{p.status}</Badge>
+                </span>
+              </div>
+              <p class="pair__cap">{p.capability}</p>
+              {p.note && <p class="pair__note">{p.note}</p>}
+              {exercised && <p class="pair__run">exercised by the tour against this specimen</p>}
+            </article>
+          );
+        })}
+      </div>
+
+      {/* a real dossier slice from the specimen — present / absent / unavailable */}
+      <div class="dossier">
+        <p class="dossier__cap">a real dossier slice · <code>specimen/service.py::add_book</code></p>
+        <div class="dossier__row">
+          <SeiTag client:visible value={SEI_SPINE.sampleSei} copyable />
+          <span class="dossier__arrow" aria-hidden="true">→</span>
+          <EnrichmentChip client:visible state="present" peer="loomweave" />
+          <EnrichmentChip client:visible state="present" peer="wardline" />
+          <EnrichmentChip client:visible state="absent" peer="legis" />
+          <EnrichmentChip client:visible state="unavailable" peer="charter" />
+          <StateBadge client:visible state="in_progress" />
+        </div>
+        <p class="dossier__note">
+          The Filigree leg cycles the sentinel issue: <StateBadge client:visible state="open" /> →
+          <StateBadge client:visible state="in_progress" /> → <StateBadge client:visible state="closed" />.
+          <code> legis</code> shows <code>absent</code> until the tree is committed and the
+          artifact is signed; <code>charter</code> is <code>unavailable</code> (still planned) —
+          an absent peer is never read as a clean state.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  {/* ---------------------------------------------------------------- */}
+  {/* 5 · Honest scope — not-a-member, Charter planned, elspeth         */}
+  {/* ---------------------------------------------------------------- */}
+  <section id="scope" class="section">
+    <div class="wrap">
+      <p class="eyebrow">Honest scope</p>
+      <h2 class="h2">Lacuna is the showcase — not a member, and not the scale proof.</h2>
+      <div class="scope">
+        <Banner client:visible tone="info" title="Not in the roster.">
+          Lacuna is the shared specimen the suite is run <em>against</em>, not a tool
+          <em> in</em> the federation. It owns its specimen, its planted-flaw manifest,
+          and its tour; the hub owns the roster and the doctrine — this page does not
+          restate them, it points to them.
+        </Banner>
+        <Banner client:visible tone="neutral" title="Charter is still planned.">
+          Charter appears only as a roster thread on the hub; its federation adapters
+          are pending, so it is labelled <code>planned</code> here too — never faked
+          into the tour.
+        </Banner>
+        <Banner client:visible tone="neutral" title="The showcase, not the scale proof.">
+          Two complementary roles share Loomweave’s analysis surface: Lacuna is the
+          showcase specimen (this small, deliberately-flawed app), while
+          <strong> elspeth</strong> (~425k LOC of real Python) is Loomweave’s
+          first-customer scale target. Lacuna is the showcase; elspeth is the scale
+          proof.
+        </Banner>
+      </div>
+    </div>
+  </section>
+
+  {/* ---------------------------------------------------------------- */}
+  {/* 6 · Links / CTA                                                   */}
+  {/* ---------------------------------------------------------------- */}
+  <section class="cta" style={`--accent:${ASH}`}>
+    <div class="wrap cta__inner">
+      <div class="cta__copy">
+        <p class="cta__lead">See it run — then read why it’s one suite.</p>
+        <p class="cta__sub">
+          The specimen, the flaw manifest, and the generated tour live in the repo;
+          the federation narrative lives on the hub.
+        </p>
+        <div class="cta__links">
+          <a href={REPO} rel="noopener"><code>README.md</code></a>
+          <a href={`${repoUrl('lacuna')}/blob/main/docs/tour.md`} rel="noopener"><code>docs/tour.md</code></a>
+          <a href={`${repoUrl('lacuna')}/blob/main/docs/matrix.md`} rel="noopener"><code>docs/matrix.md</code></a>
+          <a href={`${repoUrl('lacuna')}/blob/main/tour/lacunae.toml`} rel="noopener"><code>tour/lacunae.toml</code></a>
+        </div>
+      </div>
+      <div class="cta__buttons">
+        <Button client:idle as="a" href={HUB_DOCTRINE} rel="noopener">Read the doctrine →</Button>
+        <Button client:idle as="a" variant="secondary" href={HUB_SPINE} rel="noopener">The SEI spine →</Button>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  /* Page-local layout. Brand atoms (colors, type, motifs) come ONLY from the
+     site-kit token layer — no new colors, no dark mode (light theme only).
+     --accent is set per-section to the LACUNA ash thread (kit token value). */
+  .wrap { max-width: var(--width-content); margin: 0 auto; padding: 0 36px; }
+  .eyebrow {
+    font: var(--type-mono-sm); text-transform: uppercase;
+    letter-spacing: var(--tracking-caps); color: var(--text-muted);
+    font-size: var(--text-xs); margin: 0 0 14px;
+  }
+  .h2 { font: var(--type-h1); color: var(--text-strong); margin: 0 0 16px; max-width: 28ch; }
+  .lede { font: var(--type-body); color: var(--text-body); max-width: 66ch; margin: 0 0 26px; }
+  .lede code, .pair__cap code, .seed__note code { font-family: var(--font-mono); font-size: 0.92em; color: var(--text-strong); }
+  .lede strong { color: var(--text-strong); }
+
+  .section { padding: 64px 0; }
+  .band {
+    padding: 64px 0; background: var(--bg-sunken);
+    border-top: 1px solid var(--border-hairline);
+    border-bottom: 1px solid var(--border-hairline);
+  }
+
+  /* hero — ash accent stripe */
+  .hero {
+    padding: 64px 0 56px;
+    border-bottom: 1px solid var(--border-hairline);
+    border-top: 4px solid var(--accent);
+  }
+  .hero__title {
+    font: var(--type-display); color: var(--loom-900);
+    letter-spacing: -0.02em; line-height: 1.08;
+    max-width: 22ch; margin: 0 0 22px;
+  }
+  .hero__sub { font: var(--type-body); font-size: var(--text-lg); color: var(--text-body); max-width: 62ch; margin: 0 0 28px; }
+  .hero__sub strong { color: var(--text-strong); }
+  .hero__sub code { font-family: var(--font-mono); font-size: 0.9em; color: var(--text-strong); }
+  .hero__cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 40px; }
+
+  .terminal {
+    background: var(--surface-inverse); border-radius: var(--radius-lg);
+    padding: 18px 20px; max-width: 760px; box-shadow: var(--shadow-lg);
+  }
+  .terminal__lines { font: var(--type-mono); color: var(--text-on-inverse); font-size: var(--text-xs); line-height: 1.7; }
+  .terminal__prompt { color: var(--ash-500); }
+  .terminal__arg { color: var(--indigo-300); }
+  .terminal__dim { color: var(--ash-500); }
+  .terminal__chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+
+  /* tour terminal */
+  .terminal--tour { max-width: none; margin-bottom: 22px; }
+  .tourline { display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .tourline:last-of-type { border-bottom: 0; }
+  .tourline__cmd { font-family: var(--font-mono); color: var(--text-on-inverse); font-size: var(--text-sm); flex: none; min-width: 130px; }
+  .tourline__desc { font: var(--type-body-sm); color: var(--ash-400); }
+  .terminal__exits { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.1); }
+  .exits__sep { font: var(--type-mono-sm); color: var(--ash-500); font-size: var(--text-2xs); }
+
+  /* seeded-issue cards */
+  .grid { display: grid; gap: 16px; }
+  .grid--4 { grid-template-columns: repeat(4, 1fr); }
+  .grid--2 { grid-template-columns: repeat(2, 1fr); }
+  .seeded { margin-bottom: 24px; }
+  .card {
+    background: var(--surface-card); border: 1px solid var(--border-hairline);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-xs);
+  }
+  .card--seed { padding: 16px; }
+  .seed__head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .seed__dot { width: 9px; height: 9px; border-radius: 2px; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+  .seed__tool { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-body); }
+  .seed__count { margin-left: auto; font-family: var(--font-mono); font-weight: var(--fw-semibold); font-size: var(--text-lg); color: var(--text-strong); }
+  .seed__label { font: var(--type-body-sm); color: var(--text-body); margin: 0 0 6px; }
+  .seed__note { font: var(--type-mono-sm); color: var(--text-faint); margin: 0; line-height: 1.5; }
+
+  /* matrix pair cards */
+  .card--pair { padding: 16px; }
+  .card--pair.is-exercised { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+  .pair__head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .pair__mark { display: inline-flex; align-items: center; gap: 7px; text-decoration: none; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-body); }
+  .pair__mark:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .pair__dot { width: 9px; height: 9px; border-radius: 2px; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+  .pair__plus { color: var(--text-faint); font-family: var(--font-mono); }
+  .pair__status { margin-left: auto; }
+  .pair__cap { font: var(--type-body-sm); color: var(--text-body); margin: 0; }
+  .pair__note { font: var(--type-mono-sm); color: var(--text-faint); margin: 8px 0 0; line-height: 1.5; }
+  .pair__run { font: var(--type-mono-sm); color: var(--woad-700); margin: 8px 0 0; font-size: var(--text-2xs); }
+
+  /* dossier slice */
+  .dossier {
+    margin-top: 24px; padding: 18px;
+    background: var(--surface-card); border: 1px solid var(--border-hairline); border-radius: var(--radius-md);
+  }
+  .dossier__cap { font: var(--type-mono-sm); color: var(--text-faint); margin: 0 0 12px; }
+  .dossier__cap code { color: var(--text-muted); }
+  .dossier__row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .dossier__arrow { color: var(--text-faint); font-size: 18px; }
+  .dossier__note { font: var(--type-body-sm); color: var(--text-muted); margin: 14px 0 0; max-width: 70ch; line-height: 1.6; }
+  .dossier__note code { font-family: var(--font-mono); color: var(--text-strong); }
+
+  /* honest scope */
+  .scope { display: grid; gap: 12px; max-width: 760px; }
+
+  /* CTA */
+  .cta { padding: 48px 0; background: var(--bg-sunken); border-top: 4px solid var(--accent); }
+  .cta__inner { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; justify-content: space-between; }
+  .cta__copy { flex: 1 1 380px; }
+  .cta__lead { font: var(--type-body); font-weight: var(--fw-semibold); font-size: var(--text-lg); color: var(--text-strong); margin: 0 0 4px; }
+  .cta__sub { font: var(--type-body-sm); color: var(--text-muted); margin: 0 0 12px; max-width: 60ch; }
+  .cta__links { display: flex; gap: 16px; flex-wrap: wrap; }
+  .cta__links a { font: var(--type-mono-sm); color: var(--indigo-700); text-decoration: none; }
+  .cta__links a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .cta__buttons { display: flex; gap: 12px; flex-wrap: wrap; flex: none; }
+
+  @media (max-width: 980px) {
+    .grid--4 { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 880px) {
+    .grid--2 { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .grid--4 { grid-template-columns: 1fr; }
+    .wrap { padding: 0 18px; }
+    .hero { padding: 48px 0 40px; }
+  }
+</style>
