@@ -5,11 +5,16 @@
 #
 # Exact policy names beat globs; an unlisted policy falls through to default_cell.
 #
-#   simple tier  — chill / coached        : KEYLESS (self-clear / advisory). Live now.
-#   complex tier — structured / protected : human-in-loop / block+escalate. Routes
-#                  correctly keyless, but closure evidence needs the binding ledger
-#                  (LEGIS_HMAC_KEY) — until that is wired it reports enabled:false.
-#                  That visible gating IS the tiering showcase, not a gap.
+#   simple tier  — chill      : KEYLESS (self-clear, no judge/gate). Reports
+#                               enabled:true immediately. The only truly keyless cell.
+#                  coached    : advisory, but REQUIRES a judge provider (LLM).
+#                               Without one wired, policy_explain reports enabled:false
+#                               — that is honest gating, not a key gap.
+#   complex tier — structured : human-in-loop signoff gate.
+#                  protected  : block+escalate; closure evidence needs the binding
+#                               ledger (LEGIS_HMAC_KEY). Until wired it reports
+#                               enabled:false. That visible gating IS the tiering
+#                               showcase, not a gap.
 
 default_cell = "structured"   # fail-closed: an unmapped policy escalates to a human, never self-clears
 

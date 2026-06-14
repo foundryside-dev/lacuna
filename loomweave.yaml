@@ -3,8 +3,9 @@ integrations:
     actor: loomweave-mcp
     base_url: http://127.0.0.1:8749
     enabled: true
+    emit_findings: true
     timeout_seconds: 5
-    token_env: FILIGREE_API_TOKEN
+    token_env: WEFT_FEDERATION_TOKEN
 llm_policy:
   allow_live_provider: true
   cache_max_age_days: 180
@@ -41,3 +42,10 @@ serve:
   mcp:
     enable_write_tools: true
 version: 1
+semantic_search:
+  enabled: true
+  provider: local_openai
+  allow_live_provider: false
+  model_id: bge-small-en-v1.5
+  dimensions: 384
+  endpoint_url: http://127.0.0.1:8770
