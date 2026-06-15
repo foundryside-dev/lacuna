@@ -14,14 +14,14 @@ llm_policy:
     exclude_dynamic_system_prompt_sections: true
     executable: claude
     max_turns: 2
-    model: claude-sonnet-4-6
+    model: default
     no_session_persistence: true
     permission_mode: plan
     timeout_seconds: 300
     tools: []
   codex_cli:
     executable: codex
-    model: null
+    model: default
     profile: null
     sandbox: read-only
     timeout_seconds: 300
