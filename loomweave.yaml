@@ -2,6 +2,7 @@ integrations:
   filigree:
     actor: loomweave-mcp
     base_url: http://127.0.0.1:8749
+    project: lacuna
     enabled: true
     emit_findings: true
     timeout_seconds: 5
