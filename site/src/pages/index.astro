@@ -85,7 +85,7 @@ const ASH = LACUNA.threadHex;
   {/* ---------------------------------------------------------------- */}
   <section class="hero" style={`--accent:${ASH}`}>
     <div class="wrap">
-      <p class="eyebrow">Lacuna · the demonstration specimen</p>
+      <p class="weft-eyebrow">Lacuna · the demonstration specimen</p>
       <h1 class="hero__title">A small app with catalogued flaws — so you can watch the whole federation analyze it at once.</h1>
       <p class="hero__sub">
         Lacuna’s issues are intentional and permanent, baselined so the demo stays
@@ -123,7 +123,7 @@ const ASH = LACUNA.threadHex;
   {/* ---------------------------------------------------------------- */}
   <section id="what" class="band">
     <div class="wrap">
-      <p class="eyebrow">What it is · why it exists</p>
+      <p class="weft-eyebrow">What it is · why it exists</p>
       <h2 class="h2">A clean core, seeded with deliberate lacunae — one per tool to light up.</h2>
       <p class="lede">
         Where Weft’s members are instruments, Lacuna is the <strong>specimen</strong>:
@@ -163,7 +163,7 @@ const ASH = LACUNA.threadHex;
   {/* ---------------------------------------------------------------- */}
   <section id="tour" class="section">
     <div class="wrap">
-      <p class="eyebrow">The tour · run it yourself</p>
+      <p class="weft-eyebrow">The tour · run it yourself</p>
       <h2 class="h2">Three targets. The suite detects what’s runnable and degrades honestly.</h2>
       <p class="lede">
         Point the federation at the specimen and watch it work. The tour runs every
@@ -201,7 +201,7 @@ const ASH = LACUNA.threadHex;
   {/* ---------------------------------------------------------------- */}
   <section id="matrix" class="band">
     <div class="wrap">
-      <p class="eyebrow">The combination matrix · made runnable</p>
+      <p class="weft-eyebrow">The combination matrix · made runnable</p>
       <h2 class="h2">Each pair, grounded in one project you can actually run.</h2>
       <p class="lede">
         The hub’s matrix is the federation’s value proposition; here it is exercised
@@ -267,7 +267,7 @@ const ASH = LACUNA.threadHex;
   {/* ---------------------------------------------------------------- */}
   <section id="scope" class="section">
     <div class="wrap">
-      <p class="eyebrow">Honest scope</p>
+      <p class="weft-eyebrow">Honest scope</p>
       <h2 class="h2">Lacuna is the showcase — not a member, and not the scale proof.</h2>
       <div class="scope">
         <Banner client:visible tone="info" title="Not in the roster.">
@@ -323,26 +323,22 @@ const ASH = LACUNA.threadHex;
      site-kit token layer — no new colors, no dark mode (light theme only).
      --accent is set per-section to the LACUNA ash thread (kit token value). */
   .wrap { max-width: var(--width-content); margin: 0 auto; padding: 0 36px; }
-  .eyebrow {
-    font: var(--type-mono-sm); text-transform: uppercase;
-    letter-spacing: var(--tracking-caps); color: var(--text-muted);
-    font-size: var(--text-xs); margin: 0 0 14px;
-  }
+  .weft-eyebrow { margin: 0 0 14px; }
   .h2 { font: var(--type-h1); color: var(--text-strong); margin: 0 0 16px; max-width: 28ch; }
   .lede { font: var(--type-body); color: var(--text-body); max-width: 66ch; margin: 0 0 26px; }
   .lede code, .pair__cap code, .seed__note code { font-family: var(--font-mono); font-size: 0.92em; color: var(--text-strong); }
   .lede strong { color: var(--text-strong); }
 
-  .section { padding: 64px 0; }
+  .section { padding: var(--space-10) 0; }
   .band {
-    padding: 64px 0; background: var(--bg-sunken);
+    padding: var(--space-10) 0; background: var(--bg-sunken);
     border-top: 1px solid var(--border-hairline);
     border-bottom: 1px solid var(--border-hairline);
   }
 
   /* hero — ash accent stripe */
   .hero {
-    padding: 64px 0 56px;
+    padding: var(--space-10) 0 56px;
     border-bottom: 1px solid var(--border-hairline);
     border-top: 4px solid var(--accent);
   }
@@ -386,7 +382,7 @@ const ASH = LACUNA.threadHex;
   }
   .card--seed { padding: 16px; }
   .seed__head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-  .seed__dot { width: 9px; height: 9px; border-radius: 2px; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+  .seed__dot { width: 9px; height: 9px; border-radius: 2px; flex: none; box-shadow: inset 0 0 0 1px var(--border-hairline); }
   .seed__tool { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-body); }
   .seed__count { margin-left: auto; font-family: var(--font-mono); font-weight: var(--fw-semibold); font-size: var(--text-lg); color: var(--text-strong); }
   .seed__label { font: var(--type-body-sm); color: var(--text-body); margin: 0 0 6px; }
@@ -398,7 +394,7 @@ const ASH = LACUNA.threadHex;
   .pair__head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
   .pair__mark { display: inline-flex; align-items: center; gap: 7px; text-decoration: none; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-body); }
   .pair__mark:hover { text-decoration: underline; text-underline-offset: 3px; }
-  .pair__dot { width: 9px; height: 9px; border-radius: 2px; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+  .pair__dot { width: 9px; height: 9px; border-radius: 2px; flex: none; box-shadow: inset 0 0 0 1px var(--border-hairline); }
   .pair__plus { color: var(--text-faint); font-family: var(--font-mono); }
   .pair__status { margin-left: auto; }
   .pair__cap { font: var(--type-body-sm); color: var(--text-body); margin: 0; }

@@ -36,6 +36,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Configure Pages
+        # Enable Pages + pin the source to GitHub Actions (build_type=workflow).
+        # The 2026-06-14 deploy failed with "Ensure GitHub Pages has been enabled";
+        # this makes the workflow self-heal that state instead of 404ing.
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
