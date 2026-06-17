@@ -1,7 +1,6 @@
 # Lacuna
 
-**The MissingNo of the Weft suite** — a
-deliberately-flawed reference application the suite is demonstrated against.
+**A deliberately-flawed reference application the suite is demonstrated against.**
 
 Where Weft's other members are instruments, Lacuna is the *specimen*: a
 clean-cored library app seeded with documented **lacunae** (planted flaws), each
