@@ -37,6 +37,7 @@ def _drive() -> tuple[list, list]:
         steps.legis_govern(),
         steps.legis_policy_check(),
         steps.legis_reject_malformed(),
+        steps.legis_posture(),
         steps.filigree_findings(),
         steps.filigree_work_cycle(),
     ]

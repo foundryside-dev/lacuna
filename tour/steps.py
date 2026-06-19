@@ -1126,14 +1126,14 @@ def legis_policy_check() -> StepResult:
     legis = _tool("legis")
     if not legis:
         return StepResult(name, ok=False, detail="legis not installed")
-    # The stock `legis` binary hits RecursionError walking specimen/nesting_bomb.py
-    # (the permanent lw-too-complex lacuna), so the check runs through the venv
-    # python with a raised recursion limit (see specimen/policy_boundaries.py NOTE).
+    # Run the INSTALLED legis directly — the same uv-tool build the standing MCP
+    # server runs, so the tour validates the surface agents actually hit (the
+    # test_fingerprints in specimen/policy_boundaries.py are pinned to its Python;
+    # see that file's NOTE). nesting_bomb.py now degrades gracefully
+    # (POLICY_BOUNDARY_FILE_TOO_COMPLEX) instead of raising RecursionError, so the
+    # old raised-recursion-limit shim is gone.
     proc = _run([
-        str(ROOT / ".venv" / "bin" / "python"), "-c",
-        "import sys; sys.setrecursionlimit(100000); "
-        "from legis.cli import main; sys.exit(main())",
-        "policy-boundary-check", "--root", "specimen", "--repo-root", str(ROOT),
+        legis, "policy-boundary-check", "--root", "specimen", "--repo-root", str(ROOT),
     ])
     # Finding-line format: {file}:{line}: {rule_id}: {qualname}: {reason}.
     pairs: list[tuple[str, str]] = []
@@ -1157,3 +1157,38 @@ def legis_policy_check() -> StepResult:
         ),
         surfaced=tuple(pairs) if ok else (),
     )
+
+
+def legis_posture() -> StepResult:
+    """Read the signed posture floor — demonstrates legis's posture layer:
+    an operator-minted, hash-chained minimum-enforcement floor, readable over
+    MCP (posture_get / policy_list) without the operator key. Provisioned by
+    `make setup` (a gitignored, local GENESIS); absent it, those reads cannot
+    answer."""
+    name = "legis posture floor"
+    legis = _tool("legis")
+    if not legis:
+        return StepResult(name, ok=False, detail="legis not installed")
+    proc = _run([legis, "posture", "show"])
+    floor = ""
+    for line in (proc.stdout or "").splitlines():
+        text = line.strip()
+        if text.startswith("posture floor:"):
+            floor = text.split(":", 1)[1].strip()
+            break
+    # A readable, ledger-backed floor (not the "structured (no ledger)" default)
+    # means the posture surface is provisioned and answerable.
+    ok = proc.returncode == 0 and bool(floor) and "no ledger" not in floor
+    detail = (
+        "signed posture floor is provisioned and readable: an operator-minted "
+        "GENESIS pins the minimum enforcement cell in an append-only, hash-chained "
+        "ledger; reads need no operator key, raising the floor needs `legis posture "
+        "set` under an open operator session — so posture_get / policy_list answer "
+        "over MCP instead of failing closed"
+        if ok else
+        "posture ledger not provisioned — run `make setup` to write the signed "
+        "GENESIS; without it posture_get / policy_list cannot read a floor"
+    )
+    # The concrete cell is environment state (operator-set), kept out of the
+    # locked narrative so `make verify` stays byte-deterministic across machines.
+    return StepResult(name, ok=ok, detail=detail, note=f"floor={floor or 'unreadable'}")
