@@ -47,7 +47,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Fetch shared site-kit
         # Sparse-fetch packages/site-kit out of the weft repo into
