@@ -7,8 +7,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-# Tools that ship a runnable CLI today.
-RUNNABLE = ("loomweave", "filigree", "wardline", "legis", "warpline")
+# Tools that ship a runnable CLI today. plainweave is installed as a uv tool
+# (`uv tool install /home/john/plainweave`) → ~/.local/bin/plainweave, exactly like
+# its siblings; adding it here ARMS verify's coverage gate for the pw-* lacunae.
+RUNNABLE = ("loomweave", "filigree", "wardline", "legis", "warpline", "plainweave")
 # Members that exist in the suite but are not yet first-class here.
 DESIGN_ONLY = ("charter",)
 # Known install dir — the tools live here whether or not it is on $PATH.

@@ -502,3 +502,54 @@ demonstrates = ["warpline"]
 explanation = "NOT A FLAW — a positive warpline capability demo. warpline's timeline for _add_book returns its per-entity change history (>= 1 entry). Advisory, never gates."
 expected_tool = "warpline"
 expected_rule = "wp-timeline"
+
+# ── Plainweave intent-coverage capability demos (pw-*) ─────────────────────────
+# Planted 2026-06-24. Plainweave is advisory/enrich-only/local — it surfaces no
+# flaws; it answers "why does this code exist?" via SEI -> requirement -> goal.
+# These are NOT-A-FLAW capability demos (warpline convention): the anchor symbols
+# carry NO LACUNA docstring; the catalogue holds the intent. The `plainweave intent`
+# tour leg self-populates a deterministic, gitignored .plainweave/ store with a
+# deliberate COVERED + UNCOVERED mix (some surfaces justified, some left as honest
+# gaps), then asserts each fact. Do NOT "fix" the 2/4 public-surface tag coverage by
+# adding a web framework — the honest under-reporting (denominator_complete=false)
+# is the demonstrated point.
+
+[[lacuna]]
+id = "pw-intent-justified"
+file = "specimen/cli.py"
+symbol = "_add_book"
+category = "intent-coverage"
+demonstrates = ["plainweave", "plainweave+loomweave"]
+explanation = "NOT A FLAW — a positive plainweave capability demo. The add-a-book CLI command is JUSTIFIED: its Loomweave SEI ladders SEI -> requirement -> goal through a live requirement, so `plainweave intent coverage` counts it in the north-star numerator, `intent trace` walks code -> requirement -> goal, and `intent corpus` lists it. specimen.cli.main is justified alongside it — the covered half of the mix. Advisory, local-only, never gates."
+expected_tool = "plainweave"
+expected_rule = "pw-intent-justified"
+
+[[lacuna]]
+id = "pw-intent-liveness"
+file = "specimen/cli.py"
+symbol = "_register"
+category = "intent-coverage"
+demonstrates = ["plainweave"]
+explanation = "NOT A FLAW — a positive plainweave capability demo. The register command is bound to a requirement and laddered to a goal, then that requirement is DEPRECATED — so plainweave drops the surface from the north-star numerator (a dead obligation must not inflate honest coverage). It falls back to unjustified; the binding still exists but no longer counts. Advisory, local-only, never gates."
+expected_tool = "plainweave"
+expected_rule = "pw-intent-liveness"
+
+[[lacuna]]
+id = "pw-intent-orphan"
+file = "tour/__main__.py"
+symbol = "__main__.main"
+category = "intent-coverage"
+demonstrates = ["plainweave"]
+explanation = "NOT A FLAW — a positive plainweave capability demo. The tour entry-point is recorded as a public code entity with no requirement, so `plainweave intent orphans code` surfaces it as an honest gap (and it appears in coverage's unjustified list). Plainweave never hides an unjustified public surface. Advisory, local-only, never gates."
+expected_tool = "plainweave"
+expected_rule = "pw-intent-orphan"
+
+[[lacuna]]
+id = "pw-surface-scoping"
+file = "tour/__main__.py"
+symbol = "__main__.main"
+category = "intent-coverage"
+demonstrates = ["plainweave"]
+explanation = "NOT A FLAW — a positive plainweave capability demo. The harness's own entry-point (tour.__main__.main) is a public surface in the raw catalog; `plainweave intent coverage --exclude-namespace tour.` scopes it OUT of the product denominator, measuring the real exported API, and honestly reports the catalog incomplete (denominator_complete=false; absent tag classes exported-api, http-route) rather than overstating coverage. Advisory, local-only, never gates."
+expected_tool = "plainweave"
+expected_rule = "pw-surface-scoping"
