@@ -33,7 +33,12 @@ _COV_SCOPED = {
 _ORPHANS = {"items": [{"level": "code", "node_id": "sei-tour"}], "has_more": False, "next_offset": None}
 
 
-def _fake_pwj(default, scoped, orphans):
+# _register is bound (trace up-walk reaches its deprecated requirement+goal).
+_TRACE_BOUND = {"sei-reg": [{"level": "requirement", "node_id": "req-x"},
+                            {"level": "goal", "node_id": "goal-1"}]}
+
+
+def _fake_pwj(default, scoped, orphans, trace_up):
     def pwj(args):
         if args[:2] == ["intent", "coverage"] and "--exclude-namespace" in args:
             return {"ok": True, "data": scoped}
@@ -41,14 +46,18 @@ def _fake_pwj(default, scoped, orphans):
             return {"ok": True, "data": default}
         if args[:3] == ["intent", "orphans", "code"]:
             return {"ok": True, "data": orphans}
+        if args[:3] == ["intent", "trace", "code"]:
+            sei = args[3] if len(args) > 3 else ""
+            return {"ok": True, "data": {"up": trace_up.get(sei, []), "down": []}}
         return {"ok": True, "data": {}}
     return pwj
 
 
-def _arm(monkeypatch, default=_COV_DEFAULT, scoped=_COV_SCOPED, orphans=_ORPHANS):
+def _arm(monkeypatch, default=_COV_DEFAULT, scoped=_COV_SCOPED, orphans=_ORPHANS, trace_up=None):
     monkeypatch.setattr(steps, "_tool", lambda name: f"/home/john/.local/bin/{name}")
     monkeypatch.setattr(steps.plainweave_seed, "seed", lambda pw: None)
-    monkeypatch.setattr(steps, "_plainweave_json", _fake_pwj(default, scoped, orphans))
+    monkeypatch.setattr(steps, "_plainweave_json",
+                        _fake_pwj(default, scoped, orphans, _TRACE_BOUND if trace_up is None else trace_up))
 
 
 def test_plainweave_intent_surfaces_all_four_facts(monkeypatch):
@@ -113,6 +122,33 @@ def test_plainweave_intent_partial_degrade_omits_only_the_failing_pair(monkeypat
     assert ("pw-intent-justified", "specimen.cli._add_book") not in r.surfaced
     assert ("pw-intent-orphan", "tour.__main__.main") in r.surfaced
     assert r.ok is False  # fail loud — not all four facts held
+
+
+def test_plainweave_intent_liveness_requires_register_bound(monkeypatch):
+    # AC#7 discrimination: _register unjustified but NEVER bound (trace up-walk empty)
+    # must NOT credit pw-intent-liveness — only a deprecation-dropped (bound) surface does.
+    # Guards the hollow-liveness window: a silent bind regression cannot pass the gate.
+    _arm(monkeypatch, trace_up={})  # sei-reg up empty -> reg_bound False
+    r = steps.plainweave_intent()
+    assert ("pw-intent-liveness", "specimen.cli._register") not in r.surfaced
+    assert r.ok is False  # fail loud — the liveness fact did not hold
+
+
+def test_plainweave_intent_never_raises_on_malformed_surface(monkeypatch):
+    # A coverage surface missing 'sei' must DEGRADE (skipped), never raise (tour contract).
+    broken = {
+        "north_star": {"numerator": 2, "denominator": 4, "ratio": 0.5},
+        "denominator_complete": False,
+        "coverage": {"absent_tags": ["exported-api", "http-route"]},
+        "justified": [_surface(ADD_BOOK_LOC, "sei-add"), _surface(CLI_MAIN_LOC, "sei-main")],
+        "unjustified": [_surface(REGISTER_LOC, "sei-reg"), {"locator": TOUR_MAIN_LOC}],  # no 'sei'
+    }
+    _arm(monkeypatch, default=broken)
+    r = steps.plainweave_intent()  # must not raise
+    assert r.name == "plainweave intent"
+    # tour_main has no sei -> not in the reverse-map -> orphan cannot map -> pair omitted.
+    assert ("pw-intent-orphan", "tour.__main__.main") not in r.surfaced
+    assert r.ok is False
 
 
 # ── Seed-level: liveness positive-control (AC#7 discrimination) ────────────────

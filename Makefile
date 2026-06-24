@@ -1,6 +1,10 @@
 PY := .venv/bin/python
 WARDLINE := /home/john/.local/bin/wardline
 LEGIS := /home/john/.local/bin/legis
+# plainweave is a live RUNNABLE tour member; the leg resolves it BIN-first via
+# capability._tool. `make verify` requires it installed (a uv tool, like its
+# siblings):  uv tool install /home/john/plainweave
+PLAINWEAVE := /home/john/.local/bin/plainweave
 
 .PHONY: setup tour verify test scan cargo-check docs ci provision-posture
 

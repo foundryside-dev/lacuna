@@ -689,37 +689,49 @@ def plainweave_intent() -> StepResult:
             raise RuntimeError(f"plainweave call failed: {args[0] if args else '?'}")
         return env.get("data") or {}
 
+    # All reads AND the fact-computation run inside the try: any schema drift
+    # (a missing key, a non-dict) degrades to ok=False, never raises (tour contract).
     try:
         plainweave_seed.seed(pw)
         cov = pw(["intent", "coverage"])
         cov_scoped = pw(["intent", "coverage", "--exclude-namespace", "tour."])
         orphans = pw(["intent", "orphans", "code"]).get("items", [])
+
+        # Reverse-map SEI <-> locator/qualname from coverage (surfaces carry both
+        # fields). Defensive .get(): a surface missing a field is skipped, never raises.
+        surfaces = list(cov.get("justified", [])) + list(cov.get("unjustified", []))
+        sei2loc = {s["sei"]: s["locator"] for s in surfaces if s.get("sei") and s.get("locator")}
+        qual2sei = {_locator_to_qualname(loc): sei for sei, loc in sei2loc.items()}
+        just_q = {_locator_to_qualname(s["locator"]) for s in cov.get("justified", []) if s.get("locator")}
+        unjust_q = {_locator_to_qualname(s["locator"]) for s in cov.get("unjustified", []) if s.get("locator")}
+        scoped = list(cov_scoped.get("justified", [])) + list(cov_scoped.get("unjustified", []))
+        scoped_q = {_locator_to_qualname(s["locator"]) for s in scoped if s.get("locator")}
+        orphan_q = {
+            _locator_to_qualname(sei2loc[it["node_id"]])
+            for it in orphans
+            if it.get("node_id") in sei2loc
+        }
+        numerator = (cov.get("north_star") or {}).get("numerator")
+        absent = set(((cov.get("coverage") or {}).get("absent_tags")) or [])
+
+        # Liveness discrimination (AC#7): _register must be BOUND — its `intent trace`
+        # up-walk still reaches a requirement — yet excluded from the live numerator
+        # BECAUSE that requirement is deprecated. This distinguishes the demonstrated
+        # drop from a never-bound orphan (whose trace up-walk is empty), so a silent
+        # bind regression cannot hollowly credit the lacuna.
+        reg_sei = qual2sei.get(PLAINWEAVE_REGISTER)
+        reg_bound = bool(pw(["intent", "trace", "code", reg_sei]).get("up")) if reg_sei else False
     except Exception as exc:  # tour contract: degrade, never raise. Type name only — no hex/digits.
         return StepResult(name, ok=False, detail=f"plainweave seed/read failed: {type(exc).__name__}")
-
-    # Reverse-map SEI -> locator from coverage (surfaces carry BOTH fields) so the
-    # orphan node_id (a SEI) maps back to a creditable dotted qualname.
-    surfaces = list(cov.get("justified", [])) + list(cov.get("unjustified", []))
-    sei2loc = {s["sei"]: s["locator"] for s in surfaces}
-    just_q = {_locator_to_qualname(s["locator"]) for s in cov.get("justified", [])}
-    unjust_q = {_locator_to_qualname(s["locator"]) for s in cov.get("unjustified", [])}
-    scoped_q = {
-        _locator_to_qualname(s["locator"])
-        for s in (list(cov_scoped.get("justified", [])) + list(cov_scoped.get("unjustified", [])))
-    }
-    orphan_q = {
-        _locator_to_qualname(sei2loc[it["node_id"]])
-        for it in orphans
-        if it.get("node_id") in sei2loc
-    }
-    numerator = (cov.get("north_star") or {}).get("numerator")
-    absent = set(((cov.get("coverage") or {}).get("absent_tags")) or [])
 
     pairs: list[tuple[str, str]] = []
     # Each pair is emitted ONLY if its fact holds (partial -> omitted -> verify reds; fail loud).
     if {PLAINWEAVE_ADD_BOOK, PLAINWEAVE_CLI_MAIN} <= just_q:
         pairs.append(("pw-intent-justified", PLAINWEAVE_ADD_BOOK))
-    if PLAINWEAVE_REGISTER in unjust_q and numerator == 2:
+    # numerator == 2 is load-bearing: seed() justifies EXACTLY _add_book + cli.main, so a
+    # deprecated _register that still counted would push it to 3. reg_bound proves the drop
+    # is a deprecation (bound), not a never-bound orphan.
+    if PLAINWEAVE_REGISTER in unjust_q and reg_bound and numerator == 2:
         pairs.append(("pw-intent-liveness", PLAINWEAVE_REGISTER))
     if PLAINWEAVE_TOUR_MAIN in orphan_q:
         pairs.append(("pw-intent-orphan", PLAINWEAVE_TOUR_MAIN))

@@ -42,7 +42,11 @@ def seed(pw: Callable[[list[str]], dict], *, deprecate: bool = True) -> None:
     pw(["init", "--project-key", "lacuna"])
 
     cov = pw(["intent", "coverage"])
-    locmap = {it["locator"]: it["sei"] for it in cov["unjustified"]}
+    # Union justified+unjustified (symmetric with the leg) so an anchor that is ever
+    # classified at init still resolves; .get() so a malformed item is skipped rather
+    # than raising an opaque KeyError. A genuinely-absent anchor still fails loud below.
+    surfaces = list(cov.get("justified", [])) + list(cov.get("unjustified", []))
+    locmap = {it["locator"]: it["sei"] for it in surfaces if it.get("locator") and it.get("sei")}
     for loc in (ADD_BOOK, REGISTER, CLI_MAIN, TOUR_MAIN):
         if loc not in locmap:
             # Deterministic, hex-free message (the leg keeps detail digit-free).
