@@ -11,6 +11,17 @@ landed (corpus now **44 catalogued lacunae**) and the 2026-06-13 post-fix
 re-dogfood confirmed the major seams function — the live edge of work is closing
 the *MCP-attachment* and *config-truth* gaps that still push agents to CLI.
 
+## Added 2026-06-24 — Plainweave tour member (PDR-0005)
+
+Plainweave is now the 6th live tour member (intent-coverage capability demos:
+`pw-intent-justified` / `-liveness` / `-orphan`, `pw-surface-scoping`). The corpus is
+now **52 catalogued lacunae** (the "44" referenced elsewhere in this brief is stale).
+Banked as a demonstrator + deterministic regression-harness, not north-star movement.
+**Two owner escalations** are recorded in PDR-0005: (1) `vision.md`'s tool enumeration
+omits Plainweave (demonstrated, deliberately not rostered — owner to ratify or keep as-is);
+(2) reconcile the stale corpus count in this brief. No specimen source or sibling-member
+repo was modified (consumer boundary, PDR-0002).
+
 ## In flight (tracker — Filigree)
 
 - **`lacuna-2046f5ae8a`** — `[release]` "Future", P4. The only open tracker item;
