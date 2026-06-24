@@ -31,6 +31,7 @@ def _drive() -> tuple[list, list]:
         steps.loomweave_findings(),
         steps.rust_archaeology(),
         steps.warpline_change_impact(),
+        steps.plainweave_intent(),
         steps.wardline_scan(),
         steps.wardline_fail_closed(),
         steps.rust_scan(),

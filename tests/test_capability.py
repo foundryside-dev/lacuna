@@ -43,3 +43,21 @@ def test_warpline_is_a_detectable_live_member_when_installed():
     caps = {c.name: c for c in detect(_fake_which({"loomweave", "filigree", "wardline", "legis", "warpline"}))}
     assert "warpline" in caps
     assert caps["warpline"].available is True
+
+
+def test_plainweave_is_a_detectable_live_member_when_installed():
+    # plainweave must be RUNNABLE so verify's coverage gate asserts the pw-* entries
+    # (`expected_tool in live`). It is installed as a uv tool in ~/.local/bin like its
+    # siblings; NOT design-only.
+    caps = {c.name: c for c in detect(_fake_which(
+        {"loomweave", "filigree", "wardline", "legis", "warpline", "plainweave"}
+    ))}
+    assert "plainweave" in caps
+    assert caps["plainweave"].available is True
+
+
+def test_plainweave_absent_reports_unavailable_not_design_only(monkeypatch):
+    monkeypatch.setattr("tour.capability.BIN", __import__("pathlib").Path("/nonexistent/bin"))
+    caps = {c.name: c for c in detect(_fake_which({"loomweave", "filigree", "wardline", "legis", "warpline"}))}
+    assert caps["plainweave"].available is False
+    assert "design-only" not in caps["plainweave"].detail

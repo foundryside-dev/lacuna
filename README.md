@@ -81,6 +81,17 @@ anything new.
 > advisory/enrich-only and never gates. `_add_book` carries no `LACUNA` docstring
 > by design. Do not "fix" them; the catalogue holds the intent.
 
+> **Plainweave entries are capability demos, not flaws.** `pw-intent-justified`,
+> `pw-intent-liveness`, `pw-intent-orphan`, and `pw-surface-scoping` assert
+> Plainweave's code-up intent graph (`SEI → requirement → goal`) — Plainweave is
+> advisory/enrich-only/local and never gates. The `plainweave intent` tour leg
+> self-seeds a deterministic covered+uncovered corpus (gitignored `.plainweave/`).
+> The catalog's **2/4** public-surface tag coverage (`exported-api`/`http-route`
+> absent) is the *demonstrated honest-degradation point* — **do not "fix" it by
+> adding a web framework** to chase 4/4. The anchors carry no `LACUNA` docstring;
+> the catalogue holds the intent. `make verify` requires plainweave installed
+> (`uv tool install /home/john/plainweave`), like the other live tools.
+
 ## Part of Weft
 
 Weft models a codebase as **entities**, each carrying typed facts from different

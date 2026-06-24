@@ -16,6 +16,7 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
+from tour import plainweave_seed
 from tour.report import StepResult
 
 ROOT = Path("/home/john/lacuna")
@@ -619,6 +620,147 @@ def warpline_change_impact() -> StepResult:
             "tracked via churn + timeline — advisory, never gates"
         ),
         surfaced=surfaced,
+    )
+
+
+# ── Plainweave intent-coverage capability demo (pw-*) ──────────────────────────
+# Plainweave is advisory / enrich-only / local — no flaw rules; it answers
+# "why does this code exist?" via SEI -> requirement -> goal. Like warpline, this
+# leg asserts CAPABILITY correctness over frozen anchors, not flaw detection.
+PLAINWEAVE_ADD_BOOK = "specimen.cli._add_book"    # justified  (covered)
+PLAINWEAVE_REGISTER = "specimen.cli._register"    # deprecated (liveness)
+PLAINWEAVE_CLI_MAIN = "specimen.cli.main"         # justified  (covered)
+PLAINWEAVE_TOUR_MAIN = "tour.__main__.main"        # orphan + scoped-out
+PLAINWEAVE_ABSENT_TAGS = {"exported-api", "http-route"}  # the honest-degradation classes
+
+
+def _plainweave_json(args: list[str]) -> dict | None:
+    """Run `plainweave <args> --json` and parse stdout. None on any failure.
+
+    The single mockable seam for the plainweave leg (tests monkeypatch this). Uses
+    `_tool('plainweave')` — NOT import-based detection — because plainweave is
+    installed as a uv tool in ~/.local/bin like its siblings. Never raises.
+    """
+    plainweave = _tool("plainweave")
+    if not plainweave:
+        return None
+    proc = _run([plainweave, *args, "--json"])
+    try:
+        return json.loads(proc.stdout)
+    except (json.JSONDecodeError, TypeError):
+        return None
+
+
+def plainweave_intent() -> StepResult:
+    """Demonstrate plainweave's code-up intent graph over the specimen.
+
+    Plainweave never gates. This leg self-populates a COLD, gitignored .plainweave/
+    store with a deliberate covered+uncovered mix (tour.plainweave_seed), then
+    asserts four capability facts over FROZEN anchors:
+      * pw-intent-justified — specimen.cli._add_book (and cli.main) ladder
+        SEI->requirement->goal (north-star numerator; intent trace; corpus).
+      * pw-intent-liveness  — specimen.cli._register, bound+laddered then its
+        requirement DEPRECATED, drops out of the numerator (dead obligations don't count).
+      * pw-intent-orphan    — tour.__main__.main, recorded public + unbound, surfaces
+        in `intent orphans code` (and coverage.unjustified): an honest gap.
+      * pw-surface-scoping  — `--exclude-namespace tour.` scopes the harness entry-point
+        out of the product denominator, and coverage honestly reports the catalog
+        incomplete (denominator_complete=false; absent exported-api, http-route).
+
+    Depends on a freshly-analyzed loomweave index — `_drive()` runs `loomweave_analyze`
+    before this leg — so the SEIs the seed resolves match the live catalog.
+
+    Determinism (`make verify` is byte-for-byte): the north-star is a ratio that moves
+    with the catalog, so `detail` is FROZEN prose and `surfaced` carries only stable
+    (token, qualname) pairs; live numbers ride the non-rendered `note`. Concurrency:
+    the seed wipes+rebuilds .plainweave/ each run (idempotent) — a second concurrent
+    tour against this workspace would race it. Never raises (tour contract).
+    """
+    name = "plainweave intent"
+    if not _tool("plainweave"):
+        return StepResult(
+            name, ok=False,
+            detail="plainweave not installed — uv tool install /home/john/plainweave",
+        )
+
+    def pw(args: list[str]) -> dict:
+        env = _plainweave_json(args)
+        if env is None or not env.get("ok"):
+            raise RuntimeError(f"plainweave call failed: {args[0] if args else '?'}")
+        return env.get("data") or {}
+
+    # All reads AND the fact-computation run inside the try: any schema drift
+    # (a missing key, a non-dict) degrades to ok=False, never raises (tour contract).
+    try:
+        plainweave_seed.seed(pw)
+        cov = pw(["intent", "coverage"])
+        cov_scoped = pw(["intent", "coverage", "--exclude-namespace", "tour."])
+        orphans = pw(["intent", "orphans", "code"]).get("items", [])
+
+        # Reverse-map SEI <-> locator/qualname from coverage (surfaces carry both
+        # fields). Defensive .get(): a surface missing a field is skipped, never raises.
+        surfaces = list(cov.get("justified", [])) + list(cov.get("unjustified", []))
+        sei2loc = {s["sei"]: s["locator"] for s in surfaces if s.get("sei") and s.get("locator")}
+        qual2sei = {_locator_to_qualname(loc): sei for sei, loc in sei2loc.items()}
+        just_q = {_locator_to_qualname(s["locator"]) for s in cov.get("justified", []) if s.get("locator")}
+        unjust_q = {_locator_to_qualname(s["locator"]) for s in cov.get("unjustified", []) if s.get("locator")}
+        scoped = list(cov_scoped.get("justified", [])) + list(cov_scoped.get("unjustified", []))
+        scoped_q = {_locator_to_qualname(s["locator"]) for s in scoped if s.get("locator")}
+        orphan_q = {
+            _locator_to_qualname(sei2loc[it["node_id"]])
+            for it in orphans
+            if it.get("node_id") in sei2loc
+        }
+        numerator = (cov.get("north_star") or {}).get("numerator")
+        absent = set(((cov.get("coverage") or {}).get("absent_tags")) or [])
+
+        # Liveness discrimination (AC#7): _register must be BOUND — its `intent trace`
+        # up-walk still reaches a requirement — yet excluded from the live numerator
+        # BECAUSE that requirement is deprecated. This distinguishes the demonstrated
+        # drop from a never-bound orphan (whose trace up-walk is empty), so a silent
+        # bind regression cannot hollowly credit the lacuna.
+        reg_sei = qual2sei.get(PLAINWEAVE_REGISTER)
+        reg_bound = bool(pw(["intent", "trace", "code", reg_sei]).get("up")) if reg_sei else False
+    except Exception as exc:  # tour contract: degrade, never raise. Type name only — no hex/digits.
+        return StepResult(name, ok=False, detail=f"plainweave seed/read failed: {type(exc).__name__}")
+
+    pairs: list[tuple[str, str]] = []
+    # Each pair is emitted ONLY if its fact holds (partial -> omitted -> verify reds; fail loud).
+    if {PLAINWEAVE_ADD_BOOK, PLAINWEAVE_CLI_MAIN} <= just_q:
+        pairs.append(("pw-intent-justified", PLAINWEAVE_ADD_BOOK))
+    # numerator == 2 is load-bearing: seed() justifies EXACTLY _add_book + cli.main, so a
+    # deprecated _register that still counted would push it to 3. reg_bound proves the drop
+    # is a deprecation (bound), not a never-bound orphan.
+    if PLAINWEAVE_REGISTER in unjust_q and reg_bound and numerator == 2:
+        pairs.append(("pw-intent-liveness", PLAINWEAVE_REGISTER))
+    if PLAINWEAVE_TOUR_MAIN in orphan_q:
+        pairs.append(("pw-intent-orphan", PLAINWEAVE_TOUR_MAIN))
+    if (
+        PLAINWEAVE_TOUR_MAIN in unjust_q
+        and PLAINWEAVE_TOUR_MAIN not in scoped_q
+        and cov.get("denominator_complete") is False
+        and PLAINWEAVE_ABSENT_TAGS <= absent
+    ):
+        pairs.append(("pw-surface-scoping", PLAINWEAVE_TOUR_MAIN))
+
+    ns, ns_s = cov.get("north_star") or {}, cov_scoped.get("north_star") or {}
+    note = (
+        f"north-star {ns.get('numerator')}/{ns.get('denominator')} default, "
+        f"{ns_s.get('numerator')}/{ns_s.get('denominator')} scoped; absent_tags={sorted(absent)}"
+    )
+    return StepResult(
+        name,
+        ok=len(pairs) == 4,
+        detail=(
+            "seeded a covered+uncovered intent corpus over the specimen; "
+            "cli._add_book and cli.main are justified (SEI->requirement->goal, traced); "
+            "_register drops from the numerator once its requirement is deprecated; "
+            "tour.__main__.main surfaces as an orphan and is scoped out of the product "
+            "denominator; the catalog honestly reports incomplete public-surface tag "
+            "coverage — advisory, local-only, never gates"
+        ),
+        surfaced=tuple(pairs),
+        note=note,
     )
 
 
