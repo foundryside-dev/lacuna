@@ -17,8 +17,8 @@ gaps were resolved by member config-fixes, not by Lacuna). The bet's *successor*
 
 - **`lacuna-5d0e4ba6d7`** — `[bug] P1, triage`. loomweave duplicate-locator / last-write-wins
   shadowing of `specimen.colliding.ShelfMark` (the planted `colliding.py` lacuna). **Routed as a
-  loomweave bug report** (PDR-0006, owner-approved; comment recorded on the issue). _Open action:_
-  file/confirm in loomweave's own tracker and record the ID (consumer boundary — Lacuna reports,
+  loomweave bug report** (PDR-0006, owner-approved; comment recorded on the issue). **FILED 2026-06-25** as `clarion-48af930f2a` in loomweave's own tracker; loomweave owns the fix.
+  Lacuna keeps the consumer-side record (consumer boundary — Lacuna reports,
   loomweave fixes; Lacuna must NOT "fix" the planted lacuna).
 - **`lacuna-2046f5ae8a`** — `[release] P4` "Future". Placeholder bucket, not active work.
 
@@ -61,4 +61,4 @@ No grant change. Plainweave was **ratified into `vision.md`** per explicit owner
 2. **When dispatched:** reinstall plainweave from source → wire `.mcp.json` → re-verify the tour
    (guard the north-star) → verify plainweave attaches MCP-first in a fresh session → build the
    6-member attachment regression-harness.
-3. **Discharge the P1 loomweave report** (file in loomweave's tracker; record the ID on `lacuna-5d0e4ba6d7`).
+3. **(Done 2026-06-25)** P1 loomweave report filed as `clarion-48af930f2a`; follow loomweave's triage if it stalls.
