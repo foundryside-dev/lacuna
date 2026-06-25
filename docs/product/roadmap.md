@@ -16,7 +16,13 @@ federation's actual pitch — work the way an agent would naturally reach for th
 (MCP-first, no CLI/JSON-RPC fallback), with consistent config/port truth. The
 06-13 post-fix re-dogfood confirmed the big seams now function (wardline→filigree
 work joins, loomweave→filigree finding/issue enrichment) but flagged that MCP
-attachment is still inconsistent in a real session.
+attachment was still inconsistent in a real session.
+
+> **Updated: 2026-06-25 (PDR-0006, PDR-0007).** The MCP-attachment-truth workstream is
+> COMPLETE — G1 = 4/4 joins reachable MCP-first in one attached session (probed in-session,
+> the three 06-13 gaps resolved by member config-fixes). The Now theme holds; its successor
+> workstream is **plainweave MCP attachment** (the 6th member is MCP-absent in Lacuna) — see
+> Next + PDR-0007.
 
 - _Moves:_ federation seam health (guardrail) and dogfood friction count.
 - _Why now:_ the joins are the product's reason to exist as a demo; a join that
@@ -24,16 +30,19 @@ attachment is still inconsistent in a real session.
 
 ## Next — proposed (intent, not committed)
 
-- **MCP attachment truth.** Resolve the three observed attachment gaps: Filigree
-  MCP pointing at Weft rather than the staged repo, Loomweave MCP attached to a
-  no-index context, Legis MCP absent in-session. _(Moves: federation seam health.)_
+- **Wire the newest member (plainweave) MCP-first + 6-member attachment
+  regression-harness** (PDR-0007). plainweave ships a FastMCP server in source but is
+  MCP-absent in Lacuna (stale installed build; not in `.mcp.json`). Reconcile its
+  attachment and regression-proof all 6 members' MCP attachment so a silent de-attach
+  trips `make verify`. _(Moves: federation seam health.)_
+  _[Predecessor "MCP attachment truth" for the original 5 servers: DONE — G1 4/4, PDR-0006.]_
 - **One freshness/port oracle per tool.** Reconcile contradictory status
   surfaces (e.g. Loomweave doctor advertising an unreachable `:35541` while
   `:9730` is the working URL). _(Moves: dogfood friction count.)_
 - **Scanner job semantics as a product finding.** Treat foreground, low-feedback
   scans with no pollable job/status handle as a first-class friction even when
   Lacuna's small scan passes. _(Moves: dogfood friction count.)_
-- **Rust wing depth.** The Wave-3 Rust wing landed (44 lacunae total); extend
+- **Rust wing depth.** The Wave-3 Rust wing landed (52 lacunae total); extend
   coverage of rust-specific taint/archaeology combinations. _(Moves: specimen
   fidelity / combination-matrix coverage.)_
 

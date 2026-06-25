@@ -14,7 +14,7 @@ proving ground still proves." Measured by `make verify`.
 - **Definition:** `make verify` passes on `main` ⇔ (100% of live lacunae
   surfaced) ∧ (narrative/docs in lockstep) ∧ (0 uncatalogued gate-tripping
   findings).
-- **BASELINE → TARGET:** green at commit `c9d407f` (44 catalogued lacunae)
+- **BASELINE → TARGET:** green at commit `c9d407f` (52 catalogued lacunae; was 44 at 2026-06-13 bootstrap)
   → **100% of live lacunae surfaced and `make verify` green on every `main`
   commit, by 2026-09-13.**
 - **Reversal trigger:** if holding fidelity green requires suppressing a *real*
@@ -59,6 +59,25 @@ is unattached) are **labelled**, never simulated as live.
 - **Reversal trigger:** any tour leg presenting a design-only or unreachable
   member as live — hard stop; honesty is the demo's credibility.
 
-> _Note: raw "analyzer findings" counts (155 unbridged / 44 baselined) are
+## Readings (dated)
+
+- **2026-06-25 — G1 federation seam health: 4 of 4 (TARGET MET, ahead of 2026-09-13).**
+  Probed in-session via `mcp__*` tools — Wardline→Filigree, Loomweave→Filigree enrichment,
+  Loomweave→Filigree issue-assoc (channel reachable), Legis governance — all reachable
+  MCP-first; the three 06-13 attachment gaps were resolved by member config-fixes. No
+  reversal trigger tripped (target reached, not a regression). [PDR-0006]
+- **2026-06-25 — North star (specimen fidelity): `make verify` RED, but NOT a regression.**
+  Sole cause: uncommitted *tooling* churn (SKILL.md / AGENTS.md / CLAUDE.md install blocks)
+  → dirty tree → legis refuses to sign → `tour.md` stale. Green on a clean tree at `d09da33`
+  (PDR-0005 `make ci` green). Reversal trigger (suppressing a real defect) NOT tripped.
+- **2026-06-25 — Corpus: 52 catalogued lacunae** (was 44 at bootstrap; +4 `pw-*` in PDR-0005).
+  Telemetry; reconciled across vision/roadmap/metrics this checkpoint.
+- **2026-06-25 — G2 dogfood friction:** the 06-13 MCP-attachment friction is RESOLVED. New
+  frontier logged: plainweave (6th member) MCP-absent [PDR-0007]. Open frictions now:
+  port/config truth, scanner job semantics, large-repo ingest, plainweave attachment.
+- **2026-06-25 — G3 demonstration honesty: maintained.** No member faked as live; plainweave
+  honestly CLI-only, charter design-only.
+
+> _Note: raw "analyzer findings" counts (183 unbridged / 44 baselined) are
 > **telemetry, not a metric** — they are mostly the planted lacunae themselves.
 > Do not treat finding-count reduction as progress._

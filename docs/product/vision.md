@@ -27,7 +27,8 @@ an external demonstrator **once the suite is finished**.
 
 1. **The Weft federation's developers and product owner — primary, the active
    phase.** Lacuna is today the **internal dogfood range** and regression corpus
-   for loomweave, filigree, wardline, legis, warpline, and charter. When a seam between two
+   for loomweave, filigree, wardline, legis, warpline, and plainweave (the newest member,
+   ratified into the range 2026-06-25 — PDR-0008); charter remains design-only. When a seam between two
    tools breaks, Lacuna is where it is caught. _(Observed: the dominant recent
    activity is dogfood reports + seam fixes + corpus growth.)_
 2. **Prospective evaluators of the Weft suite — the planned graduation.** Once
@@ -57,8 +58,8 @@ an external demonstrator **once the suite is finished**.
 
 ## Authority grant
 
-**Status: CONFIRMED** (ratified by owner via `/own-product`, 2026-06-13)
-**Last reviewed: 2026-06-13 · Review cadence: quarterly (next: 2026-09-13)**
+**Status: CONFIRMED** (ratified by owner via `/own-product`, 2026-06-13; re-confirmed as-is 2026-06-25)
+**Last reviewed: 2026-06-25 · Review cadence: quarterly (next: 2026-09-25)**
 
 The product-owner agent acts **autonomously within strategy** and **escalates
 before anything hard-to-reverse or outward-facing.**

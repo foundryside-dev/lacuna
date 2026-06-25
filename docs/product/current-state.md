@@ -1,96 +1,64 @@
 # Current State — Lacuna
 
 _The resume brief: fastest path back to the running picture. Read this first._
-_Bootstrapped 2026-06-13 via `/own-product` (BOOTSTRAP branch — workspace was absent)._
+_Last checkpoint: 2026-06-25 (`/product-checkpoint`). Bootstrapped 2026-06-13._
 
 ## The bet right now
 
-**Federation seam integrity, agent-native** (see `roadmap.md` → Now). Make the
-cross-tool joins work MCP-first, not just via raw shell. The Wave-3 Rust wing has
-landed (corpus now **44 catalogued lacunae**) and the 2026-06-13 post-fix
-re-dogfood confirmed the major seams function — the live edge of work is closing
-the *MCP-attachment* and *config-truth* gaps that still push agents to CLI.
-
-## Added 2026-06-24 — Plainweave tour member (PDR-0005)
-
-Plainweave is now the 6th live tour member (intent-coverage capability demos:
-`pw-intent-justified` / `-liveness` / `-orphan`, `pw-surface-scoping`). The corpus is
-now **52 catalogued lacunae** (the "44" referenced elsewhere in this brief is stale).
-Banked as a demonstrator + deterministic regression-harness, not north-star movement.
-**Two owner escalations** are recorded in PDR-0005: (1) `vision.md`'s tool enumeration
-omits Plainweave (demonstrated, deliberately not rostered — owner to ratify or keep as-is);
-(2) reconcile the stale corpus count in this brief. No specimen source or sibling-member
-repo was modified (consumer boundary, PDR-0002).
+**Federation seam integrity, agent-native** (roadmap → Now). The first workstream —
+**MCP attachment truth (PRD-0004)** — is **DONE**: probed in-session 2026-06-25, **G1 = 4/4
+documented joins reachable MCP-first** in one attached session (the three 06-13 attachment
+gaps were resolved by member config-fixes, not by Lacuna). The bet's *successor* workstream is
+**plainweave MCP attachment** (PDR-0007): the 6th and newest member is **MCP-absent in Lacuna**
+— its source ships a FastMCP server, but the installed `0.0.1` build is stale and it is not in
+`.mcp.json`. The Now theme holds; the frontier moved one member forward.
 
 ## In flight (tracker — Filigree)
 
-- **`lacuna-2046f5ae8a`** — `[release]` "Future", P4. The only open tracker item;
-  a placeholder release bucket, not active work. (Was used transiently in the
-  06-13 dogfood as an SEI-association target; association cleaned up.)
-- **`lacuna-obs-8aa96160f2`** — DISMISSED 2026-06-13. Was the legis
-  `policy-boundary-check` RecursionError on `nesting_bomb.py`; verified resolved
-  upstream live (returns typed `POLICY_BOUNDARY_FILE_TOO_COMPLEX`, continues).
-  Exemplar of the consumer boundary: Lacuna reported, legis fixed.
-- **Analyzer findings:** 155 unbridged (111 actionable telemetry/info, 0
-  defect-signal; 44 baselined/suppressed). This is *expected* — they are largely
-  the planted lacunae. Not a backlog. See `[[metrics.md]]` G-note.
+- **`lacuna-5d0e4ba6d7`** — `[bug] P1, triage`. loomweave duplicate-locator / last-write-wins
+  shadowing of `specimen.colliding.ShelfMark` (the planted `colliding.py` lacuna). **Routed as a
+  loomweave bug report** (PDR-0006, owner-approved; comment recorded on the issue). _Open action:_
+  file/confirm in loomweave's own tracker and record the ID (consumer boundary — Lacuna reports,
+  loomweave fixes; Lacuna must NOT "fix" the planted lacuna).
+- **`lacuna-2046f5ae8a`** — `[release] P4` "Future". Placeholder bucket, not active work.
 
-## Latest signal — 2026-06-13 post-fix re-dogfood
+## Metric readings (2026-06-25)
 
-What is now working (was broken on 06-12):
-- Wardline → Filigree work joins (given the Loomweave URL + Filigree base URL)
-- Loomweave → Filigree Wardline-finding enrichment (with `FILIGREE_API_TOKEN`)
-- Loomweave → Filigree issue association round-trip (hydrates title/status/priority)
-- Legis `policy-boundary-check` no longer `RecursionError`s on `nesting_bomb.py`
+- **G1 federation seam health: 4/4 — TARGET MET** (ahead of 2026-09-13). No reversal trigger tripped.
+- **North star (`make verify`): RED, but NOT a regression** — caused solely by uncommitted *tooling*
+  churn (SKILL.md / AGENTS.md / CLAUDE.md install blocks) → dirty tree → legis won't sign → `tour.md`
+  stale. Green on a clean tree at `d09da33`. (See [[lacuna-green-tour-constraints]] memory.)
+- **Corpus: 52 catalogued lacunae** (reconciled from the stale "44" across vision/roadmap/metrics).
 
-Remaining friction (→ feeds Next bets):
-1. **MCP attachment mismatch** — Filigree MCP points at Weft; Loomweave MCP on a
-   no-index context; Legis MCP absent in-session. Direct launches work; natural
-   "reach for MCP first" does not.
-2. **Port/config truth** — Loomweave doctor advertises unreachable `:35541`;
-   `:9730` is the working URL.
-3. **Scanner job semantics** — foreground, low-feedback scans with no pollable
-   job/status handle.
-4. **Large-repo ingest** — Wardline/Filigree pair needs chunking/async beyond
-   Lacuna's small corpus.
+## Open questions / blocked-on-owner
 
-## Resolved by owner (2026-06-13) — see PDR-0002
+- **Plainweave bet (PDR-0007) is not yet sequenced** → hand to `/axiom-program-management` for
+  Now/Next sequencing + dated forecast (roadmap is intent-only).
+- **Env mutation deferred:** reconciling plainweave's MCP needs a reinstall-from-source + `.mcp.json`
+  wiring (within grant; PDR-0005 precedent) — but reinstalling the build that ARMS `make verify`'s
+  `pw-*` gate risks the north-star (verify-after), and MCP-first verification only completes in a
+  session that *re-attaches* after the config change. Owner chose "no env mutation this session."
+- **Tree hygiene (owner):** non-product tooling churn (install-block edits) sits uncommitted and
+  keeps `make verify` red until committed or stashed — not part of the product workspace; flag for owner.
 
-- **Audience weighting → RESOLVED.** Both, *in sequence*: Lacuna is the **internal
-  dogfood range now**, and graduates into an external **demonstrator** once the
-  suite is finished. Demonstrator polish currently serves the dogfood range, not
-  vice versa. (Captured in `vision.md` → Who it serves.)
-- **Product boundary → RESOLVED.** Lacuna is a **consumer of the federation, not
-  part of it**. When dogfooding finds a federation-tool bug, **Lacuna only ever
-  owes a bug report** (specimen + reproducing fixture + friction write-up); the
-  fix lives in the owning member's repo. (Captured in `vision.md` → Anti-goals.)
+## Authority grant
 
-## Open questions still outstanding
+CONFIRMED as-is by the owner this session (2026-06-25); next review 2026-09-25 (quarterly).
+No grant change. Plainweave was **ratified into `vision.md`** per explicit owner approval (PDR-0008).
 
-- **N for guardrail G1:** the total count of "documented joins" needs to be set
-  from the matrix/dogfood method. `<set>`
+## What this checkpoint did
 
-## Decided & dispatched this session (2026-06-13)
-
-- **DECIDE → PDR-0003:** committed "federation seam integrity, agent-native" as
-  the active Now bet; dispatched "MCP attachment truth" as its first workstream.
-- **DISPATCH → PRD-0004** (`prds/PRD-0004-mcp-attachment-truth.md`, status
-  `ready-for-planning`): reproduce + report the 3 MCP-attachment gaps (Filigree→
-  hub, Loomweave→no-index, Legis→absent). Success metric G1 (0/4 → 4/4 MCP-first,
-  2026-09-13); judged on Lacuna's deliverable (fixtures + reports), G1 as
-  downstream outcome (consumer boundary).
-- **Triaged:** observation `lacuna-obs-8aa96160f2` dismissed (resolved upstream).
+- **PDR-0006:** accepted PRD-0004 outcome (G1 4/4), **closed it**; resolved its two open questions
+  (now moot); routed the P1 to loomweave.
+- **PDR-0007:** opened the plainweave-MCP-attachment + 6-member regression-harness as a Next bet.
+- **PDR-0008:** ratified Plainweave into `vision.md` (owner-approved); refreshed the grant review date.
+- Reconciled corpus 44→52; recorded the 2026-06-25 metric readings.
 
 ## Where the next session starts
 
-1. **Hand PRD-0004's top item to `/axiom-planning`** — the reproduction-fixture
-   harness (a deterministic way to launch a clean attached session and capture
-   each MCP server's attachment state, off the existing `tour/`+dogfood machinery).
-2. **Route solution shape to `/axiom-solution-architect`** — how the harness hangs
-   off `tour/` and the report/SEI-evidence schema.
-3. **Route the committed bet to `/axiom-program-management`** for sequencing + the
-   dated forecast (PRD-0004 emits no date).
-4. **Resolve PRD-0004's open questions** — esp. the Legis "auto-attach vs.
-   documented-launch" bar, and which tracker carries member-routed bug reports.
-5. **CHECKPOINT** with `/product-checkpoint` at session end — the only step that
-   commits the workspace (everything above is currently untracked on disk).
+1. **Hand PDR-0007 (plainweave MCP attachment) to `/axiom-program-management`** to sequence against
+   the other open Next items (port/config truth, scanner job semantics, rust-wing depth).
+2. **When dispatched:** reinstall plainweave from source → wire `.mcp.json` → re-verify the tour
+   (guard the north-star) → verify plainweave attaches MCP-first in a fresh session → build the
+   6-member attachment regression-harness.
+3. **Discharge the P1 loomweave report** (file in loomweave's tracker; record the ID on `lacuna-5d0e4ba6d7`).
