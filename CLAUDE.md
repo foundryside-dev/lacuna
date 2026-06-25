@@ -158,7 +158,7 @@ explains enabling.
 Full workflow: the `loomweave-workflow` skill.
 <!-- /loomweave:instructions -->
 
-<!-- legis:instructions:v1.0.0:6604fe0c -->
+<!-- legis:instructions:v1.1.1:6604fe0c -->
 ## Legis (git/CI + governance)
 
 Legis is the git/CI and governance layer of the Weft suite. Reach for it when a policy fires at the CI/git boundary and a change needs a *recordable* override or human sign-off, when you need governance attestations keyed to stable code identity (SEI), or when you need git/CI context — branches, commits, pull requests, check outcomes, and the Loomweave-bound rename feed — around the work. Enforcement is graded: agent-programmable policy cells decide whether a violation self-clears with an audit trail, is judged inline, or escalates to a human; every decision lands in an append-only, SEI-keyed audit trail that survives rename/move.
