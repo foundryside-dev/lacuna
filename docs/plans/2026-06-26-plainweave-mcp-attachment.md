@@ -36,6 +36,27 @@ source is modified. The bug already filed against loomweave (`clarion-48af930f2a
 
 ---
 
+## Phase 1 — EXECUTED 2026-06-26 (branch `plainweave-mcp-attach`)
+
+- **Reinstalled** plainweave from source: **0.0.1 → 1.0.0**; `plainweave` + `plainweave-mcp`
+  binaries present.
+- **Correction to the framing below:** the `plainweave-mcp` console-script binary already
+  existed in 0.0.1 — the earlier "no mcp command" read conflated the (absent) `plainweave mcp`
+  *subcommand* with the (present) separate `plainweave-mcp` binary. The real staleness was the
+  **version** (0.0.1→1.0.0) and the genuine gap was the **missing `.mcp.json` wiring**.
+- **Guardrail HELD:** the major version bump did **not** drift the `plainweave_intent` leg —
+  `make tour` produced no plainweave-section change, all 4 `pw-*` lacunae surface, and
+  `make verify` is **GREEN** on a clean tree. No specimen reconciliation needed.
+- **`.mcp.json` WIRED:** all 6 servers now present (`filigree, legis, loomweave, plainweave,
+  wardline, warpline`); plainweave is a stdio entry → `plainweave-mcp`. Gitignored (token
+  preserved, not committed).
+- **PENDING (next session):** verify plainweave attaches **MCP-first** — `mcp__plainweave__*`
+  binds to the staged `.plainweave` context. A `.mcp.json` change only attaches on re-attach,
+  so this cannot be confirmed in the session that made the change.
+- **Remaining:** Phase 2 (6-member attachment regression-harness).
+
+---
+
 ## ⚠️ The load-bearing risk (read first)
 
 Reinstalling plainweave to a newer build can **drift the `plainweave_intent` tour leg's
