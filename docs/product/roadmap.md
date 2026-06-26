@@ -23,6 +23,13 @@ attachment was still inconsistent in a real session.
 > the three 06-13 gaps resolved by member config-fixes). The Now theme holds; its successor
 > workstream is **plainweave MCP attachment** (the 6th member is MCP-absent in Lacuna) — see
 > Next + PDR-0007.
+>
+> **Updated: 2026-06-26 (PDR-0009, PDR-0010, PDR-0011).** Plainweave Phase 1 ACCEPTED —
+> reachable MCP-first (PDR-0010). But the seam proved more fragile than recorded: a stale
+> loomweave v10 build silently de-attached loomweave's MCP server and red-lit `make verify`
+> (caught, root-caused, fixed — PDR-0011). G1 is now a **live join census** (PDR-0009), and the
+> Phase-2 **6-member attachment regression-harness** is the live Next bet — its whole point is
+> to trip `make verify` on exactly the silent de-attach that went undetected this session.
 
 - _Moves:_ federation seam health (guardrail) and dogfood friction count.
 - _Why now:_ the joins are the product's reason to exist as a demo; a join that
@@ -30,12 +37,13 @@ attachment was still inconsistent in a real session.
 
 ## Next — proposed (intent, not committed)
 
-- **Wire the newest member (plainweave) MCP-first + 6-member attachment
-  regression-harness** (PDR-0007). plainweave ships a FastMCP server in source but is
-  MCP-absent in Lacuna (stale installed build; not in `.mcp.json`). Reconcile its
-  attachment and regression-proof all 6 members' MCP attachment so a silent de-attach
-  trips `make verify`. _(Moves: federation seam health.)_
-  _[Predecessor "MCP attachment truth" for the original 5 servers: DONE — G1 4/4, PDR-0006.]_
+- **6-member attachment regression-harness (the durable win)** — PDR-0007 Phase 2, upgraded
+  scope (PDR-0009). Assert the **join census** for all 6 members on every `make verify`:
+  reachable MCP-first + bound to the staged repo, each labelled by liveness class
+  (`live-bound | live-empty | reachable-gated | absent`), so a silent de-attach **trips the
+  gate** instead of needing manual probing. _(Moves: federation seam health.)_
+  _[Phase 1 — wire plainweave MCP-first — DONE/ACCEPTED, PDR-0010. The 2026-06-26 loomweave
+  de-attach is the live proof this harness is needed.]_
 - **One freshness/port oracle per tool.** Reconcile contradictory status
   surfaces (e.g. Loomweave doctor advertising an unreachable `:35541` while
   `:9730` is the working URL). _(Moves: dogfood friction count.)_

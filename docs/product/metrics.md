@@ -14,7 +14,8 @@ proving ground still proves." Measured by `make verify`.
 - **Definition:** `make verify` passes on `main` ⇔ (100% of live lacunae
   surfaced) ∧ (narrative/docs in lockstep) ∧ (0 uncatalogued gate-tripping
   findings).
-- **BASELINE → TARGET:** green at commit `c9d407f` (52 catalogued lacunae; was 44 at 2026-06-13 bootstrap)
+- **BASELINE → TARGET:** green at commit `445c270` (2026-06-26, clean tree, exit 0,
+  52 catalogued lacunae; was 44 at 2026-06-13 bootstrap)
   → **100% of live lacunae surfaced and `make verify` green on every `main`
   commit, by 2026-09-13.**
 - **Reversal trigger:** if holding fidelity green requires suppressing a *real*
@@ -24,19 +25,26 @@ proving ground still proves." Measured by `make verify`.
 
 ### G1 — Federation seam health
 
-The number of documented cross-tool joins an agent can reach **MCP-first**, with
-no CLI / raw-JSON-RPC fallback, in a real attached session.
+The **live census** of documented cross-tool joins an agent can reach
+**MCP-first** (no CLI / raw-JSON-RPC fallback) in a real attached session — the
+count **plus a per-join liveness class** (`live-bound | live-empty |
+reachable-gated | absent`). Measured each session and, durably, by the Phase-2
+6-member attachment harness — **not** a hand-set integer (PDR-0009). The seam set
+grows as members ship interfaces, so the census tracks reality, not a frozen N.
 
-- **N = 4 documented cross-tool joins** (2026-06-13 dogfood method status table):
-  Wardline→Filigree work joins; Loomweave→Filigree Wardline-finding enrichment;
-  Loomweave→Filigree issue association; Legis MCP/tools surface.
-- **BASELINE → TARGET:** per the 2026-06-13 re-dogfood, all 4 joins *function* but
-  **0 of 4 are cleanly reachable MCP-first** in one attached session (Filigree MCP
-  → Weft not the staged repo; Loomweave MCP → no-index context; Legis MCP absent
-  in-session) → **4 of 4 documented joins reachable MCP-first in one attached
-  session, by 2026-09-13.**
-- **Reversal trigger:** a "fixed" seam that an agent still has to shell out for is
-  not fixed — reopen it.
+- **Enumerated joins (2026-06-26 census):** the original 4 — Wardline→Filigree
+  work; Loomweave→Filigree finding-enrichment; Loomweave→Filigree issue-assoc;
+  Legis surface — **plus plainweave→loomweave** (ratified, PDR-0009). Also observed
+  live but not yet enumerated: plainweave→legis preflight, legis→loomweave
+  rename-feed; live-but-empty: filigree↔loomweave entity-assoc; reachable-but-gated:
+  legis→filigree closure-gate (needs operator `LEGIS_HMAC_KEY`).
+- **BASELINE → TARGET:** 5 of 5 enumerated joins reachable MCP-first in one attached
+  session (the 4 originals + plainweave→loomweave), each labelled by liveness class,
+  **by 2026-09-13** — and a silent de-attach must trip `make verify` (Phase-2
+  harness), not require manual probing.
+- **Reversal trigger:** a "fixed" seam an agent still has to shell out for is not
+  fixed — reopen it. A silent member de-attach the gate does **not** catch is a G1
+  failure even if a later manual probe passes (the 2026-06-26 loomweave incident).
 
 ### G2 — Dogfood friction (open count)
 
@@ -61,6 +69,28 @@ is unattached) are **labelled**, never simulated as live.
 
 ## Readings (dated)
 
+- **2026-06-26 — North star: `make verify` GREEN, exit 0 at `445c270` (clean tree); all 52
+  lacunae surface.** **CORRECTS the 2026-06-25 reading below:** the RED was NOT merely
+  dirty-tree — it was a *real fidelity failure* from a **stale loomweave v10 binary against a
+  v11 DB** (same-version uv-tool staleness) that dark-ed 5 lacunae (`lw-duplicate-locator` + 4
+  `wp-*`). Root-caused and fixed (loomweave v11 reinstall + `_finding_qualname` reconcile, 3
+  commits). Reversal trigger (suppress a real defect) NOT tripped — fixed honestly. [PDR-0011]
+- **2026-06-26 — G1: regressed then restored.** Mid-session loomweave MCP **silently
+  de-attached** (stale v10 binary) → 2 of the 4 original joins unreachable → G1 ~2/4,
+  **reversal trigger TRIPPED**. Restored after the v11 reinstall + owner MCP-restart: loomweave
+  MCP reattached; original 4 + plainweave→loomweave reachable (5/5 enumerated). Census also
+  surfaced new live joins (plainweave→legis preflight, legis→loomweave rename-feed) and honest
+  non-live states (filigree↔loomweave live-empty; legis→filigree closure-gate operator-gated).
+  [PDR-0009, PDR-0010, PDR-0011]
+- **2026-06-26 — G2 dogfood friction:** plainweave-attachment friction RESOLVED (Phase 1
+  accepted, PDR-0010). New friction: **loomweave uv-tool build staleness** (v10/v11 schema split
+  → MCP de-attach + verify red) — resolved this session; and the **loomweave duplicate-locator
+  evidence-contract rename** (consumer-boundary, report PENDING owner). Open: port/config truth,
+  scanner job semantics, large-repo ingest, + the Phase-2 harness gap (silent de-attach went
+  undetected by the gate).
+- **2026-06-26 — G3 honesty: maintained.** The live census classified each join honestly
+  (live/empty/gated/absent); no member faked. Legis closure-gate labelled operator-gated, not
+  simulated.
 - **2026-06-25 — G1 federation seam health: 4 of 4 (TARGET MET, ahead of 2026-09-13).**
   Probed in-session via `mcp__*` tools — Wardline→Filigree, Loomweave→Filigree enrichment,
   Loomweave→Filigree issue-assoc (channel reachable), Legis governance — all reachable
