@@ -400,9 +400,15 @@ def _finding_qualname(entity_id: str, evidence: str) -> str:
     """Map a loomweave finding to a module qualname the coverage gate can match.
 
     File-scoped alarms attach to ``core:file:<relpath>``; the duplicate-locator
-    attaches to ``core:project:*`` and carries the first colliding source path in
-    its evidence metadata. Anything else (e.g. subsystem-scoped facts) yields ""
-    — surfaced but matching no planted symbol.
+    attaches to ``core:project:*`` (legacy) or ``python:class:<qn>`` (loomweave
+    v11+) and carries the colliding source path in its evidence metadata. v11
+    exposes it as ``colliding_source_file_path`` (the planted ``colliding.py``) and
+    repurposes ``first_source_file_path`` for the OTHER colliding file (the package
+    ``__init__.py``); older builds carried the planted path in
+    ``first_source_file_path``. Prefer the explicit colliding path, fall back to the
+    legacy key, so both build shapes map to the same module qualname. Anything else
+    (e.g. subsystem-scoped facts) yields "" — surfaced but matching no planted
+    symbol.
     """
     path = ""
     if entity_id.startswith("core:file:"):
@@ -413,7 +419,11 @@ def _finding_qualname(entity_id: str, evidence: str) -> str:
         except (json.JSONDecodeError, AttributeError):
             meta = {}
         if isinstance(meta, dict):
-            path = meta.get("first_source_file_path") or ""
+            path = (
+                meta.get("colliding_source_file_path")
+                or meta.get("first_source_file_path")
+                or ""
+            )
     if not path:
         return ""
     p = Path(path)

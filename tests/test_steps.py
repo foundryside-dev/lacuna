@@ -159,6 +159,34 @@ def test_loomweave_findings_maps_paths_to_module_qualnames(tmp_path):
     assert all(not rule.startswith("LMWV-FACT-") for rule, _ in result.surfaced)
 
 
+def test_loomweave_findings_maps_v11_duplicate_locator_shape(tmp_path):
+    """loomweave v11 reshaped the duplicate-locator finding: it anchors to the
+    colliding class (`python:class:…`) and carries the planted file in
+    `colliding_source_file_path`, while `first_source_file_path` now points at the
+    OTHER colliding file (the package `__init__.py`). The step must still map it to
+    the planted module `specimen.colliding` — reading the colliding path, not the
+    legacy key (which would yield `specimen.colliding.__init__` and miss)."""
+    from tour import steps
+
+    db = tmp_path / "loomweave.db"
+    con = sqlite3.connect(db)
+    con.execute("create table findings (rule_id text, entity_id text, evidence text)")
+    con.execute(
+        "insert into findings values ('LMWV-DUPLICATE-LOCATOR', "
+        "'python:class:specimen.colliding.ShelfMark', ?)",
+        (
+            '{"metadata": {'
+            f'"colliding_source_file_path": "{steps.ROOT}/specimen/colliding.py", '
+            f'"first_source_file_path": "{steps.ROOT}/specimen/colliding/__init__.py"'
+            "}}",
+        ),
+    )
+    con.commit(); con.close()
+
+    result = steps.loomweave_findings(db_path=db)
+    assert ("LMWV-DUPLICATE-LOCATOR", "specimen.colliding") in result.surfaced
+
+
 def test_filigree_work_cycle_detail_is_deterministic(monkeypatch):
     from tour import steps
 
