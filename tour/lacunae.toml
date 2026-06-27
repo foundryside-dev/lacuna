@@ -554,6 +554,33 @@ explanation = "NOT A FLAW — a positive plainweave capability demo. The harness
 expected_tool = "plainweave"
 expected_rule = "pw-surface-scoping"
 
+# ── Plainweave peer-facts capability demos (pw-requirements-enrichment / pw-wardline-peer-facts) ──
+# Planted 2026-06-28. The two cross-member peer-facts producers Plainweave shipped in 1.1,
+# now exercised over the CLI: requirements-enrichment (the producer for Warpline's reserved
+# enrichment.requirements slot) and wardline-peer-facts (sibling-owned .wardline/ findings
+# surfaced as advisory context; Plainweave never scans). Both are advisory/local/verdict-free
+# and assert the load-bearing NO-SILENT-CLEAN invariant, not just happy paths.
+
+[[lacuna]]
+id = "pw-requirements-enrichment"
+file = "specimen/cli.py"
+symbol = "_add_book"
+category = "peer-facts"
+demonstrates = ["plainweave", "plainweave+warpline"]
+explanation = "NOT A FLAW — a positive plainweave capability demo. Over the covered+uncovered seed, `plainweave requirements-enrichment` is the Plainweave producer for Warpline's reserved enrichment.requirements slot: a covered surface (cli._add_book) reports `present` with non-empty requirements; the recorded-but-unbound orphan (tour.__main__.main) reports `absent`; and a well-formed-but-absent locator reports `unavailable` — an identity gap is 'cannot tell', NEVER a silent `absent`. The load-bearing no-silent-clean contract. Advisory, local-only, never gates."
+expected_tool = "plainweave"
+expected_rule = "pw-requirements-enrichment"
+
+[[lacuna]]
+id = "pw-wardline-peer-facts"
+file = "specimen/peerfacts.py"
+symbol = "unsafe_sink"
+category = "peer-facts"
+demonstrates = ["plainweave", "plainweave+wardline"]
+explanation = "NOT A FLAW — a positive plainweave capability demo. `plainweave wardline-peer-facts` reads sibling-owned .wardline/ snapshots as advisory peer facts (Plainweave never scans; Wardline owns the trust gate). Over a frozen two-snapshot fixture with scan-identity manifests: an active defect and a non-defect finding surface as advisory context; a finding gone from the latest in-scope snapshot is reported resolved_or_unseen while an out-of-scope prior finding is honestly flagged (wardline_scope_mismatch), never silently resolved; and an absent .wardline/ yields freshness=unavailable, never clean. Advisory, local-only, never gates."
+expected_tool = "plainweave"
+expected_rule = "pw-wardline-peer-facts"
+
 # ── MCP-attachment capability demos (mcp-attach-*) ──────────────────────────────
 # Planted 2026-06-28. Each member (loomweave, filigree, wardline, legis, warpline,
 # plainweave) is spawned via .mcp.json, must initialize, and must bind its

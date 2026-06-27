@@ -644,6 +644,14 @@ PLAINWEAVE_CLI_MAIN = "specimen.cli.main"         # justified  (covered)
 PLAINWEAVE_TOUR_MAIN = "tour.__main__.main"        # orphan + scoped-out
 PLAINWEAVE_ABSENT_TAGS = {"exported-api", "http-route"}  # the honest-degradation classes
 
+# Peer-facts demos (pw-requirements-enrichment / pw-wardline-peer-facts). Frozen anchors
+# pin against the producers' .v1 envelopes over the same covered+uncovered seed; live
+# numbers never enter the rendered narrative (determinism).
+PLAINWEAVE_ENRICH_COVERED = "python:function:specimen.cli._add_book"          # -> present
+PLAINWEAVE_ENRICH_ABSENT = "python:function:tour.__main__.main"              # -> absent (orphan)
+PLAINWEAVE_ENRICH_UNAVAILABLE = "python:function:specimen.cli._does_not_exist"  # -> unavailable (identity gap)
+PLAINWEAVE_WARDLINE_ACTIVE = "specimen.peerfacts.unsafe_sink"  # active-defect anchor (frozen fixture)
+
 
 def _plainweave_json(args: list[str]) -> dict | None:
     """Run `plainweave <args> --json` and parse stdout. None on any failure.
@@ -772,6 +780,65 @@ def plainweave_intent() -> StepResult:
         ),
         surfaced=tuple(pairs),
         note=note,
+    )
+
+
+def plainweave_requirements_enrichment() -> StepResult:
+    """plainweave+warpline: per-entity requirements enrichment, no-silent-clean.
+
+    Over the same covered+uncovered seed, assert the three honest states a Warpline
+    consumer relies on: a covered surface -> `present` (non-empty requirements); the
+    recorded-but-unbound orphan -> `absent`; a well-formed-but-absent locator ->
+    `unavailable` (an identity gap is "cannot tell", NEVER `absent`). Advisory, local-only,
+    never gates. Frozen anchors; deterministic. Never raises (tour contract).
+    """
+    name = "plainweave requirements-enrichment"
+    if not _tool("plainweave"):
+        return StepResult(name, ok=False, detail="plainweave not installed — uv tool install /home/john/plainweave")
+
+    def pw(args: list[str]) -> dict:
+        env = _plainweave_json(args)
+        if env is None or not env.get("ok"):
+            raise RuntimeError(f"plainweave call failed: {args[0] if args else '?'}")
+        return env.get("data") or {}
+
+    try:
+        plainweave_seed.seed(pw)
+        env = _plainweave_json(
+            ["requirements-enrichment", PLAINWEAVE_ENRICH_COVERED, PLAINWEAVE_ENRICH_ABSENT, PLAINWEAVE_ENRICH_UNAVAILABLE]
+        )
+        if env is None or not env.get("ok"):
+            raise RuntimeError("requirements-enrichment call failed")
+        items = {it["entity_ref"]: it for it in (env.get("data") or {}).get("items", []) if it.get("entity_ref")}
+        covered = items.get(PLAINWEAVE_ENRICH_COVERED, {})
+        absent = items.get(PLAINWEAVE_ENRICH_ABSENT, {})
+        unavailable = items.get(PLAINWEAVE_ENRICH_UNAVAILABLE, {})
+    except Exception as exc:  # tour contract: degrade, never raise. Type name only — no hex/digits.
+        return StepResult(name, ok=False, detail=f"plainweave enrichment failed: {type(exc).__name__}")
+
+    pairs: list[tuple[str, str]] = []
+    # Load-bearing no-silent-clean conjunction: present AND absent AND unavailable (NOT
+    # absent) must all hold. A regression collapsing unavailable->absent drops the pair ->
+    # the lacuna lands in missing_ids -> `make verify` reds (fail loud).
+    if (
+        covered.get("status") == "present"
+        and covered.get("requirements")
+        and absent.get("status") == "absent"
+        and unavailable.get("status") == "unavailable"
+    ):
+        pairs.append(("pw-requirements-enrichment", PLAINWEAVE_ADD_BOOK))
+
+    return StepResult(
+        name,
+        ok=len(pairs) == 1,
+        detail=(
+            "over the covered+uncovered seed, plainweave requirements-enrichment reports "
+            "cli._add_book present (bound, non-empty requirements), tour.__main__.main absent "
+            "(recorded, unbound), and an unresolvable locator unavailable (identity gap — never "
+            "a silent 'absent') — the Warpline-facing no-silent-clean contract; advisory, "
+            "local-only, never gates"
+        ),
+        surfaced=tuple(pairs),
     )
 
 

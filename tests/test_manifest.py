@@ -7,7 +7,7 @@ MANIFEST = Path("/home/john/lacuna/tour/lacunae.toml")
 
 def test_loads_all_lacunae():
     m = load_manifest(MANIFEST)
-    assert len(m.lacunae) == 58
+    assert len(m.lacunae) == 60
     ids = {l.id for l in m.lacunae}
     assert "wl-trust-violation" in ids
     # the warpline change-impact wing (advisory, never gates)
@@ -19,6 +19,8 @@ def test_loads_all_lacunae():
         "pw-intent-orphan",
         "pw-surface-scoping",
     } <= ids
+    # the plainweave peer-facts wing (advisory/local; assert no-silent-clean)
+    assert {"pw-requirements-enrichment", "pw-wardline-peer-facts"} <= ids
     # the loomweave navigation showcases (call chain, coupling, entry point, subsystem,
     # and the rc4 relation-edge pair: inheritance + decorator)
     assert {
