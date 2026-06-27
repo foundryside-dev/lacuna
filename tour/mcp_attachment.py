@@ -22,15 +22,34 @@ Summary of spike refinements (supersedes any pre-spike table):
   Path-vs-store (4 path members must assert BOTH):
     loomweave, filigree, legis, and plainweave return a path field that may echo
     ROOT even when the backing store is absent or unreadable. The gate MUST assert
-    both the path predicate AND the store-read signal (e.g. db_present, db_initialized,
-    binding_chain, initialized). wardline and warpline already return a store-read
-    binding_ok boolean — no path assertion needed for those two.
+    BOTH the path predicate AND the store-read signal — check the FULL AND, not one
+    field. Precise per-member store-read signals (phase0-findings.md table is canonical):
+      loomweave   result.db_present == True AND result.db_identity.data_version is not None
+      filigree    db_initialized == True AND schema_compatible == True
+      legis       store.binding_chain == "ok" AND store.governance_chain == "ok"
+      plainweave  structuredContent.data.initialized == True AND schema_version is not None
+    wardline and warpline already return a store-read binding_ok boolean (plus
+    store.schema_version is not null) — no separate path predicate needed for those two.
 
   The envelope ok is call-success, never the verdict:
     All six members' binding tool returns an ok field at the envelope level. This
     signals whether the RPC call succeeded, NOT whether the member is bound to ROOT.
     Legis in particular returns structuredContent.ok = False on benign install warnings
     while being correctly bound. Read the contract field, not the envelope ok.
+
+  Per-member silent-failure modes (Task-2 implementer MUST handle; phase0-findings.md §1-7):
+    filigree (streamable-http SSE): the request MUST send the header
+      Accept: application/json, text/event-stream — omitting it returns HTTP 406 with a
+      JSON-RPC error, the PRIMARY silent failure mode for this transport. The transport is
+      STATELESS (no Mcp-Session-Id returned); capture and echo it defensively if a future
+      server starts sending one, but follow-up POSTs need only the auth header today.
+    legis: the binding call is doctor_get (returns all checks cleanly) — NOT posture_get /
+      policy_list, which crash on "no such table: audit_log". Read the NAMED check
+      (runtime.policy_cells), not top-level structuredContent.ok (False on benign install
+      warnings while correctly bound).
+    wardline: the doctor binding read is INDEPENDENT of the loomweave :9730 HTTP companion
+      (:9730 serves wardline's emit/scan path, not the binding read) — no spawn-ordering
+      requirement; wardline may spawn before loomweave serve.
 
 All 6 members self-report a server-resolved store-read fact. The tautological
 cwd==ROOT static lint is NOT used — wardline and warpline now have real binding tools
