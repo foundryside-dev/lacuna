@@ -21,3 +21,12 @@ def test_load_server_specs_parses_stdio_and_http_and_redacts(tmp_path: Path):
     assert specs["filigree"].redacted_headers() == {"Authorization": "Bearer <redacted>"}
     # the raw token is never exposed by the redacting accessor
     assert "SECRET-TOKEN" not in json.dumps(specs["filigree"].redacted_headers())
+
+
+def test_serverspec_repr_does_not_leak_token():
+    s = ServerSpec(name="filigree", transport="streamable-http",
+                   url="http://h/mcp/", headers={"Authorization": "Bearer SECRET-TOKEN-XYZ"})
+    assert "SECRET-TOKEN-XYZ" not in repr(s)
+    assert "SECRET-TOKEN-XYZ" not in str(s)
+    # the redacting accessor is still the way to surface headers safely
+    assert s.redacted_headers() == {"Authorization": "Bearer <redacted>"}

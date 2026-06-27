@@ -67,9 +67,9 @@ class ServerSpec:
     transport: str                      # "stdio" | "streamable-http"
     command: str | None = None
     args: tuple[str, ...] = ()
-    env: dict[str, str] = field(default_factory=dict)
+    env: dict[str, str] = field(default_factory=dict, repr=False)
     url: str | None = None
-    headers: dict[str, str] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict, repr=False)
 
     def redacted_headers(self) -> dict[str, str]:
         return {k: ("Bearer <redacted>" if k.lower() == "authorization" else v)
