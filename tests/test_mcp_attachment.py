@@ -6,6 +6,12 @@ from pathlib import Path
 from tour.mcp_attachment import classify, load_server_specs, probe, redact, ServerSpec
 from tour import mcp_attachment as mod
 from tour import steps
+from tour.manifest import load_manifest
+from tour.report import StepResult
+from tour import __main__ as tour_main
+from tour.capability import Capability
+
+MANIFEST = Path("/home/john/lacuna/tour/lacunae.toml")
 
 
 # ── Task-1 tests (existing) ────────────────────────────────────────────────────
@@ -441,3 +447,79 @@ def test_mcp_attach_lacunae_match_surfaced_tokens_and_trip_on_miss():
     # loomweave de-attached (token absent) → its lacuna is MISSING (gate trips)
     five = StepResult("mcp", False, "", tuple(("mcp-attach", x) for x in members if x != "loomweave"))
     assert "mcp-attach-loomweave" in coverage(m, [five]).missing_ids
+
+
+# ── Task 6: Negative tests — gate trips on a silent de-attach, names cause ─────
+
+def test_run_verify_trips_when_live_member_de_attaches(monkeypatch, capsys):
+    manifest = load_manifest(MANIFEST)
+    # The leg surfaces EVERY planted lacuna EXCEPT mcp-attach-loomweave (the de-attached
+    # member), so coverage()'s ONLY miss is that one token; distinct member names never
+    # cross-match (_symbol_matches is exact / dotted-suffix), so no sibling covers it.
+    surfaced = tuple(
+        (l.expected_rule, l.symbol) for l in manifest.lacunae if l.id != "mcp-attach-loomweave"
+    )
+    # The leg carries the failure CAUSE in `note` (the real leg builds this in Task 4:
+    # `ATTACH FAILED: … | <member>:<liveness>; …`, members sorted) — run_verify must
+    # surface it so the gate names WHY, not only WHICH (D17). loomweave is the de-attach.
+    leg = StepResult("mcp attachment", True, "frozen detail", surfaced,
+                     note=("ATTACH FAILED: mcp-attach-loomweave — fix before running make "
+                           "tour; the coverage gate fails verify by name | "
+                           "filigree:live-bound; legis:live-bound; loomweave:absent (handshake-failed); "
+                           "plainweave:live-bound; warpline:live-bound; wardline:live-bound"))
+    # loomweave's CLI is LIVE — THIS is the `expected_tool in live` condition that ARMS the
+    # gate (mcp-attach-loomweave.expected_tool == "loomweave"). Only loomweave is live here,
+    # so it is the SOLE member whose missing token can trip verify → exactly one failure.
+    caps = [Capability(name="loomweave", available=True, detail="/x/loomweave")]
+    # run_verify() already HAS an injection seam: _drive is a module-level function, so the
+    # (caps, results) refactor the defect floats is unnecessary — monkeypatch _drive directly.
+    monkeypatch.setattr(tour_main, "_drive", lambda: (caps, [leg]))
+    # Isolate the lockstep branch: echo the committed docs so fresh == on-disk and the
+    # narrative-staleness failure cannot fire, leaving the live-member coverage gate the SOLE cause.
+    monkeypatch.setattr(tour_main, "render_tour_md", lambda results: tour_main.TOUR_MD.read_text())
+    monkeypatch.setattr(tour_main, "render_matrix_md", lambda m, c: tour_main.MATRIX_MD.read_text())
+
+    rc = tour_main.run_verify()
+    out = capsys.readouterr().out
+    assert rc == 1                          # the gate trips: a live member's attach token went dark
+    assert "mcp-attach-loomweave" in out    # ...and run_verify NAMES the de-attached member
+    assert "stale" not in out               # RIGHT reason — the live-member coverage gate, NOT doc drift
+    # D17: run_verify names not just WHICH token went dark but WHY — the leg's `note`
+    # (per-member liveness / the ATTACH FAILED cause: timed-out / garbled JSON /
+    # connected-but-unbound / missing binary) rides through, so the operator sees the
+    # cause, not a bare token. `note` is excluded from the locked markdown (StepResult.note
+    # is never rendered into docs/tour.md), so emitting it on failure preserves determinism.
+    assert "loomweave:absent (handshake-failed)" in out  # the CAUSE is surfaced, not only the token
+
+
+def test_run_verify_trips_on_not_installed_mcp_binary_distinctly(monkeypatch, capsys):
+    # D18: the SECOND absent scenario — a live member whose SEPARATE *-mcp binary is not
+    # installed. capability.detect() marks `warpline` live by its CLI name, but .mcp.json
+    # spawns the distinct `warpline-mcp` binary; when that binary is absent the probe folds
+    # to `absent` with bound_context "not-installed". The gate must still trip and name the
+    # member, but the diagnostic must read "not-installed" (install the binary) — NOT
+    # "handshake-failed" (a de-attach to investigate), so the two are never confused.
+    manifest = load_manifest(MANIFEST)
+    surfaced = tuple(
+        (l.expected_rule, l.symbol) for l in manifest.lacunae if l.id != "mcp-attach-warpline"
+    )
+    leg = StepResult("mcp attachment", True, "frozen detail", surfaced,
+                     note=("ATTACH FAILED: mcp-attach-warpline — fix before running make "
+                           "tour; the coverage gate fails verify by name | "
+                           "filigree:live-bound; legis:live-bound; loomweave:live-bound; "
+                           "plainweave:live-bound; warpline:absent (not-installed); "
+                           "wardline:live-bound"))
+    # Only `warpline` (the CLI capability.detect() resolves) is live, so mcp-attach-warpline
+    # is the SOLE armed lacuna whose missing token can trip verify → exactly one failure.
+    caps = [Capability(name="warpline", available=True, detail="/x/warpline")]
+    monkeypatch.setattr(tour_main, "_drive", lambda: (caps, [leg]))
+    monkeypatch.setattr(tour_main, "render_tour_md", lambda results: tour_main.TOUR_MD.read_text())
+    monkeypatch.setattr(tour_main, "render_matrix_md", lambda m, c: tour_main.MATRIX_MD.read_text())
+
+    rc = tour_main.run_verify()
+    out = capsys.readouterr().out
+    assert rc == 1                                     # the gate trips for a missing *-mcp binary too
+    assert "mcp-attach-warpline" in out                # ...naming the member
+    assert "stale" not in out                          # RIGHT reason — the live-member coverage gate, not drift
+    assert "warpline:absent (not-installed)" in out    # D18: diagnosed as NOT-INSTALLED (install the binary)...
+    assert "handshake-failed" not in out               # ...and NEVER confused with a de-attach

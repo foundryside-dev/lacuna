@@ -70,9 +70,19 @@ def run_verify() -> int:
 
     # 1. Every lacuna whose expected tool is LIVE must be surfaced.
     live = {c.name for c in caps if c.available}
+    # D17: the mcp-attachment leg carries the failure CAUSE (per-member liveness — the
+    # ATTACH FAILED reason: timed-out / garbled JSON / connected-but-unbound / missing
+    # binary) in its `note`. Surface it on a missing attach token so the gate names WHY a
+    # member de-attached, not only WHICH. `note` is excluded from the locked markdown, so
+    # emitting it keeps `make verify` byte-for-byte deterministic.
+    legs_by_name = {r.name: r for r in results}
     for lac in manifest.lacunae:
         if lac.expected_tool in live and lac.id in cov.missing_ids:
-            failures.append(f"expected lacuna not surfaced: {lac.id} ({lac.expected_rule})")
+            msg = f"expected lacuna not surfaced: {lac.id} ({lac.expected_rule})"
+            leg = legs_by_name.get("mcp attachment")
+            if lac.id.startswith("mcp-attach-") and leg is not None and leg.note:
+                msg += f" — {leg.note}"
+            failures.append(msg)
 
     # 2. Narrative lockstep: regenerated docs must match the committed files.
     fresh_tour = render_tour_md(results)
