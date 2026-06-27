@@ -30,6 +30,14 @@ attachment was still inconsistent in a real session.
 > (caught, root-caused, fixed — PDR-0011). G1 is now a **live join census** (PDR-0009), and the
 > Phase-2 **6-member attachment regression-harness** is the live Next bet — its whole point is
 > to trip `make verify` on exactly the silent de-attach that went undetected this session.
+>
+> **Updated: 2026-06-28 (PDR-0012, PDR-0013, PDR-0014).** The Phase-2 harness is **DELIVERED +
+> GREEN** — `make verify` now asserts all 6 members attach AND store-bind live on every run, so a
+> silent de-attach trips the gate by name (built end-to-end; opus whole-branch review
+> Fix-then-merge, all fixed; branch unpushed pending owner). **G1 is now a GATE, not a manual
+> probe.** Two refinements landed: warpline+wardline got server-side store-read binding tools (R1,
+> PDR-0013), and the spike strengthened the 4 path-members to path-AND-store (PDR-0014). The Now
+> theme's centerpiece is realized; the remaining Next items carry it forward.
 
 - _Moves:_ federation seam health (guardrail) and dogfood friction count.
 - _Why now:_ the joins are the product's reason to exist as a demo; a join that
@@ -37,13 +45,13 @@ attachment was still inconsistent in a real session.
 
 ## Next — proposed (intent, not committed)
 
-- **6-member attachment regression-harness (the durable win)** — PDR-0007 Phase 2, upgraded
-  scope (PDR-0009). Assert the **join census** for all 6 members on every `make verify`:
-  reachable MCP-first + bound to the staged repo, each labelled by liveness class
-  (`live-bound | live-empty | reachable-gated | absent`), so a silent de-attach **trips the
-  gate** instead of needing manual probing. _(Moves: federation seam health.)_
-  _[Phase 1 — wire plainweave MCP-first — DONE/ACCEPTED, PDR-0010. The 2026-06-26 loomweave
-  de-attach is the live proof this harness is needed.]_
+- **6-member attachment regression-harness — ✅ DELIVERED 2026-06-28 (PDR-0012).** The durable
+  win shipped: `make verify` asserts all 6 members attach AND store-bind to the staged repo on
+  every run (green end-to-end, all 6 live-bound), so a silent de-attach trips the gate by name.
+  Branch `plainweave-mcp-attach`, **unpushed** (owner push/PR pending). _Remaining sub-increment:_
+  **Phase 5 join census** (the `live-bound | live-empty | reachable-gated | absent` per-join
+  liveness classes) DEFERRED to its own PR — the plan ships the gate first. _(Moved: federation
+  seam health — now a gate.)_
 - **One freshness/port oracle per tool.** Reconcile contradictory status
   surfaces (e.g. Loomweave doctor advertising an unreachable `:35541` while
   `:9730` is the working URL). _(Moves: dogfood friction count.)_

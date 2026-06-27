@@ -69,6 +69,36 @@ is unattached) are **labelled**, never simulated as live.
 
 ## Readings (dated)
 
+- **2026-06-28 — North star (`make verify`): GREEN end-to-end with the Phase-2 harness on the
+  (unpushed) `plainweave-mcp-attach` branch; corpus 52 → 58 there.** The 6-member MCP-attachment
+  harness is DELIVERED (PDR-0012): `make verify` exits 0 with the live `steps.mcp_attachment()`
+  leg driving all 6 federation MCP servers — all attach+store-bind, the 6 `mcp-attach-*` lacunae
+  surface, narrative lockstep, tree clean. The gate is now BIDIRECTIONAL: two negative tests prove
+  `make verify` TRIPS (naming the member + cause) on a silent de-attach. Reversal trigger (suppress
+  a real defect) NOT tripped. The **main-commit baseline (445c270, 52 lacunae) is unchanged until
+  the branch merges** (push/PR owner-gated). (Note: tour.md carries live loomweave entity counts
+  that drift on re-index — an existing tour property; regen+commit to re-green, not a fidelity
+  failure.)
+- **2026-06-28 — G1 (federation seam health): the live census is now a GATE, not a manual probe
+  (PDR-0012).** All 6 members attach AND store-bind to the staged repo, re-verified by `make verify`
+  on every run — durably, not by a one-off in-session probe. PDR-0009's reversal trigger ("a silent
+  member de-attach the gate does NOT catch is a G1 failure even if a later manual probe passes") is
+  structurally ADDRESSED: the gate is exactly that catch. Binding is store-read for all 6
+  (warpline/wardline new tools, PDR-0013; the 4 path-members strengthened to path-AND-store,
+  PDR-0014) — catching the stale-but-running incident class, not just process-start. The attach
+  census is MET as a gate, ahead of the 2026-09-13 target; the per-join liveness-class census
+  (Phase 5) is deferred to its own PR.
+- **2026-06-28 — G2 (dogfood friction):** the warpline/wardline binding-tool gap RESOLVED — both
+  sibling members shipped server-side store-read binding tools (PDR-0013). NEW friction discovered
+  + mitigated: **the legis MCP server re-stamps its `AGENTS.md`/`CLAUDE.md` instruction-block to the
+  installed version on spawn** — the harness leg spawns legis on every `make verify`, so a version
+  bump would dirty the tree and trip the clean-tree gate; absorbed v1.3.0 and confirmed durable, but
+  a future legis upgrade requires re-absorbing (current-state open item). Open otherwise: port/config
+  truth, scanner job semantics, large-repo ingest.
+- **2026-06-28 — G3 (demonstration honesty): maintained.** The 6 `mcp-attach-*` lacunae are honestly
+  labelled "NOT A FLAW — a federation seam-integrity demo"; the leg honest-degrades (surfaces a token
+  only for a member that genuinely attached AND bound); no member faked as live.
+
 - **2026-06-26 — North star: `make verify` GREEN, exit 0 at `445c270` (clean tree); all 52
   lacunae surface.** **CORRECTS the 2026-06-25 reading below:** the RED was NOT merely
   dirty-tree — it was a *real fidelity failure* from a **stale loomweave v10 binary against a
