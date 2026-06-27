@@ -371,3 +371,23 @@ def test_http_rpc_parses_sse_and_echoes_session_id(monkeypatch):
     # it must trip this test, not silently 406 at runtime.
     for entry in call_log:
         assert "application/json, text/event-stream" in entry["accept_header"]
+
+
+# ── Task 3: MCP-attachment lacunae tests ───────────────────────────────────────
+
+def test_mcp_attach_lacunae_match_surfaced_tokens_and_trip_on_miss():
+    from pathlib import Path
+    from tour.manifest import load_manifest
+    from tour.report import coverage, StepResult
+
+    MANIFEST = Path("/home/john/lacuna/tour/lacunae.toml")
+    m = load_manifest(MANIFEST)
+    ids = {l.id for l in m.lacunae}
+    members = ["loomweave", "filigree", "wardline", "legis", "warpline", "plainweave"]
+    assert {f"mcp-attach-{x}" for x in members} <= ids
+    # all 6 surfaced → all 6 demonstrated
+    all6 = StepResult("mcp", True, "", tuple(("mcp-attach", x) for x in members))
+    assert {f"mcp-attach-{x}" for x in members} <= coverage(m, [all6]).demonstrated_ids
+    # loomweave de-attached (token absent) → its lacuna is MISSING (gate trips)
+    five = StepResult("mcp", False, "", tuple(("mcp-attach", x) for x in members if x != "loomweave"))
+    assert "mcp-attach-loomweave" in coverage(m, [five]).missing_ids

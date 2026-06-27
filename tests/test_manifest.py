@@ -7,7 +7,7 @@ MANIFEST = Path("/home/john/lacuna/tour/lacunae.toml")
 
 def test_loads_all_lacunae():
     m = load_manifest(MANIFEST)
-    assert len(m.lacunae) == 52
+    assert len(m.lacunae) == 58
     ids = {l.id for l in m.lacunae}
     assert "wl-trust-violation" in ids
     # the warpline change-impact wing (advisory, never gates)
@@ -29,6 +29,9 @@ def test_loads_all_lacunae():
         "lw-inheritance",
         "lw-decorator",
     } <= ids
+    # the mcp-attachment federation seam-integrity demos (6 members)
+    assert {f"mcp-attach-{x}" for x in
+            ("loomweave", "filigree", "wardline", "legis", "warpline", "plainweave")} <= ids
 
 
 def test_lacuna_fields():

@@ -553,3 +553,72 @@ demonstrates = ["plainweave"]
 explanation = "NOT A FLAW — a positive plainweave capability demo. The harness's own entry-point (tour.__main__.main) is a public surface in the raw catalog; `plainweave intent coverage --exclude-namespace tour.` scopes it OUT of the product denominator, measuring the real exported API, and honestly reports the catalog incomplete (denominator_complete=false; absent tag classes exported-api, http-route) rather than overstating coverage. Advisory, local-only, never gates."
 expected_tool = "plainweave"
 expected_rule = "pw-surface-scoping"
+
+# ── MCP-attachment capability demos (mcp-attach-*) ──────────────────────────────
+# Planted 2026-06-28. Each member (loomweave, filigree, wardline, legis, warpline,
+# plainweave) is spawned via .mcp.json, must initialize, and must bind its
+# server-side store to the staged lacuna repo (via .weft/ or similar). Silent
+# de-attach (the member starts clean but cannot read its store) is the seam-integrity
+# risk class. These are NOT-A-FLAW capability demos: the rule_token is "mcp-attach"
+# + member name; coverage() matches it to expected_rule="mcp-attach" +
+# symbol=<member>, which must be distinct (cross-match never occurs).
+
+[[lacuna]]
+id = "mcp-attach-loomweave"
+file = ".mcp.json"
+symbol = "loomweave"
+category = "mcp-attachment"
+demonstrates = ["loomweave"]
+explanation = "NOT A FLAW — a federation seam-integrity demo. loomweave's .mcp.json-configured MCP server (`loomweave serve`) spawns, completes the MCP initialize handshake, and binds to the staged lacuna repo via a server-side store read — reachable MCP-first, no CLI fallback. A silent de-attach (a stale build that starts clean but cannot read its repo-scoped store — the 2026-06-26 loomweave incident class) makes this lacuna go dark and trips make verify."
+expected_tool = "loomweave"
+expected_rule = "mcp-attach"
+
+[[lacuna]]
+id = "mcp-attach-filigree"
+file = ".mcp.json"
+symbol = "filigree"
+category = "mcp-attachment"
+demonstrates = ["filigree"]
+explanation = "NOT A FLAW — a federation seam-integrity demo. filigree's .mcp.json-configured MCP server (streamable-http MCP server) spawns, completes the MCP initialize handshake, and binds to the staged lacuna repo via a server-side store read — reachable MCP-first, no CLI fallback. A silent de-attach (a stale build that starts clean but cannot read its repo-scoped store — the 2026-06-26 loomweave incident class) makes this lacuna go dark and trips make verify."
+expected_tool = "filigree"
+expected_rule = "mcp-attach"
+
+[[lacuna]]
+id = "mcp-attach-wardline"
+file = ".mcp.json"
+symbol = "wardline"
+category = "mcp-attachment"
+demonstrates = ["wardline"]
+explanation = "NOT A FLAW — a federation seam-integrity demo. wardline's .mcp.json-configured MCP server (`wardline mcp --root .`) spawns, completes the MCP initialize handshake, and binds to the staged lacuna repo via a server-side store read — reachable MCP-first, no CLI fallback. A silent de-attach (a stale build that starts clean but cannot read its repo-scoped store — the 2026-06-26 loomweave incident class) makes this lacuna go dark and trips make verify."
+expected_tool = "wardline"
+expected_rule = "mcp-attach"
+
+[[lacuna]]
+id = "mcp-attach-legis"
+file = ".mcp.json"
+symbol = "legis"
+category = "mcp-attachment"
+demonstrates = ["legis"]
+explanation = "NOT A FLAW — a federation seam-integrity demo. legis's .mcp.json-configured MCP server (`legis mcp`) spawns, completes the MCP initialize handshake, and binds to the staged lacuna repo via a server-side store read — reachable MCP-first, no CLI fallback. A silent de-attach (a stale build that starts clean but cannot read its repo-scoped store — the 2026-06-26 loomweave incident class) makes this lacuna go dark and trips make verify."
+expected_tool = "legis"
+expected_rule = "mcp-attach"
+
+[[lacuna]]
+id = "mcp-attach-warpline"
+file = ".mcp.json"
+symbol = "warpline"
+category = "mcp-attachment"
+demonstrates = ["warpline"]
+explanation = "NOT A FLAW — a federation seam-integrity demo. warpline's .mcp.json-configured MCP server (`warpline-mcp`) spawns, completes the MCP initialize handshake, and binds to the staged lacuna repo via a server-side store read — reachable MCP-first, no CLI fallback. A silent de-attach (a stale build that starts clean but cannot read its repo-scoped store — the 2026-06-26 loomweave incident class) makes this lacuna go dark and trips make verify."
+expected_tool = "warpline"
+expected_rule = "mcp-attach"
+
+[[lacuna]]
+id = "mcp-attach-plainweave"
+file = ".mcp.json"
+symbol = "plainweave"
+category = "mcp-attachment"
+demonstrates = ["plainweave"]
+explanation = "NOT A FLAW — a federation seam-integrity demo. plainweave's .mcp.json-configured MCP server (`plainweave-mcp`) spawns, completes the MCP initialize handshake, and binds to the staged lacuna repo via a server-side store read — reachable MCP-first, no CLI fallback. A silent de-attach (a stale build that starts clean but cannot read its repo-scoped store — the 2026-06-26 loomweave incident class) makes this lacuna go dark and trips make verify."
+expected_tool = "plainweave"
+expected_rule = "mcp-attach"
