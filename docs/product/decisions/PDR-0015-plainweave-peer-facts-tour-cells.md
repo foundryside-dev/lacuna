@@ -51,6 +51,29 @@ Two design choices keep both legs deterministic and offline:
   `materialize_workspace()` helper; the intent leg's behavior is unchanged (it uses the
   defaults).
 
+## Clean-checkout prerequisites (owner handoff — two environment items, not code defects)
+
+`make verify` is green in the authoring environment, but reproducible green on a **fresh
+clone** needs two owner actions; neither is a defect in the two demos (both are
+determinism-clean, with unit + per-conjunct drop-tests and real-producer integration
+smokes passing):
+
+1. **Install the updated `plainweave`.** The tour shells out to `~/.local/bin/plainweave`,
+   which must carry the new `wardline-peer-facts` / `requirements-enrichment` subcommands
+   (Plainweave PDR-015). `uv tool install` currently fails on a **pre-existing Plainweave
+   packaging bug**: `[tool.hatch.build.targets.wheel.force-include]` re-includes
+   `src/plainweave/web/static`, so hatchling double-adds `plainweave/web/static/.gitkeep`
+   ("A second file is being added to the wheel archive at the same path"). Fix that
+   (e.g. drop `.gitkeep` from the force-included tree), then install. Verified here against
+   an editable build of the Plainweave feature branch.
+2. **Regenerate `docs/tour.md` on a clean tree.** The pre-existing `legis govern` leg bakes
+   git-tree-cleanliness into the byte-locked narrative (it `[WARN]`s on a dirty tree, signs
+   `[PASS]` on a clean one). This branch's `make tour` ran while concurrent, un-owned
+   changes (`AGENTS.md`, `CLAUDE.md`, …) left the tree dirty, so the committed `tour.md`
+   shows `[WARN] legis govern`. On a clean checkout, `make tour` regenerates `[PASS]`
+   automatically — re-run it after item 1 and recommit. (`docs/matrix.md` is
+   manifest-derived and tree-independent, so its two new cells are already correct.)
+
 ## Reversal trigger
 
 If Plainweave reopens either `.v1` item shape (its PDR-015 reversal trigger), these legs
