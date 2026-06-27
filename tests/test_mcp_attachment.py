@@ -118,6 +118,34 @@ def test_redact_strips_authorization_token():       # R5/QA: a real token must N
     assert "Bearer <redacted>" in out
 
 
+def test_redact_strips_token_in_serialized_dict_and_json_forms():
+    # Defense-in-depth: a stringified headers dict / JSON (e.g. repr(headers) leaking into an
+    # error) puts a QUOTE, not :/=, after the name — the pre-hardening regex missed this form.
+    # The load-bearing assertion is the SECRET IS GONE; the closing quote must survive intact.
+    json_form = '{"Authorization": "Bearer JSON-TOK-456"}'
+    out = redact(json_form)
+    assert "JSON-TOK-456" not in out                # the token is gone
+    assert "Bearer <redacted>" in out
+    assert out == '{"Authorization": "Bearer <redacted>"}'   # closing quote preserved
+
+    squote_form = "{'Authorization': 'Bearer SQUOTE-TOK-789'}"
+    out = redact(squote_form)
+    assert "SQUOTE-TOK-789" not in out
+    assert out == "{'Authorization': 'Bearer <redacted>'}"
+
+
+def test_redact_strips_non_bearer_authorization_value():
+    # A non-Bearer scheme (Basic, Token, Digest) previously leaked its value because only
+    # `bearer` was matched. The scheme is PRESERVED; the credential after it is stripped.
+    out = redact("Authorization: Basic dXNlcjpwYXNzd29yZA==")
+    assert "dXNlcjpwYXNzd29yZA" not in out          # the base64 credential is gone
+    assert "Basic <redacted>" in out
+
+    out = redact('{"Authorization": "Token RAW-API-KEY-XYZ"}')
+    assert "RAW-API-KEY-XYZ" not in out
+    assert "Token <redacted>" in out
+
+
 def test_probe_binding_predicate_requires_binding_ok_AND_schema_version(monkeypatch):
     # R1 (CRITICAL): the load-bearing predicate is binding_ok==True AND store.schema_version is
     # not None. An impl that checks ONLY binding_ok is BLIND to wardline's absent-baseline
@@ -290,6 +318,55 @@ def test_probe_legis_binding_predicate_requires_path_AND_store_chains(monkeypatc
     r = run("/other/policy/cells.toml", "ok", "ok")
     assert r.bound is False
     assert r.liveness == "live-empty"
+
+
+def _make_filigree_binding(project_root, db_initialized, schema_compatible):
+    """Craft filigree binding_raw: content[0].text -> JSON with TOP-LEVEL keys
+    (project_root / db_initialized / schema_compatible — NOT nested under result, unlike
+    loomweave). This is unwrap shape 1 (content[0].text → top-level)."""
+    payload = {
+        "status": "ok",
+        "project_root": project_root,
+        "db_initialized": db_initialized,
+        "schema_compatible": schema_compatible,
+        "installed_schema_version": 29,
+        "database_schema_version": 29,
+    }
+    return {"id": 3, "result": {"content": [{"type": "text", "text": json.dumps(payload)}]}}
+
+
+def test_probe_filigree_binding_predicate_requires_path_AND_db_initialized_AND_schema_compatible(monkeypatch):
+    """filigree (streamable-http): bound only when project_root==ROOT AND db_initialized==True
+    AND schema_compatible==True. Filigree is the only path-member on the HTTP transport, so the
+    seam is mod._http_rpc (NOT _stdio_rpc). Closes the one regression-protection gap on a Critical
+    path-member: a dispatch/predicate bug here would otherwise pass undetected."""
+    ROOT_STR = str(mod.ROOT)
+    init = {"id": 1, "result": {"protocolVersion": "2024-11-05"}}
+    tools = {"id": 2, "result": {"tools": []}}
+    spec = ServerSpec(name="filigree", transport="streamable-http",
+                      url="http://localhost:8749/mcp/?project=lacuna",
+                      headers={"Authorization": "Bearer TEST-TOKEN"})
+
+    def run(project_root, db_initialized, schema_compatible):
+        binding_raw = _make_filigree_binding(project_root, db_initialized, schema_compatible)
+        monkeypatch.setattr(mod, "_http_rpc", lambda *a, **k: (init, tools, binding_raw))
+        return probe(spec, timeout=1)
+
+    # All three conditions satisfied → bound
+    assert run(ROOT_STR, True, True).bound is True
+    assert run(ROOT_STR, True, True).liveness == "live-bound"
+
+    # Store-read arm fails: db_initialized=False → NOT bound (the de-attach class)
+    assert run(ROOT_STR, False, True).bound is False
+    assert run(ROOT_STR, False, True).liveness == "live-empty"
+
+    # Store-read arm fails: schema_compatible=False → NOT bound
+    assert run(ROOT_STR, True, False).bound is False
+    assert run(ROOT_STR, True, False).liveness == "live-empty"
+
+    # Path arm fails: wrong project_root → NOT bound (path may echo even when store unreadable)
+    assert run("/other/path", True, True).bound is False
+    assert run("/other/path", True, True).liveness == "live-empty"
 
 
 # ── R8: _http_rpc fake-transport test ─────────────────────────────────────────

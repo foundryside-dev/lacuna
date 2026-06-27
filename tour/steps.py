@@ -1410,7 +1410,7 @@ def mcp_attachment() -> StepResult:
     def _liveness_note(r) -> str:
         diag = f" ({r.bound_context})" if r.liveness == "absent" and r.bound_context else ""
         return f"{r.member}:{r.liveness}{diag}"
-    note = "; ".join(_liveness_note(r) for r in sorted(results, key=lambda r: r.member))
+    note = "; ".join(_liveness_note(r) for r in sorted(results, key=lambda x: x.member))
     if failed:
         note = ("ATTACH FAILED: " + ", ".join(f"mcp-attach-{m}" for m in failed)
                 + " — fix before running make tour; the coverage gate fails verify by name | "

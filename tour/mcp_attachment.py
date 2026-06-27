@@ -116,16 +116,42 @@ def load_server_specs(cfg_path: Path = ROOT / ".mcp.json") -> dict[str, ServerSp
 
 # ── Security: token redaction ─────────────────────────────────────────────────
 
-_AUTH_RE = re.compile(r"(?i)(authorization\s*[:=]\s*)(bearer\s+)?\S+")
+# Redact an Authorization header VALUE in any free string, robust to the serialized
+# forms an error/repr can take. Capture groups:
+#   sep    — the Authorization NAME (optionally wrapped in quotes, as in a JSON/dict key
+#            "Authorization": …) plus its separator (`:` or `=`) and any opening quote of
+#            the VALUE. Handles  Authorization: …  Authorization = …  AND the JSON/dict
+#            forms  "Authorization": "…"  /  'Authorization': '…'  — the pre-hardening
+#            regex missed these because the char after the bare name is a quote, not :/=.
+#   scheme — an optional auth scheme to PRESERVE (Bearer/Basic/Digest/Token); the secret
+#            that FOLLOWS it is what we strip. A non-Bearer value (Basic CREDS) previously
+#            leaked CREDS because only `bearer` was matched.
+#   secret — the value run (stops at a closing quote or whitespace) — dropped, never echoed.
+_AUTH_RE = re.compile(
+    r"""(?ix)
+    (?P<sep>
+        ["']? authorization ["']?      # the header NAME, optionally quoted (JSON/dict key)
+        \s* [:=] \s*                   # separator (mandatory once the name is matched)
+        ["']?                          # optional opening quote of the VALUE
+    )
+    (?P<scheme> (?: bearer | basic | digest | token ) \s+ )?   # optional scheme to keep
+    (?P<secret> [^"'\s]+ )                                     # the secret value
+    """
+)
 
 
 def redact(s: str) -> str:
-    """R5: strip any Authorization/Bearer token from an ARBITRARY string (error messages,
-    stderr tails) before it lands in AttachResult.error, is printed, or persisted. Distinct
-    from ServerSpec.redacted_headers() (a headers-dict redactor); this sanitises free strings.
+    """R5: strip any Authorization header VALUE from an ARBITRARY string (error messages,
+    stderr tails, dict/JSON reprs) before it lands in AttachResult.error, is printed, or
+    persisted. Distinct from ServerSpec.redacted_headers() (a headers-dict redactor); this
+    sanitises free strings. Robust to the separator (`:`/`=`/quoted JSON form) and to the
+    auth scheme (Bearer/Basic/Digest/Token — the scheme is kept, the secret is replaced).
     Required — probe()'s except handlers call redact(str(e)); filigree is the only token-
-    carrying member (its 401s can echo the header). Tested by test_redact_strips_authorization_token."""
-    return _AUTH_RE.sub(lambda m: m.group(1) + "Bearer <redacted>", s)
+    carrying member (its 401s can echo the header). Tested by test_redact_*."""
+    def _sub(m: re.Match) -> str:
+        scheme = m.group("scheme") or "Bearer "   # default label when no scheme present
+        return m.group("sep") + scheme + "<redacted>"
+    return _AUTH_RE.sub(_sub, s)
 
 
 # ── Result type ───────────────────────────────────────────────────────────────
