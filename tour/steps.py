@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from tour import mcp_attachment as _mcp
-from tour import plainweave_seed
+from tour import plainweave_seed, wardline_peerfacts_seed
 from tour.report import StepResult
 
 ROOT = Path("/home/john/lacuna")
@@ -653,17 +653,20 @@ PLAINWEAVE_ENRICH_UNAVAILABLE = "python:function:specimen.cli._does_not_exist"  
 PLAINWEAVE_WARDLINE_ACTIVE = "specimen.peerfacts.unsafe_sink"  # active-defect anchor (frozen fixture)
 
 
-def _plainweave_json(args: list[str]) -> dict | None:
-    """Run `plainweave <args> --json` and parse stdout. None on any failure.
+def _plainweave_json(args: list[str], cwd: Path = ROOT) -> dict | None:
+    """Run `plainweave <args> --json` (in `cwd`) and parse stdout. None on any failure.
 
-    The single mockable seam for the plainweave leg (tests monkeypatch this). Uses
+    The single mockable seam for the plainweave legs (tests monkeypatch this). Uses
     `_tool('plainweave')` — NOT import-based detection — because plainweave is
-    installed as a uv tool in ~/.local/bin like its siblings. Never raises.
+    installed as a uv tool in ~/.local/bin like its siblings. `cwd` defaults to ROOT;
+    the wardline-peer-facts leg points it at a frozen fixture workspace so the producer
+    reads planted `.wardline/` snapshots instead of the repo's volatile live ones.
+    Never raises.
     """
     plainweave = _tool("plainweave")
     if not plainweave:
         return None
-    proc = _run([plainweave, *args, "--json"])
+    proc = _run([plainweave, *args, "--json"], cwd=cwd)
     try:
         return json.loads(proc.stdout)
     except (json.JSONDecodeError, TypeError):
@@ -837,6 +840,67 @@ def plainweave_requirements_enrichment() -> StepResult:
             "(recorded, unbound), and an unresolvable locator unavailable (identity gap — never "
             "a silent 'absent') — the Warpline-facing no-silent-clean contract; advisory, "
             "local-only, never gates"
+        ),
+        surfaced=tuple(pairs),
+    )
+
+
+def plainweave_wardline_peer_facts() -> StepResult:
+    """plainweave+wardline: surface Wardline findings as advisory peer facts.
+
+    Generates a frozen two-snapshot fixture (with scan-identity manifests) in a temp
+    workspace, then runs `plainweave wardline-peer-facts --json` against it. Asserts the
+    full contract: an active defect AND a non-defect finding surface as advisory context;
+    a finding gone from the latest in-scope snapshot is reported resolved_or_unseen; an
+    out-of-scope prior finding is honestly flagged (wardline_scope_mismatch), never
+    silently resolved; and an absent .wardline/ yields freshness=unavailable (NEVER clean).
+    Plainweave never scans — Wardline owns the trust gate; this is advisory, local-only,
+    and never gates. Frozen fixture; deterministic. Never raises (tour contract).
+    """
+    name = "plainweave wardline peer facts"
+    if not _tool("plainweave"):
+        return StepResult(name, ok=False, detail="plainweave not installed — uv tool install /home/john/plainweave")
+    try:
+        present_dir = wardline_peerfacts_seed.materialize()
+        absent_dir = wardline_peerfacts_seed.materialize_absent()
+        present = _plainweave_json(["wardline-peer-facts"], cwd=present_dir)
+        absent = _plainweave_json(["wardline-peer-facts"], cwd=absent_dir)
+        if present is None or not present.get("ok") or absent is None or not absent.get("ok"):
+            raise RuntimeError("wardline-peer-facts call failed")
+        data = present.get("data") or {}
+        facts = data.get("facts") or []
+        active_defect = any(
+            f.get("suppression_state") == "active"
+            and f.get("non_defect") is False
+            and f.get("qualname") == PLAINWEAVE_WARDLINE_ACTIVE
+            for f in facts
+        )
+        non_defect = any(f.get("non_defect") is True for f in facts)
+        resolved = bool(data.get("resolved_or_unseen"))
+        scope_flagged = any(d.get("code") == "wardline_scope_mismatch" for d in (data.get("degraded") or []))
+        adata = absent.get("data") or {}
+        absent_unavailable = adata.get("freshness") == "unavailable" and any(
+            d.get("code") == "wardline_findings_absent" for d in (adata.get("degraded") or [])
+        )
+    except Exception as exc:  # tour contract: degrade, never raise. Type name only — no hex/digits.
+        return StepResult(name, ok=False, detail=f"plainweave wardline peer facts failed: {type(exc).__name__}")
+
+    pairs: list[tuple[str, str]] = []
+    # All five conditions are load-bearing (active + non-defect + resolved/unseen + honest
+    # scope-mismatch + absent->unavailable). Any silent-clean regression drops the pair ->
+    # the lacuna lands in missing_ids -> `make verify` reds (fail loud).
+    if active_defect and non_defect and resolved and scope_flagged and absent_unavailable:
+        pairs.append(("pw-wardline-peer-facts", PLAINWEAVE_WARDLINE_ACTIVE))
+
+    return StepResult(
+        name,
+        ok=len(pairs) == 1,
+        detail=(
+            "plainweave reads .wardline/ snapshots as advisory peer facts: an active defect "
+            "and a non-defect finding surface; a finding gone from the latest in-scope snapshot "
+            "is reported resolved_or_unseen while an out-of-scope prior finding is honestly "
+            "flagged (scope mismatch), not silently resolved; and an absent .wardline/ is "
+            "unavailable, never clean — advisory, local-only, never gates"
         ),
         surfaced=tuple(pairs),
     )
