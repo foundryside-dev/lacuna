@@ -340,6 +340,7 @@ def test_http_rpc_parses_sse_and_echoes_session_id(monkeypatch):
         call_log.append({
             "url": req.full_url,
             "session_id_header": req.get_header("Mcp-session-id"),
+            "accept_header": req.get_header("Accept", ""),
         })
         return next(response_iter)
 
@@ -364,3 +365,9 @@ def test_http_rpc_parses_sse_and_echoes_session_id(monkeypatch):
     # The second and third calls should carry the session-id
     assert call_log[1]["session_id_header"] == SESSION_ID
     assert call_log[2]["session_id_header"] == SESSION_ID
+
+    # The Accept header MUST be sent on EVERY request — omitting it returns HTTP 406
+    # (the PRIMARY silent failure mode for filigree's SSE transport). A refactor dropping
+    # it must trip this test, not silently 406 at runtime.
+    for entry in call_log:
+        assert "application/json, text/event-stream" in entry["accept_header"]

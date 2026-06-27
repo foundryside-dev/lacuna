@@ -185,9 +185,9 @@ def _recv_result(stream, want_id: int, deadline: float) -> dict | None:
     mis-parse a notification as the result and KeyError on missing result/id."""
     while True:
         line = _readline_deadline(stream, deadline - time.monotonic())
-        if not line:                               # None = deadline elapsed (hung); "" = EOF
-            return None                            #   (server crashed/closed stdout) — both → None,
-        msg = json.loads(line)                     #   so json.loads("") never raises (probe folds → absent)
+        if not line:                               # None = deadline elapsed (hung server); "" = EOF
+            return None                            #   (server closed stdout). Both are falsy → return None
+        msg = json.loads(line)                     #   BEFORE json.loads, so it is never called on "" (probe folds → absent)
         if msg.get("id") == want_id:               # the response to OUR request
             return msg
         # else: a notification (no "id") or a stale id — discard, keep reading
@@ -339,6 +339,9 @@ def _http_rpc(url, headers, *, timeout: float,
              "params": {"name": binding_name, "arguments": binding_args}},
             extra_headers=follow_extra)
 
+    # Defensive: _post returns {} (not None) on an empty SSE body, so this guard is a
+    # belt-and-braces mirror of the stdio path — urlopen itself raises on timeout/transport
+    # error (folded by probe()), so an empty {} reply surfaces here as a missing "result".
     if init is None or tools is None or (binding is not None and binding_raw is None):
         raise TimeoutError(f"http probe timed out after {timeout}s")
 
