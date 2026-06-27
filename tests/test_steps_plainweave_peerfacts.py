@@ -15,7 +15,9 @@ ENRICH_ABSENT = "python:function:tour.__main__.main"
 ENRICH_UNAVAILABLE = "python:function:specimen.cli._does_not_exist"
 
 
-def _enrichment_env(covered_status="present", absent_status="absent", unavailable_status="unavailable"):
+def _enrichment_env(
+    covered_status="present", absent_status="absent", unavailable_status="unavailable", covered_requirements=True
+):
     return {
         "ok": True,
         "data": {
@@ -23,7 +25,9 @@ def _enrichment_env(covered_status="present", absent_status="absent", unavailabl
                 {
                     "entity_ref": ENRICH_COVERED,
                     "status": covered_status,
-                    "requirements": [{"requirement_id": "req-1"}] if covered_status == "present" else [],
+                    "requirements": [{"requirement_id": "req-1"}]
+                    if (covered_status == "present" and covered_requirements)
+                    else [],
                     "reason": None if covered_status == "present" else "x",
                     "freshness": "current",
                 },
@@ -92,11 +96,16 @@ _PRESENT_DIR = Path("/tmp/pw-present")
 _ABSENT_DIR = Path("/tmp/pw-absent")
 
 
-def _present_env(freshness="current", resolved=True, scope_mismatch=True):
-    facts = [
-        {"qualname": "specimen.peerfacts.unsafe_sink", "suppression_state": "active", "non_defect": False, "kind": "defect"},
-        {"qualname": "specimen.peerfacts.audited_helper", "suppression_state": "active", "non_defect": True, "kind": "fact"},
-    ]
+def _present_env(freshness="current", resolved=True, scope_mismatch=True, active_defect=True, non_defect=True):
+    facts = []
+    if active_defect:
+        facts.append(
+            {"qualname": "specimen.peerfacts.unsafe_sink", "suppression_state": "active", "non_defect": False, "kind": "defect"}
+        )
+    if non_defect:
+        facts.append(
+            {"qualname": "specimen.peerfacts.audited_helper", "suppression_state": "active", "non_defect": True, "kind": "fact"}
+        )
     degraded = [{"code": "wardline_scope_mismatch", "message": "out-of-scope prior finding"}] if scope_mismatch else []
     resolved_items = [{"fingerprint": "fp-resolved", "rule_id": "PY-WL-101", "location": {"path": "specimen/peerfacts.py"}}]
     return {
@@ -165,6 +174,49 @@ def test_wardline_peer_facts_degrades_never_raises_on_failed_call(monkeypatch):
     monkeypatch.setattr(steps.wardline_peerfacts_seed, "materialize", lambda: _PRESENT_DIR)
     monkeypatch.setattr(steps.wardline_peerfacts_seed, "materialize_absent", lambda: _ABSENT_DIR)
     monkeypatch.setattr(steps, "_plainweave_json", lambda args, cwd=None: None)
+    r = steps.plainweave_wardline_peer_facts()
+    assert r.ok is False
+    assert r.surfaced == ()
+
+
+# ── Per-conjunct drop-tests: every condition in each gate is load-bearing ──────
+# Each test drives exactly ONE conjunct False over an otherwise-passing scenario and
+# asserts the pair is dropped, so the gate cannot silently degrade to an always-pass
+# (the assertions ARE the deliverable; a deleted conjunct must fail a unit test).
+
+
+def test_enrichment_drops_pair_when_covered_not_present(monkeypatch):
+    _arm_enrichment(monkeypatch, _enrichment_env(covered_status="absent"))
+    r = steps.plainweave_requirements_enrichment()
+    assert r.ok is False
+    assert r.surfaced == ()
+
+
+def test_enrichment_drops_pair_when_covered_requirements_empty(monkeypatch):
+    # `present` with no requirements would be a producer contradiction; the leg must not
+    # surface coverage without a concrete requirement behind it.
+    _arm_enrichment(monkeypatch, _enrichment_env(covered_requirements=False))
+    r = steps.plainweave_requirements_enrichment()
+    assert r.ok is False
+    assert r.surfaced == ()
+
+
+def test_enrichment_drops_pair_when_orphan_not_absent(monkeypatch):
+    _arm_enrichment(monkeypatch, _enrichment_env(absent_status="present"))
+    r = steps.plainweave_requirements_enrichment()
+    assert r.ok is False
+    assert r.surfaced == ()
+
+
+def test_wardline_peer_facts_drops_pair_when_no_active_defect(monkeypatch):
+    _arm_wardline(monkeypatch, _present_env(active_defect=False), _absent_env())
+    r = steps.plainweave_wardline_peer_facts()
+    assert r.ok is False
+    assert r.surfaced == ()
+
+
+def test_wardline_peer_facts_drops_pair_when_no_non_defect(monkeypatch):
+    _arm_wardline(monkeypatch, _present_env(non_defect=False), _absent_env())
     r = steps.plainweave_wardline_peer_facts()
     assert r.ok is False
     assert r.surfaced == ()

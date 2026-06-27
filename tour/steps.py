@@ -826,6 +826,8 @@ def plainweave_requirements_enrichment() -> StepResult:
         unavailable = items.get(PLAINWEAVE_ENRICH_UNAVAILABLE, {})
     except Exception as exc:  # tour contract: degrade, never raise. Type name only — no hex/digits.
         return StepResult(name, ok=False, detail=f"plainweave enrichment failed: {type(exc).__name__}")
+    finally:
+        shutil.rmtree(workspace, ignore_errors=True)  # the isolated seed workspace is single-use
 
     pairs: list[tuple[str, str]] = []
     # Load-bearing no-silent-clean conjunction: present AND absent AND unavailable (NOT
@@ -868,9 +870,9 @@ def plainweave_wardline_peer_facts() -> StepResult:
     name = "plainweave wardline peer facts"
     if not _tool("plainweave"):
         return StepResult(name, ok=False, detail="plainweave not installed — uv tool install /home/john/plainweave")
+    present_dir = wardline_peerfacts_seed.materialize()
+    absent_dir = wardline_peerfacts_seed.materialize_absent()
     try:
-        present_dir = wardline_peerfacts_seed.materialize()
-        absent_dir = wardline_peerfacts_seed.materialize_absent()
         present = _plainweave_json(["wardline-peer-facts"], cwd=present_dir)
         absent = _plainweave_json(["wardline-peer-facts"], cwd=absent_dir)
         if present is None or not present.get("ok") or absent is None or not absent.get("ok"):
@@ -892,6 +894,9 @@ def plainweave_wardline_peer_facts() -> StepResult:
         )
     except Exception as exc:  # tour contract: degrade, never raise. Type name only — no hex/digits.
         return StepResult(name, ok=False, detail=f"plainweave wardline peer facts failed: {type(exc).__name__}")
+    finally:
+        shutil.rmtree(present_dir, ignore_errors=True)  # single-use frozen fixtures
+        shutil.rmtree(absent_dir, ignore_errors=True)
 
     pairs: list[tuple[str, str]] = []
     # All five conditions are load-bearing (active + non-defect + resolved/unseen + honest

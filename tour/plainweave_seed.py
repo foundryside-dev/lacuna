@@ -41,6 +41,7 @@ def materialize_workspace() -> Path:
     shutil.copy2(ROOT / ".weft" / "loomweave" / "loomweave.db", lw / "loomweave.db")
     return workspace
 
+
 # The 4 public surfaces in Lacuna's Loomweave catalog, by STABLE dotted locator.
 ADD_BOOK = "python:function:specimen.cli._add_book"   # cli-command  -> justified  (covered)
 REGISTER = "python:function:specimen.cli._register"   # cli-command  -> deprecated (liveness)
