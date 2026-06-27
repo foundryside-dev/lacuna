@@ -48,7 +48,8 @@ def _enrichment_env(covered_status="present", absent_status="absent", unavailabl
 
 def _arm_enrichment(monkeypatch, env):
     monkeypatch.setattr(steps, "_tool", lambda name: f"/home/john/.local/bin/{name}")
-    monkeypatch.setattr(steps.plainweave_seed, "seed", lambda pw: None)
+    monkeypatch.setattr(steps.plainweave_seed, "materialize_workspace", lambda: Path("/tmp/pw-enrich-ws"))
+    monkeypatch.setattr(steps.plainweave_seed, "seed", lambda pw, **kw: None)
 
     def pwj(args, cwd=None):
         if args[:1] == ["requirements-enrichment"]:
@@ -78,7 +79,8 @@ def test_enrichment_drops_pair_when_unavailable_collapses_to_absent(monkeypatch)
 
 def test_enrichment_degrades_never_raises_on_failed_call(monkeypatch):
     monkeypatch.setattr(steps, "_tool", lambda name: f"/home/john/.local/bin/{name}")
-    monkeypatch.setattr(steps.plainweave_seed, "seed", lambda pw: None)
+    monkeypatch.setattr(steps.plainweave_seed, "materialize_workspace", lambda: Path("/tmp/pw-enrich-ws"))
+    monkeypatch.setattr(steps.plainweave_seed, "seed", lambda pw, **kw: None)
     monkeypatch.setattr(steps, "_plainweave_json", lambda args, cwd=None: None)
     r = steps.plainweave_requirements_enrichment()
     assert r.ok is False

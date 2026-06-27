@@ -799,16 +799,24 @@ def plainweave_requirements_enrichment() -> StepResult:
     if not _tool("plainweave"):
         return StepResult(name, ok=False, detail="plainweave not installed — uv tool install /home/john/plainweave")
 
+    # Seed in an isolated, offline workspace (local Loomweave resolution) so creating the
+    # accepted trace link a `present` result needs does not depend on a live Loomweave HTTP
+    # endpoint — keeping the demo deterministic. See plainweave_seed.materialize_workspace.
+    workspace = plainweave_seed.materialize_workspace()
+
     def pw(args: list[str]) -> dict:
-        env = _plainweave_json(args)
+        env = _plainweave_json(args, cwd=workspace)
         if env is None or not env.get("ok"):
             raise RuntimeError(f"plainweave call failed: {args[0] if args else '?'}")
         return env.get("data") or {}
 
     try:
-        plainweave_seed.seed(pw)
+        # with_trace_links: enrichment keys off accepted trace links (not the SEI binding
+        # that intent-coverage uses), so a covered surface needs one to report `present`.
+        plainweave_seed.seed(pw, with_trace_links=True, root=workspace)
         env = _plainweave_json(
-            ["requirements-enrichment", PLAINWEAVE_ENRICH_COVERED, PLAINWEAVE_ENRICH_ABSENT, PLAINWEAVE_ENRICH_UNAVAILABLE]
+            ["requirements-enrichment", PLAINWEAVE_ENRICH_COVERED, PLAINWEAVE_ENRICH_ABSENT, PLAINWEAVE_ENRICH_UNAVAILABLE],
+            cwd=workspace,
         )
         if env is None or not env.get("ok"):
             raise RuntimeError("requirements-enrichment call failed")
