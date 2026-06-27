@@ -32,6 +32,9 @@ legis.yaml
 .filigree.conf.imported
 .weft-backup-*.tgz
 
+# Subagent-driven-development scratch (progress ledger, task briefs/reports)
+.superpowers/
+
 # Filigree server-mode MCP config embeds a literal federation token
 .mcp.json
 .vscode/
