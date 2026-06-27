@@ -5,6 +5,7 @@ from pathlib import Path
 
 from tour.mcp_attachment import classify, load_server_specs, probe, redact, ServerSpec
 from tour import mcp_attachment as mod
+from tour import steps
 
 
 # ── Task-1 tests (existing) ────────────────────────────────────────────────────
@@ -371,6 +372,55 @@ def test_http_rpc_parses_sse_and_echoes_session_id(monkeypatch):
     # it must trip this test, not silently 406 at runtime.
     for entry in call_log:
         assert "application/json, text/event-stream" in entry["accept_header"]
+
+
+# ── Task 4: steps.mcp_attachment() leg tests ──────────────────────────────────
+
+def test_mcp_attachment_leg_surfaces_attached_members(monkeypatch):
+    members = ["loomweave", "filigree", "wardline", "legis", "warpline", "plainweave"]
+    monkeypatch.setattr(mod, "load_server_specs",
+                        lambda *a, **k: {x: mod.ServerSpec(name=x, transport="stdio") for x in members})
+    def fake_probe(spec, **k):
+        bound = spec.name != "loomweave"          # loomweave de-attached (binary ran, handshake failed)
+        return mod.AttachResult(spec.name, attached=bound, bound=bound,
+                                liveness="live-bound" if bound else "absent",
+                                bound_context="lacuna" if bound else "handshake-failed", error=None)
+    monkeypatch.setattr(mod, "probe", fake_probe)
+    r = steps.mcp_attachment()
+    assert ("mcp-attach", "loomweave") not in r.surfaced     # not faked live (G3)
+    assert ("mcp-attach", "filigree") in r.surfaced
+    # D13: `ok` is FROZEN True — the leg never flaps the byte-compared docs/tour.md
+    # ([PASS]/[WARN] renders from `ok`). The de-attach trips `make verify` SOLELY via the
+    # coverage check (loomweave drops from `surfaced` → its lacuna goes missing), never by
+    # turning the narrative stale. The loud signal rides `note`, not `ok`.
+    assert r.ok is True                                      # frozen narrative — never flaps lockstep
+    assert "loomweave" in r.note                             # the de-attach is flagged in note (stdout)
+    # D18: within `absent`, the note distinguishes a real de-attach (handshake-failed) from a
+    # never-installed *-mcp binary (not-installed). The diagnostic is variable data → it rides
+    # `note` only, NEVER the frozen `detail`. loomweave here is a de-attach.
+    assert "loomweave:absent (handshake-failed)" in r.note
+    # detail is the EXACT frozen prose — never a live list. An exact-string match is the
+    # ONLY assertion that catches an impl that renders live member names/counts/timestamps
+    # into detail (a `"loomweave" not in r.detail` no-op passes trivially for ANY
+    # member-free string). Quote the leg's frozen detail verbatim:
+    assert r.detail == (
+        "all .mcp.json members reachable MCP-first and bound to the staged repo — "
+        "federation seam integrity asserted; a silent de-attach trips this gate")
+
+
+def test_mcp_attachment_leg_frozen_ok_on_missing_config(monkeypatch):
+    # R2/D13 (HIGH): .mcp.json is gitignored → load_server_specs() raises FileNotFoundError on a
+    # fresh clone. This is the EXACT invariant that regressed in round 2 (the outer except used to
+    # return ok=False). Pin it: the leg keeps ok=True (frozen) with surfaced=() so the [PASS]/[WARN]
+    # marker never flips (the stale-baseline trap) — make verify fails via the coverage gate instead.
+    def _boom(*_a, **_k):
+        raise FileNotFoundError("[Errno 2] No such file or directory: '.mcp.json'")
+    monkeypatch.setattr(mod, "load_server_specs", _boom)
+    r = steps.mcp_attachment()
+    assert r.ok is True                          # FROZEN — never flips the narrative marker (R2)
+    assert r.detail == steps._MCP_ATTACH_DETAIL  # byte-identical to the happy path (one shared constant)
+    assert r.surfaced == ()                      # all 6 mcp-attach lacunae go missing → verify fails loud
+    assert "mcp attachment unavailable" in r.note
 
 
 # ── Task 3: MCP-attachment lacunae tests ───────────────────────────────────────

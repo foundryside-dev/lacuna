@@ -16,6 +16,7 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
+from tour import mcp_attachment as _mcp
 from tour import plainweave_seed
 from tour.report import StepResult
 
@@ -1344,3 +1345,77 @@ def legis_posture() -> StepResult:
     # The concrete cell is environment state (operator-set), kept out of the
     # locked narrative so `make verify` stays byte-deterministic across machines.
     return StepResult(name, ok=ok, detail=detail, note=f"floor={floor or 'unreadable'}")
+
+
+# ── MCP attachment: assert each .mcp.json member attaches + binds ─────────────
+
+# R2/D13: the frozen detail is ONE module constant so the happy path and the config-error
+# path return BYTE-IDENTICAL detail — they must never drift, or lockstep breaks. Its value
+# must equal the exact literal the determinism test asserts (Task 4 Step 1).
+_MCP_ATTACH_DETAIL = (
+    "all .mcp.json members reachable MCP-first and bound to the staged repo — "
+    "federation seam integrity asserted; a silent de-attach trips this gate")
+
+
+def mcp_attachment() -> StepResult:
+    """Assert each .mcp.json member attaches MCP-first + binds to the staged repo.
+    Frozen detail (lockstep); per-member liveness goes in `note` (not rendered).
+
+    D13 — the narrative marker is DECOUPLED from the live probe. `ok` is FROZEN `True`,
+    so this leg NEVER flaps the byte-compared `docs/tour.md` (`render_tour_md` renders
+    `[PASS]`/`[WARN]` straight from `ok`). The attach gate runs SOLELY through the
+    coverage check: a de-attached member drops from `surfaced`, its `mcp-attach-<member>`
+    lacuna goes missing, and `make verify` fails naming it — mirroring
+    `warpline_change_impact`, whose narrative never flaps. Were `ok` live instead, a
+    transient probe failure would flip `[PASS]`→`[WARN]`, flag `docs/tour.md` "stale", and
+    a developer's reflexive re-`make tour` + commit would bake a `[WARN]` baseline that
+    PERMANENTLY encodes the degraded state (and the next clean run then fails the other
+    way). The loud operator signal rides `note` (printed to stdout, NEVER rendered into
+    the locked markdown): a failed member is flagged `ATTACH FAILED` there, not in the
+    narrative."""
+    name = "mcp attachment"
+    try:
+        specs = _mcp.load_server_specs()
+        results = []
+        for spec in specs.values():
+            try:                                 # per-probe isolation: one member's failure
+                results.append(_mcp.probe(spec)) #   must not discard the other five's results
+            except Exception as e:               # defence-in-depth: probe() never raises (D09, tested), so this is
+                #   dead unless a future change regresses that invariant. If it ever fires, "probe-raised" is a
+                #   recognisable D18 diagnostic (not an empty string matching neither not-installed nor handshake-failed).
+                results.append(_mcp.AttachResult(
+                    member=spec.name, attached=False, bound=False,
+                    liveness="absent", bound_context="probe-raised", error=_mcp.redact(str(e))[:200]))
+    except Exception as e:                       # R2/D13: never raise (tour contract) AND never flip frozen `ok`.
+        # .mcp.json is gitignored → load_server_specs() hits FileNotFoundError on a fresh clone. Returning
+        # ok=False would flip the [PASS]/[WARN] marker and re-open the stale-baseline trap D13 closes. Keep `ok`
+        # FROZEN True with surfaced=() so ALL 6 mcp-attach lacunae go missing → make verify fails loud naming
+        # all 6, the cause in note — never via a stale narrative. (verify is owner-local-only; .mcp.json is
+        # always present there, so this is the absent-config precondition, not normal operation.)
+        return StepResult(
+            name, ok=True, detail=_MCP_ATTACH_DETAIL, surfaced=(),
+            note=f"mcp attachment unavailable (config/probe error): {_mcp.redact(str(e))[:200]}")
+    surfaced = tuple(("mcp-attach", r.member) for r in results if r.attached and r.bound)
+    # D13: `ok` is FROZEN True — the gate is the coverage check (surfaced → missing_ids),
+    # never the byte-compared narrative. A de-attach drops the member from `surfaced` (so
+    # `make verify` fails naming it) WITHOUT turning docs/tour.md stale, so no reflexive
+    # re-`make tour` can bake a [WARN] baseline. The loud signal rides `note` (stdout, not
+    # rendered): each failed member is flagged ATTACH FAILED so the operator still sees it.
+    failed = sorted(r.member for r in results if not (r.attached and r.bound))
+    # D18: within `absent`, distinguish a never-installed *-mcp binary (bound_context "not-installed")
+    # from a real de-attach (bound_context "handshake-failed") so the operator installs vs investigates —
+    # capability.detect() marks warpline/plainweave live by CLI name, but .mcp.json spawns the separate
+    # warpline-mcp/plainweave-mcp binaries. The diagnostic is variable data → it rides `note` only, NEVER
+    # the frozen `detail`.
+    def _liveness_note(r) -> str:
+        diag = f" ({r.bound_context})" if r.liveness == "absent" and r.bound_context else ""
+        return f"{r.member}:{r.liveness}{diag}"
+    note = "; ".join(_liveness_note(r) for r in sorted(results, key=lambda r: r.member))
+    if failed:
+        note = ("ATTACH FAILED: " + ", ".join(f"mcp-attach-{m}" for m in failed)
+                + " — fix before running make tour; the coverage gate fails verify by name | "
+                + note)
+    return StepResult(
+        name, ok=True,   # FROZEN — never flaps the narrative; the gate is the coverage check (D13)
+        detail=_MCP_ATTACH_DETAIL,   # R2: same constant as the config-error path → byte-identical
+        surfaced=surfaced, note=note)
