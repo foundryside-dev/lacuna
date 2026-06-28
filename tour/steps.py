@@ -16,6 +16,7 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
+from tour import capability as _capability
 from tour import mcp_attachment as _mcp
 from tour import plainweave_seed, wardline_peerfacts_seed
 from tour.report import StepResult
@@ -390,10 +391,19 @@ def loomweave_analyze() -> StepResult:
                 con.close()
         except sqlite3.Error:
             pass
+    # Determinism: the entity count drifts with any code edit and the edge count is
+    # order-sensitive across re-analyze (it flaps ±1 even on an unchanged tree), so
+    # baking either into the byte-locked detail flaps `make verify`. Per the tour's
+    # standing rule (cf. plainweave_intent / legis_govern), the live counts ride the
+    # non-rendered `note`; the rendered detail is frozen prose.
     return StepResult(
         "loomweave analyze",
         ok=proc.returncode == 0,
-        detail=f"{ents} entities, {edges} structural edges",
+        detail=(
+            "indexed the specimen tree into Loomweave's entity / structural-edge graph "
+            "(live counts ride the non-rendered note for byte-for-byte lockstep)"
+        ),
+        note=f"{ents} entities, {edges} structural edges",
     )
 
 
@@ -673,6 +683,18 @@ def _plainweave_json(args: list[str], cwd: Path = ROOT) -> dict | None:
         return None
 
 
+def _plainweave_supports(subcommand: str) -> bool:
+    """True iff the installed plainweave exposes `subcommand`.
+
+    The capability gate for the peer-facts cells. Mockable seam (tests patch it);
+    behaviour-probed via `capability.plainweave_subcommands` so a 1.0.0-vs-CLI-parity
+    build is told apart by its actual surface, not its (shared) version string. When
+    False, the leg renders `[N/A]` (capability-gated) rather than `[WARN]` (failed) —
+    distinguishing "surface not present in this plainweave" from "ran and degraded".
+    """
+    return subcommand in _capability.plainweave_subcommands(_tool("plainweave"))
+
+
 def plainweave_intent() -> StepResult:
     """Demonstrate plainweave's code-up intent graph over the specimen.
 
@@ -796,8 +818,17 @@ def plainweave_requirements_enrichment() -> StepResult:
     never gates. Frozen anchors; deterministic. Never raises (tour contract).
     """
     name = "plainweave requirements-enrichment"
-    if not _tool("plainweave"):
-        return StepResult(name, ok=False, detail="plainweave not installed — uv tool install /home/john/plainweave")
+    if not _plainweave_supports("requirements-enrichment"):
+        return StepResult(
+            name, ok=False, available=False,
+            detail=(
+                "capability-gated — the installed plainweave does not expose the "
+                "`requirements-enrichment` CLI surface (Plainweave PDR-015; plainweave >= 1.1, "
+                "absent in the brief-pinned PyPI 1.0.0). This plainweave+warpline peer-facts "
+                "cell is intentionally not exercised under the installed version — install a "
+                "plainweave carrying the subcommand to light it up; advisory, local-only, never gates"
+            ),
+        )
 
     # Seed in an isolated, offline workspace (local Loomweave resolution) so creating the
     # accepted trace link a `present` result needs does not depend on a live Loomweave HTTP
@@ -868,8 +899,17 @@ def plainweave_wardline_peer_facts() -> StepResult:
     and never gates. Frozen fixture; deterministic. Never raises (tour contract).
     """
     name = "plainweave wardline peer facts"
-    if not _tool("plainweave"):
-        return StepResult(name, ok=False, detail="plainweave not installed — uv tool install /home/john/plainweave")
+    if not _plainweave_supports("wardline-peer-facts"):
+        return StepResult(
+            name, ok=False, available=False,
+            detail=(
+                "capability-gated — the installed plainweave does not expose the "
+                "`wardline-peer-facts` CLI surface (Plainweave PDR-015; plainweave >= 1.1, "
+                "absent in the brief-pinned PyPI 1.0.0). This plainweave+wardline peer-facts "
+                "cell is intentionally not exercised under the installed version — install a "
+                "plainweave carrying the subcommand to light it up; advisory, local-only, never gates"
+            ),
+        )
     present_dir = wardline_peerfacts_seed.materialize()
     absent_dir = wardline_peerfacts_seed.materialize_absent()
     try:

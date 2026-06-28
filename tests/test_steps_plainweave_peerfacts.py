@@ -52,6 +52,7 @@ def _enrichment_env(
 
 def _arm_enrichment(monkeypatch, env):
     monkeypatch.setattr(steps, "_tool", lambda name: f"/home/john/.local/bin/{name}")
+    monkeypatch.setattr(steps, "_plainweave_supports", lambda sub: True)
     monkeypatch.setattr(steps.plainweave_seed, "materialize_workspace", lambda: Path("/tmp/pw-enrich-ws"))
     monkeypatch.setattr(steps.plainweave_seed, "seed", lambda pw, **kw: None)
 
@@ -83,12 +84,28 @@ def test_enrichment_drops_pair_when_unavailable_collapses_to_absent(monkeypatch)
 
 def test_enrichment_degrades_never_raises_on_failed_call(monkeypatch):
     monkeypatch.setattr(steps, "_tool", lambda name: f"/home/john/.local/bin/{name}")
+    monkeypatch.setattr(steps, "_plainweave_supports", lambda sub: True)
     monkeypatch.setattr(steps.plainweave_seed, "materialize_workspace", lambda: Path("/tmp/pw-enrich-ws"))
     monkeypatch.setattr(steps.plainweave_seed, "seed", lambda pw, **kw: None)
     monkeypatch.setattr(steps, "_plainweave_json", lambda args, cwd=None: None)
     r = steps.plainweave_requirements_enrichment()
     assert r.ok is False
     assert r.surfaced == ()
+    # A present-but-failed call is [WARN] (ran and degraded), NOT [N/A] (gated).
+    assert r.available is True
+
+
+def test_enrichment_capability_gated_when_surface_absent(monkeypatch):
+    # plainweave is installed but lacks the `requirements-enrichment` subcommand
+    # (PyPI 1.0.0). The leg must render [N/A] (available=False) with a machine-readable
+    # reason — not [WARN] (failed), not faked green, and never raising.
+    monkeypatch.setattr(steps, "_plainweave_supports", lambda sub: False)
+    r = steps.plainweave_requirements_enrichment()
+    assert r.available is False
+    assert r.ok is False
+    assert r.surfaced == ()
+    assert "capability-gated" in r.detail
+    assert "requirements-enrichment" in r.detail
 
 
 # ── pw-wardline-peer-facts ────────────────────────────────────────────────────
@@ -126,6 +143,7 @@ def _absent_env(freshness="unavailable", findings_absent=True):
 
 def _arm_wardline(monkeypatch, present_env, absent_env):
     monkeypatch.setattr(steps, "_tool", lambda name: f"/home/john/.local/bin/{name}")
+    monkeypatch.setattr(steps, "_plainweave_supports", lambda sub: True)
     monkeypatch.setattr(steps.wardline_peerfacts_seed, "materialize", lambda: _PRESENT_DIR)
     monkeypatch.setattr(steps.wardline_peerfacts_seed, "materialize_absent", lambda: _ABSENT_DIR)
 
@@ -171,12 +189,28 @@ def test_wardline_peer_facts_drops_pair_when_absent_not_unavailable(monkeypatch)
 
 def test_wardline_peer_facts_degrades_never_raises_on_failed_call(monkeypatch):
     monkeypatch.setattr(steps, "_tool", lambda name: f"/home/john/.local/bin/{name}")
+    monkeypatch.setattr(steps, "_plainweave_supports", lambda sub: True)
     monkeypatch.setattr(steps.wardline_peerfacts_seed, "materialize", lambda: _PRESENT_DIR)
     monkeypatch.setattr(steps.wardline_peerfacts_seed, "materialize_absent", lambda: _ABSENT_DIR)
     monkeypatch.setattr(steps, "_plainweave_json", lambda args, cwd=None: None)
     r = steps.plainweave_wardline_peer_facts()
     assert r.ok is False
     assert r.surfaced == ()
+    # A present-but-failed call is [WARN] (ran and degraded), NOT [N/A] (gated).
+    assert r.available is True
+
+
+def test_wardline_peer_facts_capability_gated_when_surface_absent(monkeypatch):
+    # plainweave is installed but lacks the `wardline-peer-facts` subcommand (PyPI
+    # 1.0.0). The leg must render [N/A] (available=False) with a machine-readable
+    # reason — not [WARN] (failed), not faked green, and never raising.
+    monkeypatch.setattr(steps, "_plainweave_supports", lambda sub: False)
+    r = steps.plainweave_wardline_peer_facts()
+    assert r.available is False
+    assert r.ok is False
+    assert r.surfaced == ()
+    assert "capability-gated" in r.detail
+    assert "wardline-peer-facts" in r.detail
 
 
 # ── Per-conjunct drop-tests: every condition in each gate is load-bearing ──────

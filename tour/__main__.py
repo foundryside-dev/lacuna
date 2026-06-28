@@ -72,6 +72,21 @@ def run_verify() -> int:
 
     # 1. Every lacuna whose expected tool is LIVE must be surfaced.
     live = {c.name for c in caps if c.available}
+
+    # Capability-gated lacunae: their `expected_tool` is a detected-but-UNAVAILABLE
+    # capability (e.g. the plainweave peer-facts CLI surface is absent under PyPI
+    # 1.0.0). These are NOT failures — but a silent gate is itself a swallow, so name
+    # them + the machine-readable reason explicitly in verify's output (stdout only;
+    # excluded from the byte-locked markdown, so determinism is preserved).
+    cap_by_name = {c.name: c for c in caps}
+    gated = [
+        lac for lac in manifest.lacunae
+        if (cap := cap_by_name.get(lac.expected_tool)) is not None and not cap.available
+    ]
+    if gated:
+        print("CAPABILITY-GATED (not expected under the installed tools; not a failure):")
+        for lac in gated:
+            print(f"  - {lac.id} — {cap_by_name[lac.expected_tool].detail}")
     # D17: the mcp-attachment leg carries the failure CAUSE (per-member liveness — the
     # ATTACH FAILED reason: timed-out / garbled JSON / connected-but-unbound / missing
     # binary) in its `note`. Surface it on a missing attach token so the gate names WHY a

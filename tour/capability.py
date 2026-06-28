@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import re
 import shutil
+import subprocess
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,6 +17,53 @@ RUNNABLE = ("loomweave", "filigree", "wardline", "legis", "warpline", "plainweav
 DESIGN_ONLY = ("charter",)
 # Known install dir — the tools live here whether or not it is on $PATH.
 BIN = Path("/home/john/.local/bin")
+
+# Per-subcommand plainweave capabilities. The peer-facts tour cells need a SPECIFIC
+# plainweave CLI surface, not merely the binary: PyPI 1.0.0 ships `plainweave` but
+# not these subcommands (they land with Plainweave PDR-015 / plainweave >= 1.1).
+# Gating each cell on its own subcommand (rather than one combined capability) means
+# a PARTIAL plainweave release lights up exactly the cells whose surface is present
+# and gates only the ones whose surface is absent. Maps subcommand -> capability name
+# (a lacuna's `expected_tool`).
+PLAINWEAVE_PEER_FACT_SUBCOMMANDS = {
+    "requirements-enrichment": "plainweave-requirements-enrichment",
+    "wardline-peer-facts": "plainweave-wardline-peer-facts",
+}
+
+
+def plainweave_subcommands(plainweave_path: str | None) -> frozenset[str]:
+    """The top-level subcommands the installed plainweave actually exposes.
+
+    Probed by parsing the argparse choices block of `plainweave --help`, so the
+    peer-facts cells gate on BEHAVIOUR (the real CLI surface), not on a version
+    string — PyPI 1.0.0 and an unreleased CLI-parity build can share a version
+    string but not a surface (the stale-build trap). Returns an empty set on any
+    failure (absent binary, probe error, parse miss): the caller treats "cannot
+    tell" as "surface unavailable", never as a silent present.
+    """
+    if not plainweave_path:
+        return frozenset()
+    try:
+        proc = subprocess.run(
+            [plainweave_path, "--help"],
+            capture_output=True, text=True, check=False, timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return frozenset()
+    return _extract_subcommand_choices(proc.stdout)
+
+
+def _extract_subcommand_choices(help_text: str) -> frozenset[str]:
+    """Pull argparse's first `{a,b,c,...}` choices block (the subcommand list) out of
+    `--help` text. Pure (no I/O) so the parse — the linchpin of "probe by surface, not
+    version string" — is unit-testable independently of an installed plainweave. The
+    pattern is non-greedy (stops at the first `}`) and `\\s`-tolerant so a line-wrapped
+    choices block still parses. Returns an empty set on a parse miss ("cannot tell" ⇒
+    surface unavailable, never a silent present)."""
+    match = re.search(r"\{([a-z0-9_,\s\-]+?)\}", help_text)
+    if not match:
+        return frozenset()
+    return frozenset(tok for tok in re.sub(r"\s+", "", match.group(1)).split(",") if tok)
 
 
 @dataclass(frozen=True)
@@ -35,15 +84,41 @@ def _locate(name: str, which: Callable[[str], str | None]) -> str | None:
     return str(candidate) if candidate.exists() else None
 
 
-def detect(which: Callable[[str], str | None] = shutil.which) -> list[Capability]:
+def detect(
+    which: Callable[[str], str | None] = shutil.which,
+    pw_subcommands: Callable[[str | None], frozenset[str]] = plainweave_subcommands,
+) -> list[Capability]:
     caps: list[Capability] = []
+    plainweave_path: str | None = None
     for name in RUNNABLE:
         path = _locate(name, which)
+        if name == "plainweave":
+            plainweave_path = path
         caps.append(
             Capability(
                 name=name,
                 available=path is not None,
                 detail=path or "not found (PATH or ~/.local/bin)",
+            )
+        )
+    # Per-subcommand peer-facts capabilities, probed from the actual plainweave CLI
+    # surface. Under PyPI 1.0.0 the binary is present but the subcommands are not, so
+    # these report UNAVAILABLE with a machine-readable reason — and the peer-facts
+    # lacunae (whose `expected_tool` is one of these names) are gated out of verify's
+    # coverage assertion rather than reported as a failed surface.
+    surface = pw_subcommands(plainweave_path)
+    for sub, cap_name in PLAINWEAVE_PEER_FACT_SUBCOMMANDS.items():
+        present = sub in surface
+        caps.append(
+            Capability(
+                name=cap_name,
+                available=present,
+                detail=(
+                    (plainweave_path or "plainweave")
+                    if present
+                    else f"plainweave `{sub}` CLI surface absent "
+                    "(Plainweave PDR-015 / plainweave >= 1.1; not in PyPI 1.0.0)"
+                ),
             )
         )
     for name in DESIGN_ONLY:
