@@ -30,6 +30,14 @@ rust index facts: cfg-twin, colon-path-resolved, derives-edge, path-mount
 
 touching _add_book surfaces downstream service.add_book in blast-radius + reverify worklist (edge-provenanced); change history tracked via churn + timeline — advisory, never gates
 
+## [PASS] warpline attest bundle
+
+handed an attest bundle for a change to _add_book, warpline reports risk_verification=unavailable with an explicit machine reason rather than a silent clean — it echoes a proven-good verdict ONLY when it can mechanically prove the worklist good (impact-complete AND every affected entity attested clean-at-current-body under a newer wardline attestation schema than the installed producer emits), neither of which holds on the installed toolset — advisory, never gates
+
+## [PASS] warpline reverify federation
+
+reverify(include_federation=true) over a change to _add_book names every Weft federation member — filigree work, wardline risk, legis governance — each with its own weft-reason, and reports work/risk/governance on the closed enrichment vocabulary; a member that is absent or unreachable is stated honestly, never implied clean — advisory, never gates
+
 ## [PASS] plainweave intent
 
 seeded a covered+uncovered intent corpus over the specimen; cli._add_book and cli.main are justified (SEI->requirement->goal, traced); _register drops from the numerator once its requirement is deprecated; tour.__main__.main surfaces as an orphan and is scoped out of the product denominator; the catalog honestly reports incomplete public-surface tag coverage — advisory, local-only, never gates

@@ -30,6 +30,15 @@ PLAINWEAVE_PEER_FACT_SUBCOMMANDS = {
     "wardline-peer-facts": "plainweave-wardline-peer-facts",
 }
 
+# Per-option warpline capabilities. The risk-as-verification tour cell needs a SPECIFIC
+# warpline CLI surface — `reverify --attest-bundle` — not merely the binary: a warpline
+# built before the wardline-attest-2 consumer landed (a main-branch or PyPI build sharing
+# the 1.2.0 version string) ships `warpline` but not that flag — the stale-build trap.
+# Maps reverify option -> capability name (a lacuna's `expected_tool`).
+WARPLINE_PEER_FACT_OPTIONS = {
+    "--attest-bundle": "warpline-attest-bundle",
+}
+
 
 def plainweave_subcommands(plainweave_path: str | None) -> frozenset[str]:
     """The top-level subcommands the installed plainweave actually exposes.
@@ -51,6 +60,26 @@ def plainweave_subcommands(plainweave_path: str | None) -> frozenset[str]:
     except (OSError, subprocess.SubprocessError):
         return frozenset()
     return _extract_subcommand_choices(proc.stdout)
+
+
+def warpline_reverify_options(warpline_path: str | None) -> frozenset[str]:
+    """The long-option flags `warpline reverify` exposes, parsed from its --help.
+
+    Probed by SURFACE (the real CLI surface), not a version string: a main-branch or PyPI
+    warpline can share the `1.2.0` version yet lack `--attest-bundle` (it ships with the
+    wardline-attest-2 consumer). Returns an empty set on any failure (absent binary, probe
+    error): "cannot tell" ⇒ surface unavailable, never a silent present.
+    """
+    if not warpline_path:
+        return frozenset()
+    try:
+        proc = subprocess.run(
+            [warpline_path, "reverify", "--help"],
+            capture_output=True, text=True, check=False, timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return frozenset()
+    return frozenset(re.findall(r"--[a-z][a-z0-9-]+", proc.stdout))
 
 
 def _extract_subcommand_choices(help_text: str) -> frozenset[str]:
@@ -87,13 +116,17 @@ def _locate(name: str, which: Callable[[str], str | None]) -> str | None:
 def detect(
     which: Callable[[str], str | None] = shutil.which,
     pw_subcommands: Callable[[str | None], frozenset[str]] = plainweave_subcommands,
+    wp_reverify_options: Callable[[str | None], frozenset[str]] = warpline_reverify_options,
 ) -> list[Capability]:
     caps: list[Capability] = []
     plainweave_path: str | None = None
+    warpline_path: str | None = None
     for name in RUNNABLE:
         path = _locate(name, which)
         if name == "plainweave":
             plainweave_path = path
+        if name == "warpline":
+            warpline_path = path
         caps.append(
             Capability(
                 name=name,
@@ -118,6 +151,26 @@ def detect(
                     if present
                     else f"plainweave `{sub}` CLI surface absent "
                     "(Plainweave PDR-015 / plainweave >= 1.1; not in PyPI 1.0.0)"
+                ),
+            )
+        )
+    # Per-option warpline capabilities, probed from the actual warpline reverify surface.
+    # A warpline built before the wardline-attest-2 consumer (main/PyPI, same 1.2.0 string)
+    # lacks `--attest-bundle`, so the risk-as-verification lacuna (whose `expected_tool` is
+    # this capability name) gates out of verify's coverage assertion rather than reporting a
+    # failed surface — exactly like the plainweave peer-facts cells under PyPI 1.0.0.
+    wp_options = wp_reverify_options(warpline_path)
+    for opt, cap_name in WARPLINE_PEER_FACT_OPTIONS.items():
+        present = opt in wp_options
+        caps.append(
+            Capability(
+                name=cap_name,
+                available=present,
+                detail=(
+                    (warpline_path or "warpline")
+                    if present
+                    else f"warpline `reverify {opt}` surface absent "
+                    "(pre-attest-2 build; ships with the wardline-attest-2 consumer)"
                 ),
             )
         )

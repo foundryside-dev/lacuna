@@ -504,6 +504,19 @@ WARPLINE_ANCHOR_COMMIT = "fb01a0138d58fa5326fb855d8dd15687f1960af7"
 # The frozen expected downstream: the service method the CLI flow delegates to.
 WARPLINE_EXPECTED_DOWNSTREAM = "python:function:specimen/service.py::LibraryService.add_book"
 
+# Tier B — warpline consuming sibling peer facts. Closed honesty vocabularies: warpline
+# NEVER mints a silent clean. The risk-as-verification (wardline->warpline) reason_codes
+# are warpline's machine reasons for "could not mechanically prove the worklist good".
+WARPLINE_NO_SILENT_CLEAN_REASONS = frozenset({
+    "completeness_partial", "verification_source_absent",
+    "attestation_schema_unknown", "attestation_dirty", "attestation_no_commit",
+    "attestation_commit_mismatch", "attestation_unkeyed", "attestation_incomplete",
+})
+# include_federation (legis/wardline/filigree -> warpline) closed vocabs.
+WARPLINE_FED_MEMBERS = ("filigree", "wardline", "legis")
+WARPLINE_ENRICH_VOCAB = frozenset({"present", "absent", "unavailable"})
+WARPLINE_REASON_CLASS_VOCAB = frozenset({"clean", "disabled", "unreachable"})
+
 
 def _warpline_json(args: list[str]) -> dict | None:
     """Run `warpline <args> --json` and parse stdout. None on any failure.
@@ -641,6 +654,189 @@ def warpline_change_impact() -> StepResult:
             "tracked via churn + timeline — advisory, never gates"
         ),
         surfaced=surfaced,
+    )
+
+
+def _warpline_anchor_key_id() -> int | None:
+    """Resolve the frozen anchor's warpline key_id from the hot store.
+
+    `warpline_change_impact` runs first in `_drive()` and `backfill`s the change_events
+    that the pinned rev-range reads, so by the time the Tier-B legs run the store is warm
+    and the lookup is store-state independent (a minimal `COMMIT~1..COMMIT` range always
+    contains the anchor). Returns None if the anchor is not found (cold store / leg run in
+    isolation) so the caller degrades to ok=False (fail-loud), never a silent pass.
+    """
+    rng = f"{WARPLINE_ANCHOR_COMMIT}~1..{WARPLINE_ANCHOR_COMMIT}"
+    for item in _warpline_items(_warpline_json(["changed", "--rev-range", rng])):
+        entity = item.get("entity", {})
+        if entity.get("locator") == WARPLINE_ANCHOR_LOCATOR:
+            return entity.get("warpline_entity_key_id")
+    return None
+
+
+def warpline_attest_bundle() -> StepResult:
+    """warpline+wardline: risk-as-verification reads NO-SILENT-CLEAN (advisory, never gates).
+
+    Narrative goal — "wardline attests; warpline `reverify --attest-bundle` reads
+    proven-good." On the installed toolset proven-good is unreachable (wardline 1.0.7 emits
+    `wardline-attest-1`; warpline requires `-2`; and the specimen's DELTA snapshot is
+    impact-incomplete), so this leg asserts the contract that MATTERS: warpline echoes
+    wardline's authority ONLY when it can mechanically prove the worklist good, and otherwise
+    degrades to `risk_verification=unavailable` with an explicit machine reason_code — NEVER a
+    warpline-minted clean. Builds a wardline-attest bundle into a throwaway tempdir (a real
+    `wardline attest` when an attest key is present; a synthetic wardline-attest-shaped fixture
+    as a fallback when it is not — `wardline attest` needs a minted WARDLINE_ATTEST_KEY, and a
+    missing demo secret must NEVER flip the rendered mark) and asserts the no-silent-clean
+    DEGRADE. NOTE: on the specimen's DELTA snapshot warpline's impact-completeness gate
+    pre-empts attestation, so the bundle content is NOT the discriminator — what is proven is
+    that warpline returns unavailable + an explicit machine reason, never a silent clean.
+
+    Capability-gated on `warpline reverify --attest-bundle` (the wardline-attest-2 consumer
+    surface): a pre-attest-2 warpline (main/PyPI, same 1.2.0 string) renders [N/A], not
+    [WARN]. Determinism (`make verify` is byte-for-byte): `detail` is FROZEN prose, `surfaced`
+    is the stable (token, qualname) pair, and the assertion is the verdict CLASS (`unavailable`
+    + reason in a closed set), never a specific reason_code; the live reason_code rides the
+    non-rendered `note`. The future flip to proven-good is one predicate line. Never raises.
+    """
+    name = "warpline attest bundle"
+    warpline = _tool("warpline")
+    wardline = _tool("wardline")
+    if not warpline:
+        return StepResult(name, ok=False, detail="warpline not installed")
+    if "--attest-bundle" not in _capability.warpline_reverify_options(warpline):
+        return StepResult(
+            name, ok=False, available=False,
+            detail=(
+                "capability-gated — the installed warpline does not expose "
+                "`reverify --attest-bundle` (the wardline-attest-2 consumer surface; a "
+                "main-branch or PyPI 1.2.0 build sharing the version string lacks it). This "
+                "wardline+warpline risk-as-verification cell is intentionally not exercised "
+                "under the installed build — install a warpline carrying the consumer to "
+                "light it up; advisory, never gates"
+            ),
+        )
+    if not wardline:
+        return StepResult(name, ok=False, detail="wardline not installed")
+
+    anchor_q = _locator_to_qualname(WARPLINE_ANCHOR_LOCATOR)
+    key_id = _warpline_anchor_key_id()
+    no_silent_clean = False
+    reason_code = None
+    bundle_source = None
+    if key_id is not None:
+        with tempfile.TemporaryDirectory() as td:
+            bundle = Path(td) / "attest.json"
+            # Build the bundle into the throwaway tempdir — NEVER the repo tree. `wardline
+            # attest` needs a minted attest key (WARDLINE_ATTEST_KEY / `wardline install`);
+            # when it is absent the verdict is identical (the impact-completeness gate
+            # pre-empts attestation), so fall back to a synthetic wardline-attest-shaped
+            # bundle — the gate stays self-contained and deterministic, never a hard [WARN]
+            # on a missing demo secret.
+            proc = _run([wardline, "attest", "specimen/", "--allow-dirty", "--out", str(bundle)])
+            if proc.returncode == 0 and bundle.exists() and bundle.stat().st_size > 0:
+                bundle_source = "wardline-attest"
+            else:
+                bundle.write_text(json.dumps(
+                    {"schema": "wardline-attest-1", "commit": WARPLINE_ANCHOR_COMMIT, "boundaries": []}
+                ))
+                bundle_source = "synthetic-fallback"
+            rv = _warpline_data(_warpline_json([
+                "reverify", "--changed-entity-key-id", str(key_id),
+                "--depth", "2", "--attest-bundle", str(bundle),
+            ])).get("risk_verification") or {}
+            reason_code = rv.get("reason_code")
+            no_silent_clean = (
+                rv.get("risk") == "unavailable"
+                and reason_code in WARPLINE_NO_SILENT_CLEAN_REASONS
+            )
+
+    ok = no_silent_clean
+    surfaced = (("wp-attest-no-silent-clean", anchor_q),) if ok else ()
+    return StepResult(
+        name, ok=ok,
+        detail=(
+            "handed an attest bundle for a change to _add_book, warpline reports "
+            "risk_verification=unavailable with an explicit machine reason rather than a "
+            "silent clean — it echoes a proven-good verdict ONLY when it can mechanically "
+            "prove the worklist good (impact-complete AND every affected entity attested "
+            "clean-at-current-body under a newer wardline attestation schema than the "
+            "installed producer emits), neither of which holds on the installed toolset — "
+            "advisory, never gates"
+        ),
+        surfaced=surfaced,
+        note=(f"risk_verification reason_code={reason_code}; bundle={bundle_source}" if reason_code else ""),
+    )
+
+
+def warpline_reverify_federation() -> StepResult:
+    """warpline+legis+wardline+filigree: include_federation HONESTY INVARIANT (MCP-only).
+
+    `include_federation` is MCP-only (no CLI flag), so this drives the warpline-mcp server
+    through the attachment transport (`_mcp._stdio_rpc`, one tools/call per spawn).
+    `reverify(include_federation=true)` consults the Weft federation READ-ONLY and merges a
+    federation block that ALWAYS names every member — filigree (work), wardline (risk), legis
+    (governance) — each carrying its own weft-reason, plus work/risk/governance on the closed
+    enrichment vocabulary. Asserts that STRUCTURE (every member present with a reason_class in
+    the closed set; the three scalars in the closed vocab), NEVER a live verdict/count — those
+    flip with whether filigree/legis/wardline are reachable, which is the whole point: a member
+    that is disabled or unreachable is stated honestly, never implied clean.
+
+    Determinism (`make verify` is byte-for-byte): `detail` is FROZEN prose, `surfaced` is the
+    stable (token, qualname) pair, and the live per-member verdicts ride the non-rendered
+    `note`. The store is hot (warpline_change_impact ran first in `_drive()`), so the key_id
+    is resolved on the CLI side (the MCP spawn stays a single call). Never raises.
+    """
+    name = "warpline reverify federation"
+    if not _tool("warpline") or not _tool("warpline-mcp"):
+        return StepResult(name, ok=False, detail="warpline-mcp not installed")
+
+    anchor_q = _locator_to_qualname(WARPLINE_ANCHOR_LOCATOR)
+    key_id = _warpline_anchor_key_id()
+    fed_ok = scalars_ok = False
+    note = ""
+    if key_id is not None:
+        binding_raw = None
+        try:
+            spec = _mcp.load_server_specs().get("warpline")
+            if spec is not None:
+                _i, _t, binding_raw = _mcp._stdio_rpc(
+                    spec.command, spec.args, spec.env, timeout=15,
+                    binding=("warpline_reverify_worklist_get",
+                             {"repo": str(_mcp.ROOT), "changed_entity_key_ids": [key_id],
+                              "depth": 2, "include_federation": True}),
+                )
+        except Exception:  # tour contract: any transport/parse failure degrades, never raises
+            binding_raw = None
+        if binding_raw is not None:
+            sc = (binding_raw.get("result") or {}).get("structuredContent") or {}
+            data = sc.get("data") or {}
+            enr = sc.get("enrichment") or {}
+            members = (data.get("federation") or {}).get("members") or {}
+            fed_ok = all(
+                m in members
+                and (members[m].get("weft_reason") or {}).get("reason_class")
+                in WARPLINE_REASON_CLASS_VOCAB
+                for m in WARPLINE_FED_MEMBERS
+            )
+            scalars_ok = all(enr.get(k) in WARPLINE_ENRICH_VOCAB for k in ("work", "risk", "governance"))
+            note = "; ".join(
+                f"{m}:{(members.get(m, {}).get('weft_reason') or {}).get('reason_class')}"
+                for m in WARPLINE_FED_MEMBERS
+            )
+
+    ok = fed_ok and scalars_ok
+    surfaced = (("wp-reverify-federation", anchor_q),) if ok else ()
+    return StepResult(
+        name, ok=ok,
+        detail=(
+            "reverify(include_federation=true) over a change to _add_book names every Weft "
+            "federation member — filigree work, wardline risk, legis governance — each with "
+            "its own weft-reason, and reports work/risk/governance on the closed enrichment "
+            "vocabulary; a member that is absent or unreachable is stated honestly, never "
+            "implied clean — advisory, never gates"
+        ),
+        surfaced=surfaced,
+        note=note,
     )
 
 

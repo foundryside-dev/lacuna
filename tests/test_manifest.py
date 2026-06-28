@@ -7,11 +7,13 @@ MANIFEST = Path("/home/john/lacuna/tour/lacunae.toml")
 
 def test_loads_all_lacunae():
     m = load_manifest(MANIFEST)
-    assert len(m.lacunae) == 60
+    assert len(m.lacunae) == 62
     ids = {l.id for l in m.lacunae}
     assert "wl-trust-violation" in ids
     # the warpline change-impact wing (advisory, never gates)
     assert {"wp-blast-radius", "wp-reverify", "wp-churn", "wp-timeline"} <= ids
+    # the warpline peer-facts wing (warpline consuming sibling facts; never gates)
+    assert {"wp-attest-no-silent-clean", "wp-reverify-federation"} <= ids
     # the plainweave intent-coverage wing (advisory/local capability demos)
     assert {
         "pw-intent-justified",

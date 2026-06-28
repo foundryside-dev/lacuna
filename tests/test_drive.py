@@ -11,11 +11,39 @@ def test_drive_includes_the_legis_governance_step(monkeypatch):
         steps, "mcp_attachment",
         lambda: StepResult("mcp attachment", ok=True, detail="stub"),
     )
+    # the include_federation leg spawns warpline-mcp; stub it for this ordering test.
+    monkeypatch.setattr(
+        steps, "warpline_reverify_federation",
+        lambda: StepResult("warpline reverify federation", ok=True, detail="stub"),
+    )
     _caps, results = _drive()
     names = [r.name for r in results]
     assert "legis govern" in names
     # ordering: legis runs after the wardline scan it consumes
     assert names.index("legis govern") > names.index("wardline scan")
+
+
+def test_drive_includes_the_warpline_peer_facts_steps(monkeypatch):
+    # The two Tier-B warpline peer-facts legs must run AFTER warpline_change_impact (which
+    # populates the hot store both reuse). Stub the MCP-spawning legs for a fast ordering test.
+    from tour import steps
+    from tour.report import StepResult
+
+    monkeypatch.setattr(
+        steps, "mcp_attachment",
+        lambda: StepResult("mcp attachment", ok=True, detail="stub"),
+    )
+    monkeypatch.setattr(
+        steps, "warpline_reverify_federation",
+        lambda: StepResult("warpline reverify federation", ok=True, detail="stub"),
+    )
+    _caps, results = _drive()
+    names = [r.name for r in results]
+    assert "warpline attest bundle" in names
+    assert "warpline reverify federation" in names
+    # both consume the store warpline_change_impact populates, so they run after it
+    assert names.index("warpline attest bundle") > names.index("warpline change impact")
+    assert names.index("warpline reverify federation") > names.index("warpline change impact")
 
 
 def test_drive_includes_the_plainweave_intent_step(monkeypatch):
@@ -33,6 +61,10 @@ def test_drive_includes_the_plainweave_intent_step(monkeypatch):
     monkeypatch.setattr(
         steps, "mcp_attachment",
         lambda: StepResult("mcp attachment", ok=True, detail="stub"),
+    )
+    monkeypatch.setattr(
+        steps, "warpline_reverify_federation",
+        lambda: StepResult("warpline reverify federation", ok=True, detail="stub"),
     )
     _caps, results = _drive()
     names = [r.name for r in results]

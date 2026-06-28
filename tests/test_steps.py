@@ -386,3 +386,142 @@ def test_warpline_change_impact_requires_all_four(monkeypatch):
     r = steps.warpline_change_impact()
     assert not r.ok
     assert r.surfaced == ()
+
+
+# --- Tier B: warpline peer-facts (risk-as-verification + include_federation) ----------
+
+class _FakeProc:
+    """Minimal CompletedProcess stand-in for the wardline-attest subprocess seam."""
+    def __init__(self, returncode):
+        self.returncode = returncode
+        self.stdout = ""
+        self.stderr = ""
+
+
+def _attest_warpline_json(risk_verification):
+    """Fake `_warpline_json` for the attest-bundle leg: `changed` resolves the anchor
+    key_id; `reverify` returns the supplied risk_verification verdict."""
+    def fake(args):
+        if args[0] == "changed":
+            return {"data": {"items": [
+                {"entity": {"locator": "python:function:specimen/cli.py::_add_book",
+                            "warpline_entity_key_id": 128}}
+            ]}}
+        if args[0] == "reverify":
+            return {"data": {"risk_verification": risk_verification}}
+        raise AssertionError(args)
+    return fake
+
+
+def test_warpline_attest_bundle_no_silent_clean(monkeypatch, tmp_path):
+    from tour import steps
+
+    monkeypatch.setattr(steps, "_tool", lambda name: f"/fake/{name}")
+    monkeypatch.setattr(steps._capability, "warpline_reverify_options",
+                        lambda path: frozenset({"--attest-bundle"}))
+    monkeypatch.setattr(steps, "_warpline_json",
+                        _attest_warpline_json({"risk": "unavailable", "reason_code": "completeness_partial"}))
+    # wardline attest rc!=0 (no minted key) -> the leg falls back to a synthetic bundle and
+    # must still build it + run reverify; a missing demo secret never flips the rendered mark.
+    monkeypatch.setattr(steps, "_run", lambda *a, **k: _FakeProc(2))
+    monkeypatch.setattr(steps.tempfile, "TemporaryDirectory", lambda: _FakeTmp(tmp_path))
+
+    r = steps.warpline_attest_bundle()
+    assert r.ok
+    assert r.available
+    # frozen prose — no live numbers/ids/reason_codes may leak into the byte-compared detail
+    assert not any(ch.isdigit() for ch in r.detail)
+    assert "completeness_partial" not in r.detail
+    assert ("wp-attest-no-silent-clean", "specimen.cli._add_book") in r.surfaced
+
+
+def test_warpline_attest_bundle_capability_gated(monkeypatch):
+    from tour import steps
+
+    monkeypatch.setattr(steps, "_tool", lambda name: f"/fake/{name}")
+    # installed warpline lacks the `reverify --attest-bundle` surface (pre-attest-2 build)
+    monkeypatch.setattr(steps._capability, "warpline_reverify_options", lambda path: frozenset())
+    r = steps.warpline_attest_bundle()
+    assert not r.ok
+    assert r.available is False   # [N/A] capability-gated, not [WARN]
+    assert r.surfaced == ()
+
+
+def test_warpline_attest_bundle_rejects_proven_on_this_fixture(monkeypatch, tmp_path):
+    from tour import steps
+
+    monkeypatch.setattr(steps, "_tool", lambda name: f"/fake/{name}")
+    monkeypatch.setattr(steps._capability, "warpline_reverify_options",
+                        lambda path: frozenset({"--attest-bundle"}))
+    # a 'proven' verdict must NOT credit the no-silent-clean lacuna -> fail loud
+    monkeypatch.setattr(steps, "_warpline_json",
+                        _attest_warpline_json({"risk": "proven", "reason_code": "attested_clean"}))
+    monkeypatch.setattr(steps, "_run", lambda *a, **k: _FakeProc(2))
+    monkeypatch.setattr(steps.tempfile, "TemporaryDirectory", lambda: _FakeTmp(tmp_path))
+
+    r = steps.warpline_attest_bundle()
+    assert not r.ok
+    assert r.surfaced == ()
+
+
+class _FakeSpec:
+    command = "/fake/warpline-mcp"
+    args = ()
+    env = {}
+
+
+def _fed_binding(members, enrichment):
+    return {"result": {"structuredContent": {
+        "data": {"federation": {"members": members}, "items": []},
+        "enrichment": enrichment,
+    }}}
+
+
+def _changed_only_json(args):
+    if args[0] == "changed":
+        return {"data": {"items": [
+            {"entity": {"locator": "python:function:specimen/cli.py::_add_book",
+                        "warpline_entity_key_id": 128}}
+        ]}}
+    raise AssertionError(args)
+
+
+def test_warpline_reverify_federation_honesty_invariant(monkeypatch):
+    from tour import steps
+
+    monkeypatch.setattr(steps, "_tool", lambda name: f"/fake/{name}")
+    monkeypatch.setattr(steps, "_warpline_json", _changed_only_json)
+    monkeypatch.setattr(steps._mcp, "load_server_specs", lambda: {"warpline": _FakeSpec()})
+    binding = _fed_binding(
+        {"filigree": {"weft_reason": {"reason_class": "clean"}},
+         "wardline": {"weft_reason": {"reason_class": "unreachable"}},
+         "legis": {"weft_reason": {"reason_class": "clean"}}},
+        {"work": "absent", "risk": "unavailable", "governance": "absent"},
+    )
+    monkeypatch.setattr(steps._mcp, "_stdio_rpc", lambda *a, **k: (None, None, binding))
+
+    r = steps.warpline_reverify_federation()
+    assert r.ok
+    assert not any(ch.isdigit() for ch in r.detail)
+    assert ("wp-reverify-federation", "specimen.cli._add_book") in r.surfaced
+    # per-member verdicts live only in the non-rendered note
+    assert "legis" in r.note
+
+
+def test_warpline_reverify_federation_requires_every_member(monkeypatch):
+    from tour import steps
+
+    monkeypatch.setattr(steps, "_tool", lambda name: f"/fake/{name}")
+    monkeypatch.setattr(steps, "_warpline_json", _changed_only_json)
+    monkeypatch.setattr(steps._mcp, "load_server_specs", lambda: {"warpline": _FakeSpec()})
+    # legis member dropped -> structure incomplete -> fail loud (a silenced member is a swallow)
+    binding = _fed_binding(
+        {"filigree": {"weft_reason": {"reason_class": "clean"}},
+         "wardline": {"weft_reason": {"reason_class": "clean"}}},
+        {"work": "absent", "risk": "absent", "governance": "unavailable"},
+    )
+    monkeypatch.setattr(steps._mcp, "_stdio_rpc", lambda *a, **k: (None, None, binding))
+
+    r = steps.warpline_reverify_federation()
+    assert not r.ok
+    assert r.surfaced == ()

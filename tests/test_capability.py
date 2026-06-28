@@ -117,6 +117,27 @@ def test_peer_facts_caps_gate_per_subcommand_not_combined():
     assert caps["plainweave-wardline-peer-facts"].available is False
 
 
+def test_warpline_attest_bundle_cap_live_when_surface_present():
+    # a warpline carrying the wardline-attest-2 consumer exposes `reverify --attest-bundle`.
+    caps = {c.name: c for c in detect(
+        _fake_which(_FULL),
+        wp_reverify_options=lambda path: frozenset({"--repo", "--depth", "--attest-bundle", "--json"}),
+    )}
+    assert caps["warpline-attest-bundle"].available is True
+
+
+def test_warpline_attest_bundle_cap_gated_when_surface_absent():
+    # warpline binary present, but a pre-attest-2 build (main/PyPI, same 1.2.0 string)
+    # lacks the `--attest-bundle` flag -> the capability is honestly unavailable.
+    caps = {c.name: c for c in detect(
+        _fake_which(_FULL),
+        wp_reverify_options=lambda path: frozenset({"--repo", "--depth", "--json"}),
+    )}
+    assert caps["warpline"].available is True               # the binary IS present
+    assert caps["warpline-attest-bundle"].available is False
+    assert "attest-bundle" in caps["warpline-attest-bundle"].detail  # machine-readable reason
+
+
 def test_peer_facts_caps_unavailable_when_plainweave_binary_absent(monkeypatch):
     # No plainweave binary at all → the real probe is handed None and returns empty,
     # so the caps are unavailable (cannot tell == unavailable, never silent-present).

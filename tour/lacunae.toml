@@ -503,6 +503,33 @@ explanation = "NOT A FLAW — a positive warpline capability demo. warpline's ti
 expected_tool = "warpline"
 expected_rule = "wp-timeline"
 
+# ── Warpline peer-facts capability demos (wp-attest-* / wp-reverify-federation) ──────
+# Planted 2026-06-28. The warpline half of the peer-facts theme: warpline CONSUMING a
+# sibling's facts. risk-as-verification reads a PUSHED wardline-attest-2 bundle (wardline
+# owns the trust gate; warpline echoes, never re-signs); include_federation consults the
+# whole Weft federation read-only. Both prove the no-silent-clean / honesty invariant —
+# warpline never mints a clean it did not mechanically verify.
+
+[[lacuna]]
+id = "wp-attest-no-silent-clean"
+file = "specimen/cli.py"
+symbol = "_add_book"
+category = "peer-facts"
+demonstrates = ["warpline", "wardline+warpline"]
+explanation = "NOT A FLAW — a positive warpline capability demo. `warpline reverify --attest-bundle` reads risk_verification=proven-good ONLY when the worklist is impact-complete AND every affected entity is attested-clean-at-current-body (an all-or-nothing echo of wardline's authority; signature not re-verified by warpline); an absent/partial/unkeyed/schema-skewed/dirty/unmatched bundle degrades to risk_verification=unavailable with an explicit machine reason_code, NEVER a warpline-minted clean. This leg hands warpline a wardline-attest bundle and asserts that no-silent-clean DEGRADE. On the installed toolset proven-good is doubly unreachable — wardline emits wardline-attest-1 (warpline needs -2) AND the specimen's snapshot is impact-incomplete (DELTA), whose completeness gate pre-empts attestation — so the bundle content is not the discriminator; the point proven is that warpline returns unavailable+reason, never a silent clean (the one-line predicate flip lights up proven-good under a wardline-attest-2 producer over a complete snapshot). Capability-gated on the `reverify --attest-bundle` surface (the wardline-attest-2 consumer; PDR-0017): renders [N/A] under a pre-attest-2 warpline (e.g. a main-branch or PyPI 1.2.0 build). Advisory/enrich-only, never gates."
+expected_tool = "warpline-attest-bundle"
+expected_rule = "wp-attest-no-silent-clean"
+
+[[lacuna]]
+id = "wp-reverify-federation"
+file = "specimen/cli.py"
+symbol = "_add_book"
+category = "peer-facts"
+demonstrates = ["warpline", "filigree+legis+wardline+warpline"]
+explanation = "NOT A FLAW — a positive warpline capability demo. `warpline_reverify_worklist_get(include_federation=true)` (MCP-only) consults the Weft federation read-only and merges a federation block that ALWAYS names every member — filigree (work), wardline (risk), legis (governance) — each carrying its own weft-reason, plus work/risk/governance on the closed enrichment vocabulary {present,absent,unavailable}. A member that is disabled or unreachable is stated honestly; warpline never implies a clean it did not verify. Governed-present (a verified legis clearance lighting governance=present) is a documented recipe, not asserted here. Advisory/enrich-only, never gates (PDR-0017)."
+expected_tool = "warpline"
+expected_rule = "wp-reverify-federation"
+
 # ── Plainweave intent-coverage capability demos (pw-*) ─────────────────────────
 # Planted 2026-06-24. Plainweave is advisory/enrich-only/local — it surfaces no
 # flaws; it answers "why does this code exist?" via SEI -> requirement -> goal.
