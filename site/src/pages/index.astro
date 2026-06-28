@@ -5,8 +5,8 @@
 // Showcase template (IA §5.3), NOT the member template (§5.1):
 //   Hero(ash) → What/why (seeded issues) → The tour (terminal,
 //   make targets, ExitCode) → Matrix-made-runnable (specimen-grounded
-//   pairing cards) → Honest scope (not-a-member, Charter planned,
-//   elspeth) → Links/CTA → Footer.
+//   pairing cards) → Honest scope (not-a-member, Plainweave's
+//   seeded-corpus caveat, elspeth) → Links/CTA → Footer.
 //
 // Lacuna is analyzed *by* the suite, not a member *of* it — so its
 // "composes" block is the whole matrix grounded in one project, and
@@ -112,7 +112,7 @@ const ASH = LACUNA.threadHex;
           <EnrichmentChip client:visible state="present" peer="wardline" />
           <EnrichmentChip client:visible state="present" peer="warpline" />
           <EnrichmentChip client:visible state="absent" peer="legis" />
-          <EnrichmentChip client:visible state="unavailable" peer="charter" />
+          <EnrichmentChip client:visible state="absent" peer="plainweave" />
         </div>
       </div>
     </div>
@@ -168,8 +168,9 @@ const ASH = LACUNA.threadHex;
       <p class="lede">
         Point the federation at the specimen and watch it work. The tour runs every
         live Weft tool, regenerates the narrative, and asserts it. Legis runs
-        <strong> live</strong> here (three passing legs); Charter is the only member
-        still design-only, and it is labelled as such — never faked.
+        <strong> live</strong> here (three passing legs), and Plainweave runs
+        <strong> live</strong> too (its intent-coverage leg) — every admitted
+        member now runs against the specimen; no member is faked or design-only.
       </p>
 
       <div class="terminal terminal--tour">
@@ -249,22 +250,23 @@ const ASH = LACUNA.threadHex;
           <EnrichmentChip client:visible state="present" peer="wardline" />
           <EnrichmentChip client:visible state="present" peer="warpline" />
           <EnrichmentChip client:visible state="absent" peer="legis" />
-          <EnrichmentChip client:visible state="unavailable" peer="charter" />
+          <EnrichmentChip client:visible state="absent" peer="plainweave" />
           <StateBadge client:visible state="in_progress" />
         </div>
         <p class="dossier__note">
           The Filigree leg cycles the sentinel issue: <StateBadge client:visible state="open" /> →
           <StateBadge client:visible state="in_progress" /> → <StateBadge client:visible state="closed" />.
           <code> legis</code> shows <code>absent</code> until the tree is committed and the
-          artifact is signed; <code>charter</code> is <code>unavailable</code> (still planned) —
-          an absent peer is never read as a clean state.
+          artifact is signed; <code>plainweave</code> runs <code>live</code> in the tour but shows
+          <code> absent</code> for <em>this</em> surface — no requirement is bound to it, exactly the
+          orphan Plainweave surfaces — never read as a clean state.
         </p>
       </div>
     </div>
   </section>
 
   {/* ---------------------------------------------------------------- */}
-  {/* 5 · Honest scope — not-a-member, Charter planned, elspeth         */}
+  {/* 5 · Honest scope — not-a-member, Plainweave seeded-corpus, elspeth */}
   {/* ---------------------------------------------------------------- */}
   <section id="scope" class="section">
     <div class="wrap">
@@ -277,10 +279,11 @@ const ASH = LACUNA.threadHex;
           and its tour; the hub owns the roster and the doctrine — this page does not
           restate them, it points to them.
         </Banner>
-        <Banner client:visible tone="neutral" title="Charter is still planned.">
-          Charter appears only as a roster thread on the hub; its federation adapters
-          are pending, so it is labelled <code>planned</code> here too — never faked
-          into the tour.
+        <Banner client:visible tone="neutral" title="Plainweave runs live — on a seeded intent corpus.">
+          Plainweave is admitted (PDR-0030) and runs <code>live</code> in the tour;
+          its intent corpus here is a deterministic, regenerable seed over the specimen
+          (gitignored <code>.plainweave/</code>), not a hand-curated requirements backlog —
+          the leg demonstrates the reads honestly, it does not claim a real backlog.
         </Banner>
         <Banner client:visible tone="neutral" title="The showcase, not the scale proof.">
           Two complementary roles share Loomweave’s analysis surface: Lacuna is the

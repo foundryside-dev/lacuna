@@ -37,17 +37,26 @@ interpolates `${WEFT_FEDERATION_TOKEN}` from the environment, not from `.env`:
 export WEFT_FEDERATION_TOKEN="$(cat ~/.config/filigree/federation_token)"
 ```
 
-Likewise for the **legis binding ledger / closure gate**: `make setup` generates
-`LEGIS_HMAC_KEY` into `.env`, but the standing legis MCP server reads it from the
-shell env (not `.mcp.json` — never put the secret there). Export it before
-launching Claude Code so the gate is enabled:
+Likewise for the **legis MCP server** — its binding ledger / closure gate **and**
+a clean `legis doctor`: `make setup` writes the legis keys to `.env`, but the
+standing server reads them from the shell env (not `.mcp.json` — never put them
+there; legis deliberately scrubs operator keys out of `.mcp.json`). Export `.env`
+before launching Claude Code:
 
 ```bash
-set -a; . ./.env; set +a        # export everything in .env (incl. LEGIS_HMAC_KEY)
-# or, just the one key:  export LEGIS_HMAC_KEY=...
+set -a; . ./.env; set +a        # export everything in .env: LEGIS_OPERATOR_KEY,
+                                # LEGIS_WARDLINE_ARTIFACT_KEY, LEGIS_HMAC_KEY, …
 ```
 
-Without it, the closure gate stays honestly disabled (`CELL_NOT_ENABLED`).
+This both enables the closure gate (otherwise `CELL_NOT_ENABLED`) **and** makes
+`legis doctor` read clean: without it the standing MCP server inherits none of the
+`.env` keys, so doctor flags the operator-key and wardline-artifact-key warnings.
+With `.env` loaded it settles to a single, expected note (the operator key is
+plaintext-in-env — usable, by design, for this demo tier).
+
+**Tip:** with [direnv](https://direnv.net) installed, the committed `.envrc`
+auto-loads `.env` on `cd` (`direnv allow` once after `make setup`) — no manual
+export needed, so the agent you launch from this directory inherits the keys.
 
 ## Run the tour
 

@@ -16,7 +16,9 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
-from tour import plainweave_seed
+from tour import capability as _capability
+from tour import mcp_attachment as _mcp
+from tour import plainweave_seed, wardline_peerfacts_seed
 from tour.report import StepResult
 
 ROOT = Path("/home/john/lacuna")
@@ -389,10 +391,19 @@ def loomweave_analyze() -> StepResult:
                 con.close()
         except sqlite3.Error:
             pass
+    # Determinism: the entity count drifts with any code edit and the edge count is
+    # order-sensitive across re-analyze (it flaps ±1 even on an unchanged tree), so
+    # baking either into the byte-locked detail flaps `make verify`. Per the tour's
+    # standing rule (cf. plainweave_intent / legis_govern), the live counts ride the
+    # non-rendered `note`; the rendered detail is frozen prose.
     return StepResult(
         "loomweave analyze",
         ok=proc.returncode == 0,
-        detail=f"{ents} entities, {edges} structural edges",
+        detail=(
+            "indexed the specimen tree into Loomweave's entity / structural-edge graph "
+            "(live counts ride the non-rendered note for byte-for-byte lockstep)"
+        ),
+        note=f"{ents} entities, {edges} structural edges",
     )
 
 
@@ -400,9 +411,15 @@ def _finding_qualname(entity_id: str, evidence: str) -> str:
     """Map a loomweave finding to a module qualname the coverage gate can match.
 
     File-scoped alarms attach to ``core:file:<relpath>``; the duplicate-locator
-    attaches to ``core:project:*`` and carries the first colliding source path in
-    its evidence metadata. Anything else (e.g. subsystem-scoped facts) yields ""
-    — surfaced but matching no planted symbol.
+    attaches to ``core:project:*`` (legacy) or ``python:class:<qn>`` (loomweave
+    v11+) and carries the colliding source path in its evidence metadata. v11
+    exposes it as ``colliding_source_file_path`` (the planted ``colliding.py``) and
+    repurposes ``first_source_file_path`` for the OTHER colliding file (the package
+    ``__init__.py``); older builds carried the planted path in
+    ``first_source_file_path``. Prefer the explicit colliding path, fall back to the
+    legacy key, so both build shapes map to the same module qualname. Anything else
+    (e.g. subsystem-scoped facts) yields "" — surfaced but matching no planted
+    symbol.
     """
     path = ""
     if entity_id.startswith("core:file:"):
@@ -413,7 +430,11 @@ def _finding_qualname(entity_id: str, evidence: str) -> str:
         except (json.JSONDecodeError, AttributeError):
             meta = {}
         if isinstance(meta, dict):
-            path = meta.get("first_source_file_path") or ""
+            path = (
+                meta.get("colliding_source_file_path")
+                or meta.get("first_source_file_path")
+                or ""
+            )
     if not path:
         return ""
     p = Path(path)
@@ -482,6 +503,19 @@ WARPLINE_ANCHOR_LOCATOR = "python:function:specimen/cli.py::_add_book"
 WARPLINE_ANCHOR_COMMIT = "fb01a0138d58fa5326fb855d8dd15687f1960af7"
 # The frozen expected downstream: the service method the CLI flow delegates to.
 WARPLINE_EXPECTED_DOWNSTREAM = "python:function:specimen/service.py::LibraryService.add_book"
+
+# Tier B — warpline consuming sibling peer facts. Closed honesty vocabularies: warpline
+# NEVER mints a silent clean. The risk-as-verification (wardline->warpline) reason_codes
+# are warpline's machine reasons for "could not mechanically prove the worklist good".
+WARPLINE_NO_SILENT_CLEAN_REASONS = frozenset({
+    "completeness_partial", "verification_source_absent",
+    "attestation_schema_unknown", "attestation_dirty", "attestation_no_commit",
+    "attestation_commit_mismatch", "attestation_unkeyed", "attestation_incomplete",
+})
+# include_federation (legis/wardline/filigree -> warpline) closed vocabs.
+WARPLINE_FED_MEMBERS = ("filigree", "wardline", "legis")
+WARPLINE_ENRICH_VOCAB = frozenset({"present", "absent", "unavailable"})
+WARPLINE_REASON_CLASS_VOCAB = frozenset({"clean", "disabled", "unreachable"})
 
 
 def _warpline_json(args: list[str]) -> dict | None:
@@ -623,6 +657,189 @@ def warpline_change_impact() -> StepResult:
     )
 
 
+def _warpline_anchor_key_id() -> int | None:
+    """Resolve the frozen anchor's warpline key_id from the hot store.
+
+    `warpline_change_impact` runs first in `_drive()` and `backfill`s the change_events
+    that the pinned rev-range reads, so by the time the Tier-B legs run the store is warm
+    and the lookup is store-state independent (a minimal `COMMIT~1..COMMIT` range always
+    contains the anchor). Returns None if the anchor is not found (cold store / leg run in
+    isolation) so the caller degrades to ok=False (fail-loud), never a silent pass.
+    """
+    rng = f"{WARPLINE_ANCHOR_COMMIT}~1..{WARPLINE_ANCHOR_COMMIT}"
+    for item in _warpline_items(_warpline_json(["changed", "--rev-range", rng])):
+        entity = item.get("entity", {})
+        if entity.get("locator") == WARPLINE_ANCHOR_LOCATOR:
+            return entity.get("warpline_entity_key_id")
+    return None
+
+
+def warpline_attest_bundle() -> StepResult:
+    """warpline+wardline: risk-as-verification reads NO-SILENT-CLEAN (advisory, never gates).
+
+    Narrative goal — "wardline attests; warpline `reverify --attest-bundle` reads
+    proven-good." On the installed toolset proven-good is unreachable (wardline 1.0.7 emits
+    `wardline-attest-1`; warpline requires `-2`; and the specimen's DELTA snapshot is
+    impact-incomplete), so this leg asserts the contract that MATTERS: warpline echoes
+    wardline's authority ONLY when it can mechanically prove the worklist good, and otherwise
+    degrades to `risk_verification=unavailable` with an explicit machine reason_code — NEVER a
+    warpline-minted clean. Builds a wardline-attest bundle into a throwaway tempdir (a real
+    `wardline attest` when an attest key is present; a synthetic wardline-attest-shaped fixture
+    as a fallback when it is not — `wardline attest` needs a minted WARDLINE_ATTEST_KEY, and a
+    missing demo secret must NEVER flip the rendered mark) and asserts the no-silent-clean
+    DEGRADE. NOTE: on the specimen's DELTA snapshot warpline's impact-completeness gate
+    pre-empts attestation, so the bundle content is NOT the discriminator — what is proven is
+    that warpline returns unavailable + an explicit machine reason, never a silent clean.
+
+    Capability-gated on `warpline reverify --attest-bundle` (the wardline-attest-2 consumer
+    surface): a pre-attest-2 warpline (main/PyPI, same 1.2.0 string) renders [N/A], not
+    [WARN]. Determinism (`make verify` is byte-for-byte): `detail` is FROZEN prose, `surfaced`
+    is the stable (token, qualname) pair, and the assertion is the verdict CLASS (`unavailable`
+    + reason in a closed set), never a specific reason_code; the live reason_code rides the
+    non-rendered `note`. The future flip to proven-good is one predicate line. Never raises.
+    """
+    name = "warpline attest bundle"
+    warpline = _tool("warpline")
+    wardline = _tool("wardline")
+    if not warpline:
+        return StepResult(name, ok=False, detail="warpline not installed")
+    if "--attest-bundle" not in _capability.warpline_reverify_options(warpline):
+        return StepResult(
+            name, ok=False, available=False,
+            detail=(
+                "capability-gated — the installed warpline does not expose "
+                "`reverify --attest-bundle` (the wardline-attest-2 consumer surface; a "
+                "main-branch or PyPI 1.2.0 build sharing the version string lacks it). This "
+                "wardline+warpline risk-as-verification cell is intentionally not exercised "
+                "under the installed build — install a warpline carrying the consumer to "
+                "light it up; advisory, never gates"
+            ),
+        )
+    if not wardline:
+        return StepResult(name, ok=False, detail="wardline not installed")
+
+    anchor_q = _locator_to_qualname(WARPLINE_ANCHOR_LOCATOR)
+    key_id = _warpline_anchor_key_id()
+    no_silent_clean = False
+    reason_code = None
+    bundle_source = None
+    if key_id is not None:
+        with tempfile.TemporaryDirectory() as td:
+            bundle = Path(td) / "attest.json"
+            # Build the bundle into the throwaway tempdir — NEVER the repo tree. `wardline
+            # attest` needs a minted attest key (WARDLINE_ATTEST_KEY / `wardline install`);
+            # when it is absent the verdict is identical (the impact-completeness gate
+            # pre-empts attestation), so fall back to a synthetic wardline-attest-shaped
+            # bundle — the gate stays self-contained and deterministic, never a hard [WARN]
+            # on a missing demo secret.
+            proc = _run([wardline, "attest", "specimen/", "--allow-dirty", "--out", str(bundle)])
+            if proc.returncode == 0 and bundle.exists() and bundle.stat().st_size > 0:
+                bundle_source = "wardline-attest"
+            else:
+                bundle.write_text(json.dumps(
+                    {"schema": "wardline-attest-1", "commit": WARPLINE_ANCHOR_COMMIT, "boundaries": []}
+                ))
+                bundle_source = "synthetic-fallback"
+            rv = _warpline_data(_warpline_json([
+                "reverify", "--changed-entity-key-id", str(key_id),
+                "--depth", "2", "--attest-bundle", str(bundle),
+            ])).get("risk_verification") or {}
+            reason_code = rv.get("reason_code")
+            no_silent_clean = (
+                rv.get("risk") == "unavailable"
+                and reason_code in WARPLINE_NO_SILENT_CLEAN_REASONS
+            )
+
+    ok = no_silent_clean
+    surfaced = (("wp-attest-no-silent-clean", anchor_q),) if ok else ()
+    return StepResult(
+        name, ok=ok,
+        detail=(
+            "handed an attest bundle for a change to _add_book, warpline reports "
+            "risk_verification=unavailable with an explicit machine reason rather than a "
+            "silent clean — it echoes a proven-good verdict ONLY when it can mechanically "
+            "prove the worklist good (impact-complete AND every affected entity attested "
+            "clean-at-current-body under a newer wardline attestation schema than the "
+            "installed producer emits), neither of which holds on the installed toolset — "
+            "advisory, never gates"
+        ),
+        surfaced=surfaced,
+        note=(f"risk_verification reason_code={reason_code}; bundle={bundle_source}" if reason_code else ""),
+    )
+
+
+def warpline_reverify_federation() -> StepResult:
+    """warpline+legis+wardline+filigree: include_federation HONESTY INVARIANT (MCP-only).
+
+    `include_federation` is MCP-only (no CLI flag), so this drives the warpline-mcp server
+    through the attachment transport (`_mcp._stdio_rpc`, one tools/call per spawn).
+    `reverify(include_federation=true)` consults the Weft federation READ-ONLY and merges a
+    federation block that ALWAYS names every member — filigree (work), wardline (risk), legis
+    (governance) — each carrying its own weft-reason, plus work/risk/governance on the closed
+    enrichment vocabulary. Asserts that STRUCTURE (every member present with a reason_class in
+    the closed set; the three scalars in the closed vocab), NEVER a live verdict/count — those
+    flip with whether filigree/legis/wardline are reachable, which is the whole point: a member
+    that is disabled or unreachable is stated honestly, never implied clean.
+
+    Determinism (`make verify` is byte-for-byte): `detail` is FROZEN prose, `surfaced` is the
+    stable (token, qualname) pair, and the live per-member verdicts ride the non-rendered
+    `note`. The store is hot (warpline_change_impact ran first in `_drive()`), so the key_id
+    is resolved on the CLI side (the MCP spawn stays a single call). Never raises.
+    """
+    name = "warpline reverify federation"
+    if not _tool("warpline") or not _tool("warpline-mcp"):
+        return StepResult(name, ok=False, detail="warpline-mcp not installed")
+
+    anchor_q = _locator_to_qualname(WARPLINE_ANCHOR_LOCATOR)
+    key_id = _warpline_anchor_key_id()
+    fed_ok = scalars_ok = False
+    note = ""
+    if key_id is not None:
+        binding_raw = None
+        try:
+            spec = _mcp.load_server_specs().get("warpline")
+            if spec is not None:
+                _i, _t, binding_raw = _mcp._stdio_rpc(
+                    spec.command, spec.args, spec.env, timeout=15,
+                    binding=("warpline_reverify_worklist_get",
+                             {"repo": str(_mcp.ROOT), "changed_entity_key_ids": [key_id],
+                              "depth": 2, "include_federation": True}),
+                )
+        except Exception:  # tour contract: any transport/parse failure degrades, never raises
+            binding_raw = None
+        if binding_raw is not None:
+            sc = (binding_raw.get("result") or {}).get("structuredContent") or {}
+            data = sc.get("data") or {}
+            enr = sc.get("enrichment") or {}
+            members = (data.get("federation") or {}).get("members") or {}
+            fed_ok = all(
+                m in members
+                and (members[m].get("weft_reason") or {}).get("reason_class")
+                in WARPLINE_REASON_CLASS_VOCAB
+                for m in WARPLINE_FED_MEMBERS
+            )
+            scalars_ok = all(enr.get(k) in WARPLINE_ENRICH_VOCAB for k in ("work", "risk", "governance"))
+            note = "; ".join(
+                f"{m}:{(members.get(m, {}).get('weft_reason') or {}).get('reason_class')}"
+                for m in WARPLINE_FED_MEMBERS
+            )
+
+    ok = fed_ok and scalars_ok
+    surfaced = (("wp-reverify-federation", anchor_q),) if ok else ()
+    return StepResult(
+        name, ok=ok,
+        detail=(
+            "reverify(include_federation=true) over a change to _add_book names every Weft "
+            "federation member — filigree work, wardline risk, legis governance — each with "
+            "its own weft-reason, and reports work/risk/governance on the closed enrichment "
+            "vocabulary; a member that is absent or unreachable is stated honestly, never "
+            "implied clean — advisory, never gates"
+        ),
+        surfaced=surfaced,
+        note=note,
+    )
+
+
 # ── Plainweave intent-coverage capability demo (pw-*) ──────────────────────────
 # Plainweave is advisory / enrich-only / local — no flaw rules; it answers
 # "why does this code exist?" via SEI -> requirement -> goal. Like warpline, this
@@ -633,22 +850,45 @@ PLAINWEAVE_CLI_MAIN = "specimen.cli.main"         # justified  (covered)
 PLAINWEAVE_TOUR_MAIN = "tour.__main__.main"        # orphan + scoped-out
 PLAINWEAVE_ABSENT_TAGS = {"exported-api", "http-route"}  # the honest-degradation classes
 
+# Peer-facts demos (pw-requirements-enrichment / pw-wardline-peer-facts). Frozen anchors
+# pin against the producers' .v1 envelopes over the same covered+uncovered seed; live
+# numbers never enter the rendered narrative (determinism).
+PLAINWEAVE_ENRICH_COVERED = "python:function:specimen.cli._add_book"          # -> present
+PLAINWEAVE_ENRICH_ABSENT = "python:function:tour.__main__.main"              # -> absent (orphan)
+PLAINWEAVE_ENRICH_UNAVAILABLE = "python:function:specimen.cli._does_not_exist"  # -> unavailable (identity gap)
+PLAINWEAVE_WARDLINE_ACTIVE = "specimen.peerfacts.unsafe_sink"  # active-defect anchor (frozen fixture)
 
-def _plainweave_json(args: list[str]) -> dict | None:
-    """Run `plainweave <args> --json` and parse stdout. None on any failure.
 
-    The single mockable seam for the plainweave leg (tests monkeypatch this). Uses
+def _plainweave_json(args: list[str], cwd: Path = ROOT) -> dict | None:
+    """Run `plainweave <args> --json` (in `cwd`) and parse stdout. None on any failure.
+
+    The single mockable seam for the plainweave legs (tests monkeypatch this). Uses
     `_tool('plainweave')` — NOT import-based detection — because plainweave is
-    installed as a uv tool in ~/.local/bin like its siblings. Never raises.
+    installed as a uv tool in ~/.local/bin like its siblings. `cwd` defaults to ROOT;
+    the wardline-peer-facts leg points it at a frozen fixture workspace so the producer
+    reads planted `.wardline/` snapshots instead of the repo's volatile live ones.
+    Never raises.
     """
     plainweave = _tool("plainweave")
     if not plainweave:
         return None
-    proc = _run([plainweave, *args, "--json"])
+    proc = _run([plainweave, *args, "--json"], cwd=cwd)
     try:
         return json.loads(proc.stdout)
     except (json.JSONDecodeError, TypeError):
         return None
+
+
+def _plainweave_supports(subcommand: str) -> bool:
+    """True iff the installed plainweave exposes `subcommand`.
+
+    The capability gate for the peer-facts cells. Mockable seam (tests patch it);
+    behaviour-probed via `capability.plainweave_subcommands` so a 1.0.0-vs-CLI-parity
+    build is told apart by its actual surface, not its (shared) version string. When
+    False, the leg renders `[N/A]` (capability-gated) rather than `[WARN]` (failed) —
+    distinguishing "surface not present in this plainweave" from "ran and degraded".
+    """
+    return subcommand in _capability.plainweave_subcommands(_tool("plainweave"))
 
 
 def plainweave_intent() -> StepResult:
@@ -761,6 +1001,157 @@ def plainweave_intent() -> StepResult:
         ),
         surfaced=tuple(pairs),
         note=note,
+    )
+
+
+def plainweave_requirements_enrichment() -> StepResult:
+    """plainweave+warpline: per-entity requirements enrichment, no-silent-clean.
+
+    Over the same covered+uncovered seed, assert the three honest states a Warpline
+    consumer relies on: a covered surface -> `present` (non-empty requirements); the
+    recorded-but-unbound orphan -> `absent`; a well-formed-but-absent locator ->
+    `unavailable` (an identity gap is "cannot tell", NEVER `absent`). Advisory, local-only,
+    never gates. Frozen anchors; deterministic. Never raises (tour contract).
+    """
+    name = "plainweave requirements-enrichment"
+    if not _plainweave_supports("requirements-enrichment"):
+        return StepResult(
+            name, ok=False, available=False,
+            detail=(
+                "capability-gated — the installed plainweave does not expose the "
+                "`requirements-enrichment` CLI surface (Plainweave PDR-015; plainweave >= 1.1, "
+                "absent in the brief-pinned PyPI 1.0.0). This plainweave+warpline peer-facts "
+                "cell is intentionally not exercised under the installed version — install a "
+                "plainweave carrying the subcommand to light it up; advisory, local-only, never gates"
+            ),
+        )
+
+    # Seed in an isolated, offline workspace (local Loomweave resolution) so creating the
+    # accepted trace link a `present` result needs does not depend on a live Loomweave HTTP
+    # endpoint — keeping the demo deterministic. See plainweave_seed.materialize_workspace.
+    workspace = plainweave_seed.materialize_workspace()
+
+    def pw(args: list[str]) -> dict:
+        env = _plainweave_json(args, cwd=workspace)
+        if env is None or not env.get("ok"):
+            raise RuntimeError(f"plainweave call failed: {args[0] if args else '?'}")
+        return env.get("data") or {}
+
+    try:
+        # with_trace_links: enrichment keys off accepted trace links (not the SEI binding
+        # that intent-coverage uses), so a covered surface needs one to report `present`.
+        plainweave_seed.seed(pw, with_trace_links=True, root=workspace)
+        env = _plainweave_json(
+            ["requirements-enrichment", PLAINWEAVE_ENRICH_COVERED, PLAINWEAVE_ENRICH_ABSENT, PLAINWEAVE_ENRICH_UNAVAILABLE],
+            cwd=workspace,
+        )
+        if env is None or not env.get("ok"):
+            raise RuntimeError("requirements-enrichment call failed")
+        items = {it["entity_ref"]: it for it in (env.get("data") or {}).get("items", []) if it.get("entity_ref")}
+        covered = items.get(PLAINWEAVE_ENRICH_COVERED, {})
+        absent = items.get(PLAINWEAVE_ENRICH_ABSENT, {})
+        unavailable = items.get(PLAINWEAVE_ENRICH_UNAVAILABLE, {})
+    except Exception as exc:  # tour contract: degrade, never raise. Type name only — no hex/digits.
+        return StepResult(name, ok=False, detail=f"plainweave enrichment failed: {type(exc).__name__}")
+    finally:
+        shutil.rmtree(workspace, ignore_errors=True)  # the isolated seed workspace is single-use
+
+    pairs: list[tuple[str, str]] = []
+    # Load-bearing no-silent-clean conjunction: present AND absent AND unavailable (NOT
+    # absent) must all hold. A regression collapsing unavailable->absent drops the pair ->
+    # the lacuna lands in missing_ids -> `make verify` reds (fail loud).
+    if (
+        covered.get("status") == "present"
+        and covered.get("requirements")
+        and absent.get("status") == "absent"
+        and unavailable.get("status") == "unavailable"
+    ):
+        pairs.append(("pw-requirements-enrichment", PLAINWEAVE_ADD_BOOK))
+
+    return StepResult(
+        name,
+        ok=len(pairs) == 1,
+        detail=(
+            "over the covered+uncovered seed, plainweave requirements-enrichment reports "
+            "cli._add_book present (bound, non-empty requirements), tour.__main__.main absent "
+            "(recorded, unbound), and an unresolvable locator unavailable (identity gap — never "
+            "a silent 'absent') — the Warpline-facing no-silent-clean contract; advisory, "
+            "local-only, never gates"
+        ),
+        surfaced=tuple(pairs),
+    )
+
+
+def plainweave_wardline_peer_facts() -> StepResult:
+    """plainweave+wardline: surface Wardline findings as advisory peer facts.
+
+    Generates a frozen two-snapshot fixture (with scan-identity manifests) in a temp
+    workspace, then runs `plainweave wardline-peer-facts --json` against it. Asserts the
+    full contract: an active defect AND a non-defect finding surface as advisory context;
+    a finding gone from the latest in-scope snapshot is reported resolved_or_unseen; an
+    out-of-scope prior finding is honestly flagged (wardline_scope_mismatch), never
+    silently resolved; and an absent .wardline/ yields freshness=unavailable (NEVER clean).
+    Plainweave never scans — Wardline owns the trust gate; this is advisory, local-only,
+    and never gates. Frozen fixture; deterministic. Never raises (tour contract).
+    """
+    name = "plainweave wardline peer facts"
+    if not _plainweave_supports("wardline-peer-facts"):
+        return StepResult(
+            name, ok=False, available=False,
+            detail=(
+                "capability-gated — the installed plainweave does not expose the "
+                "`wardline-peer-facts` CLI surface (Plainweave PDR-015; plainweave >= 1.1, "
+                "absent in the brief-pinned PyPI 1.0.0). This plainweave+wardline peer-facts "
+                "cell is intentionally not exercised under the installed version — install a "
+                "plainweave carrying the subcommand to light it up; advisory, local-only, never gates"
+            ),
+        )
+    present_dir = wardline_peerfacts_seed.materialize()
+    absent_dir = wardline_peerfacts_seed.materialize_absent()
+    try:
+        present = _plainweave_json(["wardline-peer-facts"], cwd=present_dir)
+        absent = _plainweave_json(["wardline-peer-facts"], cwd=absent_dir)
+        if present is None or not present.get("ok") or absent is None or not absent.get("ok"):
+            raise RuntimeError("wardline-peer-facts call failed")
+        data = present.get("data") or {}
+        facts = data.get("facts") or []
+        active_defect = any(
+            f.get("suppression_state") == "active"
+            and f.get("non_defect") is False
+            and f.get("qualname") == PLAINWEAVE_WARDLINE_ACTIVE
+            for f in facts
+        )
+        non_defect = any(f.get("non_defect") is True for f in facts)
+        resolved = bool(data.get("resolved_or_unseen"))
+        scope_flagged = any(d.get("code") == "wardline_scope_mismatch" for d in (data.get("degraded") or []))
+        adata = absent.get("data") or {}
+        absent_unavailable = adata.get("freshness") == "unavailable" and any(
+            d.get("code") == "wardline_findings_absent" for d in (adata.get("degraded") or [])
+        )
+    except Exception as exc:  # tour contract: degrade, never raise. Type name only — no hex/digits.
+        return StepResult(name, ok=False, detail=f"plainweave wardline peer facts failed: {type(exc).__name__}")
+    finally:
+        shutil.rmtree(present_dir, ignore_errors=True)  # single-use frozen fixtures
+        shutil.rmtree(absent_dir, ignore_errors=True)
+
+    pairs: list[tuple[str, str]] = []
+    # All five conditions are load-bearing (active + non-defect + resolved/unseen + honest
+    # scope-mismatch + absent->unavailable). Any silent-clean regression drops the pair ->
+    # the lacuna lands in missing_ids -> `make verify` reds (fail loud).
+    if active_defect and non_defect and resolved and scope_flagged and absent_unavailable:
+        pairs.append(("pw-wardline-peer-facts", PLAINWEAVE_WARDLINE_ACTIVE))
+
+    return StepResult(
+        name,
+        ok=len(pairs) == 1,
+        detail=(
+            "plainweave reads .wardline/ snapshots as advisory peer facts: an active defect "
+            "and a non-defect finding surface; a finding gone from the latest in-scope snapshot "
+            "is reported resolved_or_unseen while an out-of-scope prior finding is honestly "
+            "flagged (scope mismatch), not silently resolved; and an absent .wardline/ is "
+            "unavailable, never clean — advisory, local-only, never gates"
+        ),
+        surfaced=tuple(pairs),
     )
 
 
@@ -1334,3 +1725,77 @@ def legis_posture() -> StepResult:
     # The concrete cell is environment state (operator-set), kept out of the
     # locked narrative so `make verify` stays byte-deterministic across machines.
     return StepResult(name, ok=ok, detail=detail, note=f"floor={floor or 'unreadable'}")
+
+
+# ── MCP attachment: assert each .mcp.json member attaches + binds ─────────────
+
+# R2/D13: the frozen detail is ONE module constant so the happy path and the config-error
+# path return BYTE-IDENTICAL detail — they must never drift, or lockstep breaks. Its value
+# must equal the exact literal the determinism test asserts (Task 4 Step 1).
+_MCP_ATTACH_DETAIL = (
+    "all .mcp.json members reachable MCP-first and bound to the staged repo — "
+    "federation seam integrity asserted; a silent de-attach trips this gate")
+
+
+def mcp_attachment() -> StepResult:
+    """Assert each .mcp.json member attaches MCP-first + binds to the staged repo.
+    Frozen detail (lockstep); per-member liveness goes in `note` (not rendered).
+
+    D13 — the narrative marker is DECOUPLED from the live probe. `ok` is FROZEN `True`,
+    so this leg NEVER flaps the byte-compared `docs/tour.md` (`render_tour_md` renders
+    `[PASS]`/`[WARN]` straight from `ok`). The attach gate runs SOLELY through the
+    coverage check: a de-attached member drops from `surfaced`, its `mcp-attach-<member>`
+    lacuna goes missing, and `make verify` fails naming it — mirroring
+    `warpline_change_impact`, whose narrative never flaps. Were `ok` live instead, a
+    transient probe failure would flip `[PASS]`→`[WARN]`, flag `docs/tour.md` "stale", and
+    a developer's reflexive re-`make tour` + commit would bake a `[WARN]` baseline that
+    PERMANENTLY encodes the degraded state (and the next clean run then fails the other
+    way). The loud operator signal rides `note` (printed to stdout, NEVER rendered into
+    the locked markdown): a failed member is flagged `ATTACH FAILED` there, not in the
+    narrative."""
+    name = "mcp attachment"
+    try:
+        specs = _mcp.load_server_specs()
+        results = []
+        for spec in specs.values():
+            try:                                 # per-probe isolation: one member's failure
+                results.append(_mcp.probe(spec)) #   must not discard the other five's results
+            except Exception as e:               # defence-in-depth: probe() never raises (D09, tested), so this is
+                #   dead unless a future change regresses that invariant. If it ever fires, "probe-raised" is a
+                #   recognisable D18 diagnostic (not an empty string matching neither not-installed nor handshake-failed).
+                results.append(_mcp.AttachResult(
+                    member=spec.name, attached=False, bound=False,
+                    liveness="absent", bound_context="probe-raised", error=_mcp.redact(str(e))[:200]))
+    except Exception as e:                       # R2/D13: never raise (tour contract) AND never flip frozen `ok`.
+        # .mcp.json is gitignored → load_server_specs() hits FileNotFoundError on a fresh clone. Returning
+        # ok=False would flip the [PASS]/[WARN] marker and re-open the stale-baseline trap D13 closes. Keep `ok`
+        # FROZEN True with surfaced=() so ALL 6 mcp-attach lacunae go missing → make verify fails loud naming
+        # all 6, the cause in note — never via a stale narrative. (verify is owner-local-only; .mcp.json is
+        # always present there, so this is the absent-config precondition, not normal operation.)
+        return StepResult(
+            name, ok=True, detail=_MCP_ATTACH_DETAIL, surfaced=(),
+            note=f"mcp attachment unavailable (config/probe error): {_mcp.redact(str(e))[:200]}")
+    surfaced = tuple(("mcp-attach", r.member) for r in results if r.attached and r.bound)
+    # D13: `ok` is FROZEN True — the gate is the coverage check (surfaced → missing_ids),
+    # never the byte-compared narrative. A de-attach drops the member from `surfaced` (so
+    # `make verify` fails naming it) WITHOUT turning docs/tour.md stale, so no reflexive
+    # re-`make tour` can bake a [WARN] baseline. The loud signal rides `note` (stdout, not
+    # rendered): each failed member is flagged ATTACH FAILED so the operator still sees it.
+    failed = sorted(r.member for r in results if not (r.attached and r.bound))
+    # D18: within `absent`, distinguish a never-installed *-mcp binary (bound_context "not-installed")
+    # from a real de-attach (bound_context "handshake-failed") so the operator installs vs investigates —
+    # capability.detect() marks warpline/plainweave live by CLI name, but .mcp.json spawns the separate
+    # warpline-mcp/plainweave-mcp binaries. The diagnostic is variable data → it rides `note` only, NEVER
+    # the frozen `detail`.
+    def _liveness_note(r) -> str:
+        diag = f" ({r.bound_context})" if r.liveness == "absent" and r.bound_context else ""
+        return f"{r.member}:{r.liveness}{diag}"
+    note = "; ".join(_liveness_note(r) for r in sorted(results, key=lambda x: x.member))
+    if failed:
+        note = ("ATTACH FAILED: " + ", ".join(f"mcp-attach-{m}" for m in failed)
+                + " — fix before running make tour; the coverage gate fails verify by name | "
+                + note)
+    return StepResult(
+        name, ok=True,   # FROZEN — never flaps the narrative; the gate is the coverage check (D13)
+        detail=_MCP_ATTACH_DETAIL,   # R2: same constant as the config-error path → byte-identical
+        surfaced=surfaced, note=note)

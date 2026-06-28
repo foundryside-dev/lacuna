@@ -1,4 +1,25 @@
-# PRD-0004 — MCP attachment truth            Status: ready-for-planning
+# PRD-0004 — MCP attachment truth            Status: CLOSED 2026-06-25 (G1 4/4 met; reproduce-and-report moot) — superseded by the plainweave-MCP-attachment Next bet
+
+> **STATUS UPDATE (2026-06-25, in-session live probe).** Planning probed the three
+> attachment gaps directly via this attached session's `mcp__*` tools (the faithful
+> G1 measurement). **All three are RESOLVED:** Loomweave MCP bound to
+> `/home/john/lacuna` (423 entities, fresh index); Filigree MCP bound to lacuna
+> (schema 29/29); Legis MCP present and answering (`doctor_get` responds,
+> filigree-scoped to lacuna). The 0/4 baseline (06-13) is stale — member config-fixes
+> since then closed the seams. **Criteria 1–2 (reproduce + report member bugs) are
+> moot** (no member bugs exist); **criterion 3 (G1 outcome) is substantially met.**
+> Evidence + the dissolved-premise reframe: `docs/plans/2026-06-25-mcp-attachment-truth-harness.md`.
+> **Owner decision (2026-06-25): CLOSED — open plainweave as a fresh Next bet.**
+> G1 confirmed 4/4 reachable MCP-first in this attached session (Wardline→Filigree,
+> Loomweave→Filigree enrichment, Loomweave→Filigree issue-assoc, Legis governance) —
+> outcome met. Reproduce-and-report criteria 1–2 accepted as **moot** (no member bugs
+> exist). The live frontier — plainweave (6th member) MCP-absent in Lacuna (source ships
+> a FastMCP server; installed `0.0.1` build is stale; not in `.mcp.json`) — is filed as a
+> **new Next bet**: wire the newest member MCP-first + a 6-member attachment
+> regression-harness. PDR (close PRD-0004 + record the bet), roadmap Next, G1 reading,
+> and current-state rewrite are written and committed at the next `/product-checkpoint`.
+
+Status (historical): in-planning (dispatched 2026-06-25, owner-reconfirmed after Plainweave detour)
 Decision: PDR-0003   Bet (roadmap.md): Now → first dispatched workstream   Target metric (metrics.md): G1 federation seam health
 
 ## Problem
@@ -95,14 +116,29 @@ reachable **MCP-first** in one attached session.
   environment-specific to one machine. If a gap is non-deterministic, criterion 1
   for that gap converts to "characterise the nondeterminism" and G1's 4/4 target
   is at risk. *If wrong, the bet's outcome date slips and may need re-routing.*
-- **Open:** whether "MCP-first reachable" for Legis means the `mcp__legis__*`
-  namespace must auto-attach via `.mcp.json`, or whether a documented one-command
-  launch counts. The dogfood report treats auto-attach as the bar; confirm with
-  the Legis owner — this changes whether criterion 3's Legis leg is Lacuna-
-  reproducible or purely a member fix.
-- **Open:** which tracker carries the member-routed bug reports (criterion 2) —
-  each member's own filigree, or a federation-hub tracker. Routing affects how
-  "filed" is verified.
+- **RESOLVED — Legis bar (DECIDE 2026-06-25, within grant).** "MCP-first
+  reachable" for *every* member, Legis included, means the `mcp__*` namespace
+  **auto-attaches via `.mcp.json`** in a clean attached session. A documented
+  one-command launch does **not** count: requiring the agent to shell out to start
+  a server is itself the CLI-fallback friction this bet exists to kill ("point the
+  suite and watch it work"); it matches the dogfood method's bar. *Honest-degrade
+  rider:* where a member architecturally cannot auto-attach (e.g. Legis's
+  launch-bound `--agent-id`), that constraint **is the finding** — the bug report
+  names "auto-attach blocked by X", and confirmation with the Legis owner rides on
+  the filed report (consumer boundary), not a pre-dispatch ask. *Reversal:* if the
+  Legis owner establishes auto-attach is impossible by design, criterion 3's Legis
+  leg converts from "Lacuna-reproducible gap" to "member-side limitation," and G1
+  is re-scoped to 3 auto-attachable + 1 documented-launch.
+- **RESOLVED — report routing (DECIDE 2026-06-25, within grant).** Member-routed
+  bug reports (criterion 2) are filed to **the owning member's own tracker**
+  (loomweave's / filigree's / legis's own Filigree instance) — that is where the
+  fix is worked and therefore where "filed" is authoritatively verified, and it
+  co-locates the report with the code that owns it (PDR-0002). A federation-hub
+  tracker is the fallback only where a member exposes no own tracker. The
+  member-routed report IDs are recorded back here as criterion 2 is discharged.
+  *Caveat (cross-member emit seam is not uniformly reliable yet):* "filed" may mean
+  a hand-filed issue in the member's tracker rather than an auto-emitted one — the
+  verification is the issue ID, not the emit path.
 
 ## Handoff
 

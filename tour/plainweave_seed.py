@@ -17,11 +17,30 @@ positional `entity_id` (NOT the locator) so it matches `entity_associations`.
 from __future__ import annotations
 
 import shutil
+import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
 ROOT = Path("/home/john/lacuna")
 ACTOR = "agent:lacuna-pw-seed"
+
+
+def materialize_workspace() -> Path:
+    """A fresh temp workspace holding a COPY of the live Loomweave catalog but no
+    ``ephemeral.port`` — so Plainweave resolves entity identity LOCALLY (offline) there.
+
+    The ``requirements_enrichment`` leg seeds here rather than at ROOT: creating an
+    accepted trace link goes through ``resolve_identity``, which routes to the HTTP
+    identity endpoint whenever ``.weft/loomweave/ephemeral.port`` names one. Dropping that
+    file forces the local-catalog path, keeping the demo deterministic and independent of
+    whether a Loomweave server happens to be live on a given port.
+    """
+    workspace = Path(tempfile.mkdtemp(prefix="pw-enrichment-"))
+    lw = workspace / ".weft" / "loomweave"
+    lw.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(ROOT / ".weft" / "loomweave" / "loomweave.db", lw / "loomweave.db")
+    return workspace
+
 
 # The 4 public surfaces in Lacuna's Loomweave catalog, by STABLE dotted locator.
 ADD_BOOK = "python:function:specimen.cli._add_book"   # cli-command  -> justified  (covered)
@@ -30,15 +49,32 @@ CLI_MAIN = "python:function:specimen.cli.main"        # entry-point  -> justifie
 TOUR_MAIN = "python:function:tour.__main__.main"       # entry-point  -> orphan + scoped-out
 
 
-def seed(pw: Callable[[list[str]], dict], *, deprecate: bool = True) -> None:
-    """Build the corpus. ``pw(args) -> data`` runs ``plainweave <args> --json`` and
-    returns the envelope's ``data`` (raising on an error envelope).
+def seed(
+    pw: Callable[[list[str]], dict],
+    *,
+    deprecate: bool = True,
+    with_trace_links: bool = False,
+    root: Path = ROOT,
+) -> None:
+    """Build the corpus. ``pw(args) -> data`` runs ``plainweave <args> --json`` (in the
+    caller's cwd) and returns the envelope's ``data`` (raising on an error envelope).
 
     ``deprecate=False`` is the liveness positive-control: it skips the deprecation
     so ``_register`` stays justified — proving a passing liveness assertion is the
     deprecation dropping the surface, not a broken seed.
+
+    ``with_trace_links=True`` additionally records an accepted ``satisfies`` trace link
+    for each justified surface. Intent-coverage justification keys off the SEI binding
+    (the default), but ``requirements_enrichment`` keys off accepted trace links — so the
+    enrichment leg opts in to make a covered surface report ``present``. The intent leg
+    leaves it off, so its corpus and assertions are unchanged.
+
+    ``root`` is the project root whose ``.plainweave`` store is rebuilt; it defaults to
+    ROOT (the intent leg) and is overridden to an isolated workspace by the enrichment leg
+    (see :func:`materialize_workspace`). The caller's ``pw`` must run plainweave with
+    ``cwd=root`` so reads/writes land in the same store.
     """
-    shutil.rmtree(ROOT / ".plainweave", ignore_errors=True)
+    shutil.rmtree(root / ".plainweave", ignore_errors=True)
     pw(["init", "--project-key", "lacuna"])
 
     cov = pw(["intent", "coverage"])
@@ -64,6 +100,15 @@ def seed(pw: Callable[[list[str]], dict], *, deprecate: bool = True) -> None:
         pw(["req", "approve", req, "--expected-version", "0", "--actor", ACTOR])
         pw(["bind", "sei", locmap[loc], req, "--entity-kind", "loomweave_entity", "--actor", ACTOR])
         pw(["goal", "link", goal, req, "--actor", ACTOR])
+        if with_trace_links:
+            link = pw([
+                "trace", "propose",
+                "--from-kind", "loomweave_entity", "--from-id", locmap[loc],
+                "--relation", "satisfies",
+                "--to-kind", "requirement_version", "--to-id", f"{req}@1",
+                "--actor", ACTOR,
+            ])["id"]
+            pw(["trace", "accept", link, "--actor", ACTOR])
         return req
 
     # COVERED (2 justified surfaces): the healthy half of the mix.

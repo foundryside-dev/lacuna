@@ -74,3 +74,44 @@ def test_note_is_not_rendered_into_locked_markdown():
 def test_note_defaults_empty_and_is_optional():
     r = StepResult("x", ok=True, detail="d")
     assert r.note == ""
+
+
+# ── Capability-gating render (PDR-0016) ────────────────────────────────────────
+
+
+def test_step_result_available_defaults_true():
+    assert StepResult("x", ok=True, detail="d").available is True
+
+
+def test_tour_md_renders_na_for_capability_gated_leg():
+    # available=False (capability-gated) renders [N/A], distinct from [PASS]/[WARN] —
+    # a gated leg did not run, did not fail, and is NOT faked green.
+    gated = render_tour_md([StepResult("plainweave requirements-enrichment", ok=False,
+                                       detail="capability-gated — surface absent", available=False)])
+    assert "[N/A] plainweave requirements-enrichment" in gated
+    assert "[WARN]" not in gated and "[PASS]" not in gated
+    # a ran-and-degraded leg is still [WARN], not [N/A]
+    warned = render_tour_md([StepResult("x", ok=False, detail="d")])
+    assert "[WARN] x" in warned
+
+
+def test_matrix_md_annotates_capability_gated_cell_not_flat_listed():
+    # A cell whose only demonstrating lacuna is gated (expected_tool capability present
+    # but unavailable) must be annotated "not exercised", never listed as exercised —
+    # otherwise the matrix makes a confident-false coverage claim.
+    m = Manifest(lacunae=(
+        Lacuna("g", "specimen/cli.py", "_add_book", "peer-facts",
+               ("plainweave+warpline",), "exp", "plainweave-requirements-enrichment",
+               "pw-requirements-enrichment"),
+        Lacuna("live", "specimen/dead_code.py", "orphaned_helper", "structure",
+               ("loomweave",), "exp", "loomweave", "dead-entity"),
+    ))
+    caps = [
+        Capability("loomweave", True, "/bin/loomweave"),
+        Capability("plainweave-requirements-enrichment", False,
+                   "plainweave `requirements-enrichment` CLI surface absent (not in PyPI 1.0.0)"),
+    ]
+    md = render_matrix_md(m, caps)
+    assert "- `loomweave`" in md                                 # live cell: flat-listed
+    assert "`plainweave+warpline` — _not exercised" in md        # gated cell: annotated
+    assert "requirements-enrichment" in md                       # machine-readable reason carried

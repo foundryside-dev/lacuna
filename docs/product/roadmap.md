@@ -16,7 +16,28 @@ federation's actual pitch — work the way an agent would naturally reach for th
 (MCP-first, no CLI/JSON-RPC fallback), with consistent config/port truth. The
 06-13 post-fix re-dogfood confirmed the big seams now function (wardline→filigree
 work joins, loomweave→filigree finding/issue enrichment) but flagged that MCP
-attachment is still inconsistent in a real session.
+attachment was still inconsistent in a real session.
+
+> **Updated: 2026-06-25 (PDR-0006, PDR-0007).** The MCP-attachment-truth workstream is
+> COMPLETE — G1 = 4/4 joins reachable MCP-first in one attached session (probed in-session,
+> the three 06-13 gaps resolved by member config-fixes). The Now theme holds; its successor
+> workstream is **plainweave MCP attachment** (the 6th member is MCP-absent in Lacuna) — see
+> Next + PDR-0007.
+>
+> **Updated: 2026-06-26 (PDR-0009, PDR-0010, PDR-0011).** Plainweave Phase 1 ACCEPTED —
+> reachable MCP-first (PDR-0010). But the seam proved more fragile than recorded: a stale
+> loomweave v10 build silently de-attached loomweave's MCP server and red-lit `make verify`
+> (caught, root-caused, fixed — PDR-0011). G1 is now a **live join census** (PDR-0009), and the
+> Phase-2 **6-member attachment regression-harness** is the live Next bet — its whole point is
+> to trip `make verify` on exactly the silent de-attach that went undetected this session.
+>
+> **Updated: 2026-06-28 (PDR-0012, PDR-0013, PDR-0014).** The Phase-2 harness is **DELIVERED +
+> GREEN** — `make verify` now asserts all 6 members attach AND store-bind live on every run, so a
+> silent de-attach trips the gate by name (built end-to-end; opus whole-branch review
+> Fix-then-merge, all fixed; branch unpushed pending owner). **G1 is now a GATE, not a manual
+> probe.** Two refinements landed: warpline+wardline got server-side store-read binding tools (R1,
+> PDR-0013), and the spike strengthened the 4 path-members to path-AND-store (PDR-0014). The Now
+> theme's centerpiece is realized; the remaining Next items carry it forward.
 
 - _Moves:_ federation seam health (guardrail) and dogfood friction count.
 - _Why now:_ the joins are the product's reason to exist as a demo; a join that
@@ -24,16 +45,20 @@ attachment is still inconsistent in a real session.
 
 ## Next — proposed (intent, not committed)
 
-- **MCP attachment truth.** Resolve the three observed attachment gaps: Filigree
-  MCP pointing at Weft rather than the staged repo, Loomweave MCP attached to a
-  no-index context, Legis MCP absent in-session. _(Moves: federation seam health.)_
+- **6-member attachment regression-harness — ✅ DELIVERED 2026-06-28 (PDR-0012).** The durable
+  win shipped: `make verify` asserts all 6 members attach AND store-bind to the staged repo on
+  every run (green end-to-end, all 6 live-bound), so a silent de-attach trips the gate by name.
+  Branch `plainweave-mcp-attach`, **unpushed** (owner push/PR pending). _Remaining sub-increment:_
+  **Phase 5 join census** (the `live-bound | live-empty | reachable-gated | absent` per-join
+  liveness classes) DEFERRED to its own PR — the plan ships the gate first. _(Moved: federation
+  seam health — now a gate.)_
 - **One freshness/port oracle per tool.** Reconcile contradictory status
   surfaces (e.g. Loomweave doctor advertising an unreachable `:35541` while
   `:9730` is the working URL). _(Moves: dogfood friction count.)_
 - **Scanner job semantics as a product finding.** Treat foreground, low-feedback
   scans with no pollable job/status handle as a first-class friction even when
   Lacuna's small scan passes. _(Moves: dogfood friction count.)_
-- **Rust wing depth.** The Wave-3 Rust wing landed (44 lacunae total); extend
+- **Rust wing depth.** The Wave-3 Rust wing landed (52 lacunae total); extend
   coverage of rust-specific taint/archaeology combinations. _(Moves: specimen
   fidelity / combination-matrix coverage.)_
 

@@ -31,7 +31,12 @@ def _drive() -> tuple[list, list]:
         steps.loomweave_findings(),
         steps.rust_archaeology(),
         steps.warpline_change_impact(),
+        steps.warpline_attest_bundle(),
+        steps.warpline_reverify_federation(),
         steps.plainweave_intent(),
+        steps.plainweave_requirements_enrichment(),
+        steps.plainweave_wardline_peer_facts(),
+        steps.mcp_attachment(),
         steps.wardline_scan(),
         steps.wardline_fail_closed(),
         steps.rust_scan(),
@@ -69,9 +74,34 @@ def run_verify() -> int:
 
     # 1. Every lacuna whose expected tool is LIVE must be surfaced.
     live = {c.name for c in caps if c.available}
+
+    # Capability-gated lacunae: their `expected_tool` is a detected-but-UNAVAILABLE
+    # capability (e.g. the plainweave peer-facts CLI surface is absent under PyPI
+    # 1.0.0). These are NOT failures — but a silent gate is itself a swallow, so name
+    # them + the machine-readable reason explicitly in verify's output (stdout only;
+    # excluded from the byte-locked markdown, so determinism is preserved).
+    cap_by_name = {c.name: c for c in caps}
+    gated = [
+        lac for lac in manifest.lacunae
+        if (cap := cap_by_name.get(lac.expected_tool)) is not None and not cap.available
+    ]
+    if gated:
+        print("CAPABILITY-GATED (not expected under the installed tools; not a failure):")
+        for lac in gated:
+            print(f"  - {lac.id} — {cap_by_name[lac.expected_tool].detail}")
+    # D17: the mcp-attachment leg carries the failure CAUSE (per-member liveness — the
+    # ATTACH FAILED reason: timed-out / garbled JSON / connected-but-unbound / missing
+    # binary) in its `note`. Surface it on a missing attach token so the gate names WHY a
+    # member de-attached, not only WHICH. `note` is excluded from the locked markdown, so
+    # emitting it keeps `make verify` byte-for-byte deterministic.
+    legs_by_name = {r.name: r for r in results}
     for lac in manifest.lacunae:
         if lac.expected_tool in live and lac.id in cov.missing_ids:
-            failures.append(f"expected lacuna not surfaced: {lac.id} ({lac.expected_rule})")
+            msg = f"expected lacuna not surfaced: {lac.id} ({lac.expected_rule})"
+            leg = legs_by_name.get("mcp attachment")
+            if lac.id.startswith("mcp-attach-") and leg is not None and leg.note:
+                msg += f" — {leg.note}"
+            failures.append(msg)
 
     # 2. Narrative lockstep: regenerated docs must match the committed files.
     fresh_tour = render_tour_md(results)

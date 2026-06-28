@@ -7,11 +7,13 @@ MANIFEST = Path("/home/john/lacuna/tour/lacunae.toml")
 
 def test_loads_all_lacunae():
     m = load_manifest(MANIFEST)
-    assert len(m.lacunae) == 52
+    assert len(m.lacunae) == 62
     ids = {l.id for l in m.lacunae}
     assert "wl-trust-violation" in ids
     # the warpline change-impact wing (advisory, never gates)
     assert {"wp-blast-radius", "wp-reverify", "wp-churn", "wp-timeline"} <= ids
+    # the warpline peer-facts wing (warpline consuming sibling facts; never gates)
+    assert {"wp-attest-no-silent-clean", "wp-reverify-federation"} <= ids
     # the plainweave intent-coverage wing (advisory/local capability demos)
     assert {
         "pw-intent-justified",
@@ -19,6 +21,8 @@ def test_loads_all_lacunae():
         "pw-intent-orphan",
         "pw-surface-scoping",
     } <= ids
+    # the plainweave peer-facts wing (advisory/local; assert no-silent-clean)
+    assert {"pw-requirements-enrichment", "pw-wardline-peer-facts"} <= ids
     # the loomweave navigation showcases (call chain, coupling, entry point, subsystem,
     # and the rc4 relation-edge pair: inheritance + decorator)
     assert {
@@ -29,6 +33,9 @@ def test_loads_all_lacunae():
         "lw-inheritance",
         "lw-decorator",
     } <= ids
+    # the mcp-attachment federation seam-integrity demos (6 members)
+    assert {f"mcp-attach-{x}" for x in
+            ("loomweave", "filigree", "wardline", "legis", "warpline", "plainweave")} <= ids
 
 
 def test_lacuna_fields():
