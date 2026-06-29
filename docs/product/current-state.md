@@ -1,77 +1,65 @@
 # Current State — Lacuna
 
 _The resume brief: fastest path back to the running picture. Read this first._
-_Last checkpoint: 2026-06-28 (`/product-checkpoint`). Bootstrapped 2026-06-13._
+_Last checkpoint: 2026-06-29 (`/product-checkpoint`). Bootstrapped 2026-06-13._
 
 ## The bet right now
 
-**Federation seam integrity, agent-native** (roadmap → Now). Its centerpiece — **the Phase-2
-6-member MCP-attachment regression-harness — is DELIVERED + GREEN** this session (PDR-0012). The
-bet's metric, G1 (seam health), is now a **gate** instead of a manual probe: `make verify`
-re-asserts that all 6 federation MCP servers attach AND store-bind to the staged repo on every run,
-so a silent de-attach (the 2026-06-26 loomweave incident) trips the gate by name. The Now theme
-continues with the remaining items (port/config oracle, scanner job semantics, rust-wing depth) +
-the deferred Phase-5 join census.
+**Federation seam integrity, agent-native** (roadmap → Now). Its centerpiece — the 6-member
+MCP-attachment regression-harness — is **DELIVERED + MERGED TO `main`** (PR #2, merge `5107462`).
+**G1 (federation seam health) is now a GATE on `main`**, not a branch or a manual probe: `make
+verify` re-asserts all 6 federation MCP servers attach AND store-bind on every run, so a silent
+de-attach trips the gate by name. North-star + G1 are the metrics it moves.
 
-## What happened this session (the short version)
+## What this checkpoint did
 
-Reviewed the harness plan through **3 Workflow review rounds** (round-1 fixes → round-2 regression
-remediation → round-3 test-pins) to execution-ready. Resolved **R1** by having warpline + wardline
-ship **server-side store-read binding tools** (PDR-0013), confirmed live. Then **BUILT the harness**
-via subagent-driven-development (Tasks 0–6, 16 commits on `plainweave-mcp-attach`): the Phase-0 spike
-**strengthened the 4 path-members to path-AND-store binding** (PDR-0014 — a real gap the spike caught
-in a thrice-reviewed plan). Every code task was per-reviewed + approved; an opus whole-branch review
-returned Fix-then-merge → all fixed. **`make verify` exits 0 end-to-end, all 6 live-bound.**
-[PDR-0012, PDR-0013, PDR-0014]
+- **Merged PR #2** to `main` (owner-directed): the harness + plainweave/warpline peer-facts cells.
+  Corpus 52 → **62** catalogued lacunae; release branch deleted. [PDR-0018]
+- **Filed + reconciled the merge-gate consumer-boundary escalations** (owner-authorized), with
+  dedup (3+ duplicates avoided) and ground-truth verification that **caught and corrected two
+  stale-info errors** (a churn verdict that was already fixed; a duplicate-locator report mis-framed
+  as a live bug). Filed loomweave `clarion-f8fc8aebca` (P3); corrected the churn record on the hub.
+  [PDR-0019]
+- **Recorded readings** (corpus 62; G1 gate live on `main`; churn join NO-GO → **live-GO** after
+  loomweave PR #77 merged) — **no PDR reversal trigger tripped.**
+- **Authority grant** re-confirmed as-is.
 
 ## In flight
 
-- **Branch `plainweave-mcp-attach`** — the harness: 16 commits (`a490b08..HEAD`), authored
-  tachyon-beep, **UNPUSHED** (push/PR owner-gated, below).
-- **Filigree tracker:** `lacuna-2046f5ae8a` (`[release] P4` "Future") unchanged; the self-tracker
-  has the known [[filigree-self-tracker-schema-lag]] (returned nothing this session — reconciled in
-  the workspace, not the tracker).
+- **Lacuna tracker:** `lacuna-2046f5ae8a` (`[release] P4` "Future") unchanged; self-tracker quiet
+  ([[filigree-self-tracker-schema-lag]]).
+- **Sibling/hub refs (owned by them, not Lacuna — informational):** loomweave `clarion-f8fc8aebca`
+  (P3, signaling-discipline ask, open); hub `weft-ca12d859bb` (D1/D2 member-main-behind, open). The
+  churn thread (`weft-6fc4a166dc`/`weft-e585382ff3`/`weft-670ec2fe90`) is **CLOSED**.
 
-## Metric readings (2026-06-28)
+## Open questions / next decisions (for the next DECIDE)
 
-- **North star (`make verify`): GREEN end-to-end with the harness on the (unpushed) branch; corpus
-  52 → 58 there.** The main-commit baseline (445c270, 52 lacunae) is unchanged until merge. The gate
-  is bidirectional — proven to trip + name the member on a de-attach.
-- **G1: the live census is now a GATE** (PDR-0012) — all 6 attach+store-bind verified every run;
-  PDR-0009's reversal trigger structurally addressed. Binding is store-read for all 6 (PDR-0013/0014).
-- **G2:** warpline/wardline binding-tool gap RESOLVED; NEW friction — legis re-stamps
-  `AGENTS.md`/`CLAUDE.md` on spawn (absorbed v1.3.0; re-absorb on a future legis upgrade).
-- **G3:** maintained — the 6 `mcp-attach` lacunae honestly "NOT A FLAW"; the leg honest-degrades.
+- **[PRODUCT QUESTION] Peer-facts cells — explicit Next theme or completed one-off?** The four
+  peer-facts cells (PDR-0015/0016/0017) shipped via sibling-driven tasking, off the planned roadmap.
+  Decide whether to recognize "members consuming siblings' facts" as an explicit Next theme or close
+  it as done. Not yet decided.
+- **[SEQUENCING] Hand the remaining Now/Next seam items to `/axiom-program-management`:** the
+  deferred **Phase-5 join census** (per-join liveness classes), the port/config oracle, scanner job
+  semantics, rust-wing depth.
 
-## Open questions / blocked-on-owner (escalations)
+## Watch-items (not escalations)
 
-- **[OWNER ACTION] Push / open a PR for `plainweave-mcp-attach`** — the harness is merge-ready
-  (16 commits, opus-reviewed, `make verify` green) but **UNPUSHED**, per your git sensitivity. Say
-  the word and I push / open the PR. (Supersedes the prior 3-commit push item — those commits are
-  now part of this branch.)
-- **[ESCALATION, carried] Consumer-boundary report to loomweave** — v11 silently renamed the
-  `LMWV-DUPLICATE-LOCATOR` evidence contract (PDR-0011); filing to loomweave's tracker gates to you.
-  **Still awaiting your go** (not addressed this session).
-- **[MAINTENANCE] legis instruction-block re-stamp** — the harness leg spawns legis on every
-  `make verify`; a future legis version upgrade will re-stamp `AGENTS.md`/`CLAUDE.md` → dirty tree →
-  trip the clean-tree gate. Absorbed v1.3.0 (durable now); re-absorb on the next legis upgrade, or
-  have the leg guard those files (a Phase-5-era hardening).
-- **loomweave reinstall durability** (carried, now broader): a `uv tool upgrade` can revert a
-  `cp`-over-uv-path install; the same now applies to the new `warpline-mcp`/`wardline` binding tools
-  — re-sync from source if a stale reinstall reverts them ([[loom-uvtool-build-staleness]]).
+- **legis instruction-block re-stamp** — legis spawns on every `make verify`; a future legis
+  version upgrade re-stamps `AGENTS.md`/`CLAUDE.md` → dirty tree → trips the clean-tree gate.
+  Absorbed v1.3.0 (durable now); re-absorb on the next legis upgrade.
+- **uv-tool build staleness** — a `uv tool upgrade` can revert a `cp`-over-uv-path install for
+  loomweave / warpline-mcp / wardline; re-sync from source if a stale reinstall reverts them
+  ([[loom-uvtool-build-staleness]]).
 
 ## Authority grant
 
-CONFIRMED as-is (2026-06-26); next review 2026-09-25 (quarterly). No grant change. This session's
-big actions were explicitly owner-directed in-session: the harness build/execution (Lacuna's own
-repo) and the warpline + wardline binding-tool builds (the owner's own Loom-portfolio members) —
-both within grant. Nothing pushed/released; the one outward-facing step (push/PR) is correctly held.
+CONFIRMED as-is (re-confirmed 2026-06-29); next review 2026-09-25 (quarterly). No grant change.
+**Nothing escalated this checkpoint** — all prior open escalations (push/PR; the carried loomweave
+duplicate-locator report) were RESOLVED this session. The push/PR/merge and the sibling-tracker
+filings were all owner-directed or owner-authorized in-session; the hub closed its own #77 issues.
 
 ## Where the next session starts
 
-1. **The push/PR decision** on `plainweave-mcp-attach` (owner go/no-go), and the loomweave
-   consumer-boundary report.
-2. **Sequence the remaining seam-integrity Next items** with `/axiom-program-management`: the
-   deferred **Phase-5 join census** (the next harness increment — per-join liveness classes), the
-   port/config oracle, scanner job semantics, rust-wing depth.
+1. **Decide the peer-facts-cells question** (explicit Next theme vs. one-off).
+2. **Sequence the remaining seam-integrity Next items** with `/axiom-program-management`.
 3. **Watch the legis re-stamp** on any legis upgrade before trusting a green `make verify`.

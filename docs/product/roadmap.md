@@ -38,6 +38,13 @@ attachment was still inconsistent in a real session.
 > probe.** Two refinements landed: warpline+wardline got server-side store-read binding tools (R1,
 > PDR-0013), and the spike strengthened the 4 path-members to path-AND-store (PDR-0014). The Now
 > theme's centerpiece is realized; the remaining Next items carry it forward.
+>
+> **Updated: 2026-06-29 (PDR-0018, PDR-0019).** PR #2 **MERGED to `main`** (merge `5107462`): the
+> harness + the plainweave/warpline peer-facts cells are now on `main` — **G1 is a gate on `main`**,
+> not a branch. Corpus 52 → **62** catalogued lacunae. The merge-gate dogfood's consumer-boundary
+> findings are filed/reconciled (PDR-0019); the loomweave←warpline churn join flipped NO-GO →
+> **live-GO on main** when loomweave PR #77 merged (2026-06-29). The Now theme continues with the
+> remaining Next items + the deferred Phase-5 join census.
 
 - _Moves:_ federation seam health (guardrail) and dogfood friction count.
 - _Why now:_ the joins are the product's reason to exist as a demo; a join that
@@ -45,13 +52,21 @@ attachment was still inconsistent in a real session.
 
 ## Next — proposed (intent, not committed)
 
-- **6-member attachment regression-harness — ✅ DELIVERED 2026-06-28 (PDR-0012).** The durable
-  win shipped: `make verify` asserts all 6 members attach AND store-bind to the staged repo on
-  every run (green end-to-end, all 6 live-bound), so a silent de-attach trips the gate by name.
-  Branch `plainweave-mcp-attach`, **unpushed** (owner push/PR pending). _Remaining sub-increment:_
-  **Phase 5 join census** (the `live-bound | live-empty | reachable-gated | absent` per-join
-  liveness classes) DEFERRED to its own PR — the plan ships the gate first. _(Moved: federation
-  seam health — now a gate.)_
+- **6-member attachment regression-harness — ✅ DELIVERED + MERGED TO MAIN 2026-06-29 (PDR-0012,
+  PDR-0018).** The durable win is on `main` (PR #2, merge `5107462`): `make verify` asserts all 6
+  members attach AND store-bind to the staged repo on every run, so a silent de-attach trips the
+  gate by name. _Caveat now a property of `main`:_ green only against sibling **release** builds
+  (D1/D2 `weft-ca12d859bb`); `tour.md` byte-locked to PyPI plainweave 1.0.0 (PDR-0016). _Remaining
+  sub-increment:_ **Phase 5 join census** (the `live-bound | live-empty | reachable-gated | absent`
+  per-join liveness classes) DEFERRED to its own PR. _(Moved: federation seam health — now a gate
+  on `main`.)_
+- **Plainweave + warpline peer-facts cells — ✅ MERGED 2026-06-29 (PDR-0015/0016/0017, PDR-0018).**
+  Four tour cells exercising members **consuming** siblings' facts (plainweave→wardline,
+  plainweave→warpline, wardline→warpline, the 4-member federation cell), each asserting the
+  no-silent-clean invariant. Emerged as sibling-driven tasking, not a planned bet. **OPEN PRODUCT
+  QUESTION for the next DECIDE:** promote "peer-facts cells" to an explicit Next theme, or treat as
+  completed one-off tasking? (not yet decided — see current-state). _(Moves: combination-matrix
+  coverage.)_
 - **One freshness/port oracle per tool.** Reconcile contradictory status
   surfaces (e.g. Loomweave doctor advertising an unreachable `:35541` while
   `:9730` is the working URL). _(Moves: dogfood friction count.)_

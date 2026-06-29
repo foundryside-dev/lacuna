@@ -69,6 +69,31 @@ is unattached) are **labelled**, never simulated as live.
 
 ## Readings (dated)
 
+- **2026-06-29 — North star: PR #2 MERGED to `main` (merge `5107462`); main baseline moves
+  `445c270`/52 → `5107462`/**62** catalogued lacunae.** The 6-member attachment harness + the
+  plainweave/warpline peer-facts cells are now on `main`. Caveat now a property of `main` (not a
+  defect): `make verify` is green only against sibling **release** builds (warpline `release/1.2.0`,
+  wardline `1.0.7 [scanner,rust]` — D1/D2 `weft-ca12d859bb`), and `tour.md` is byte-locked to PyPI
+  plainweave 1.0.0 (PDR-0016, the two plainweave peer-facts cells render honest `[N/A]`).
+  **Reversal trigger (suppress a real defect to keep the gate quiet): NOT tripped.** [PDR-0018]
+- **2026-06-29 — G1 (federation seam health): the gate is now LIVE ON `main`** (was branch-only).
+  The `loomweave←warpline` churn join flipped **NO-GO → live-GO** when loomweave **PR #77**
+  (`30549a3`, NDJSON framing + repo arg + recv-timeout + real wire test) **merged 2026-06-29**
+  (`1d2b4fa`); hub items `weft-6fc4a166dc` (validation gate), `weft-e585382ff3` (deadlock bug), and
+  parent `weft-670ec2fe90` are all CLOSED with merge-tied reasons. No reversal trigger tripped (a
+  real break was fixed honestly, not suppressed). [PDR-0019]
+- **2026-06-29 — G2 (dogfood friction): the 2026-06-28 merge-gate findings filed/reconciled**
+  (PDR-0019). loomweave churn friction RESOLVED (PR #77 merged). D1/D2 (member LATEST capabilities
+  live on release branches, not `main`) filed as `weft-ca12d859bb` — a federation-infra prerequisite
+  owned by the hub/members, not a Lacuna-open friction. Carried watch-items: legis MCP re-stamps
+  `AGENTS.md`/`CLAUDE.md` on a version bump (absorbed v1.3.0; re-absorb on next legis upgrade);
+  loomweave/warpline/wardline uv-tool build-staleness on `uv tool upgrade`. Open Lacuna-side
+  frictions unchanged: port/config truth, scanner job semantics, large-repo ingest.
+- **2026-06-29 — G3 (demonstration honesty): maintained.** The two plainweave peer-facts cells
+  render `[N/A]` (capability-gated, not faked green) under PyPI 1.0.0; the warpline cells assert the
+  no-silent-clean invariant; no member faked as live. [PDR-0016, PDR-0017]
+- **NO PDR reversal trigger tripped this checkpoint.**
+
 - **2026-06-28 — North star (`make verify`): GREEN end-to-end with the Phase-2 harness on the
   (unpushed) `plainweave-mcp-attach` branch; corpus 52 → 58 there.** The 6-member MCP-attachment
   harness is DELIVERED (PDR-0012): `make verify` exits 0 with the live `steps.mcp_attachment()`
