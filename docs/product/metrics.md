@@ -58,8 +58,10 @@ Count of open cross-tool friction items in the most recent dogfood report.
 
 ### G3 — Demonstration honesty (do-no-harm)
 
-The tour never fakes a member. Design-only members (Charter; Legis where its MCP
-is unattached) are **labelled**, never simulated as live.
+The tour never fakes a member. Design-only / not-yet-released members (**tabard**,
+forthcoming — identity management; Legis where its MCP is unattached) are
+**labelled**, never simulated as live. _(Charter is no longer the example here — it
+shipped as plainweave, now live; PDR-0021.)_
 
 - **BASELINE → TARGET:** honest as of 2026-06-13 (Charter labelled design-only;
   tour "degrades honestly") → **0 faked-as-live members across all tour runs,

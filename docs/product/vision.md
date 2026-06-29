@@ -19,24 +19,32 @@ records the friction.
 
 > "Where Weft's other members are instruments, Lacuna is the specimen." — README
 
-## Who it serves — two audiences, in sequence
+## Who it serves — a comprehensive demo of the full suite, as it comes online
 
-Lacuna serves both audiences, but **in a deliberate temporal order** (owner-
-confirmed 2026-06-13). It is an internal dogfood range **now**; it graduates into
-an external demonstrator **once the suite is finished**.
+Lacuna's intent is to be a **comprehensive, growing demonstration of the full Weft
+suite as each member comes online** (owner-directed 2026-06-29, PDR-0021 — this
+**supersedes** the 2026-06-13 "dogfood now, demonstrator later" sequencing). The
+growing demo is the **primary deliverable now**, not a future graduation gated on
+the suite being "finished." As each member ships a capability or cross-member
+surface, Lacuna picks it up — a planted lacuna + tour leg + matrix cell — and
+degrades honestly where a member is absent or design-only.
 
-1. **The Weft federation's developers and product owner — primary, the active
-   phase.** Lacuna is today the **internal dogfood range** and regression corpus
-   for loomweave, filigree, wardline, legis, warpline, and plainweave (the newest member,
-   ratified into the range 2026-06-25 — PDR-0008); charter remains design-only. When a seam between two
-   tools breaks, Lacuna is where it is caught. _(Observed: the dominant recent
-   activity is dogfood reports + seam fixes + corpus growth.)_
-2. **Prospective evaluators of the Weft suite — the planned graduation.** Once
-   the suite is finished, Lacuna becomes the **demonstrator**: `docs/tour.md` and
-   `docs/matrix.md` are the "point the suite and watch it work" artifact — a
-   credible, honest demonstration that degrades transparently when a member is
-   design-only. This is a *future* state gated on the suite being done; until
-   then, demonstrator polish serves the dogfood range, not the other way around.
+One artifact serves both audiences, continuously:
+
+1. **The Weft federation's developers and product owner.** Lacuna is the
+   **dogfood range** and regression corpus: when a seam between two tools breaks,
+   Lacuna is where it is caught.
+2. **Prospective evaluators of the Weft suite.** `docs/tour.md` and
+   `docs/matrix.md` are the "point the suite and watch it work" demonstration —
+   credible and honest, surfacing every live lacuna and labelling any absent or
+   design-only member rather than faking it (the G3 honesty discipline).
+
+**Roster covered today:** loomweave, filigree, wardline, legis, warpline, and
+**plainweave** (requirements management — the member formerly tracked as
+*charter*). **Forthcoming:** **tabard** (identity management — issuing agent
+names); Lacuna picks up identity-management coverage when tabard's surface is
+released (the PDR-0020 intake gate). The Weft hub (`~/weft`) still owns the
+canonical roster; this list is only what Lacuna currently *demonstrates*.
 
 ## Anti-goals — what Lacuna is deliberately NOT
 

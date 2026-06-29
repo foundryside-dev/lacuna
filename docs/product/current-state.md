@@ -5,61 +5,63 @@ _Last checkpoint: 2026-06-29 (`/product-checkpoint`). Bootstrapped 2026-06-13._
 
 ## The bet right now
 
-**Federation seam integrity, agent-native** (roadmap → Now). Its centerpiece — the 6-member
-MCP-attachment regression-harness — is **DELIVERED + MERGED TO `main`** (PR #2, merge `5107462`).
-**G1 (federation seam health) is now a GATE on `main`**, not a branch or a manual probe: `make
-verify` re-asserts all 6 federation MCP servers attach AND store-bind on every run, so a silent
-de-attach trips the gate by name. North-star + G1 are the metrics it moves.
+**Federation seam integrity, agent-native** (roadmap → Now) — the 6-member MCP-attachment harness is
+**merged to `main`**, so **G1 (seam health) is a gate on `main`**. Sitting above it now is the
+**comprehensive-coverage intent** (PDR-0020/0021): Lacuna is a **comprehensive, growing demo of the
+full suite as each member comes online**, and that demo is now the **primary deliverable** (not a
+future graduation) — serving dogfood AND demonstrator continuously.
 
 ## What this checkpoint did
 
-- **Merged PR #2** to `main` (owner-directed): the harness + plainweave/warpline peer-facts cells.
-  Corpus 52 → **62** catalogued lacunae; release branch deleted. [PDR-0018]
-- **Filed + reconciled the merge-gate consumer-boundary escalations** (owner-authorized), with
-  dedup (3+ duplicates avoided) and ground-truth verification that **caught and corrected two
-  stale-info errors** (a churn verdict that was already fixed; a duplicate-locator report mis-framed
-  as a live bug). Filed loomweave `clarion-f8fc8aebca` (P3); corrected the churn record on the hub.
-  [PDR-0019]
-- **Recorded readings** (corpus 62; G1 gate live on `main`; churn join NO-GO → **live-GO** after
-  loomweave PR #77 merged) — **no PDR reversal trigger tripped.**
-- **Authority grant** re-confirmed as-is.
+- **Merged PR #2** to `main` (owner-directed): harness + peer-facts cells. Corpus 52 → **62**
+  lacunae. [PDR-0018]
+- **Filed + reconciled the merge-gate consumer-boundary escalations**, with dedup + ground-truth
+  verification that caught/corrected two stale-info errors; churn join resolved (loomweave PR #77
+  merged → **live-GO**). [PDR-0019]
+- **Resolved the peer-facts question → a standing comprehensive-coverage theme** (owner-stated
+  intent). [PDR-0020]
+- **Vision change (owner-directed): elevated the comprehensive demo to primary intent** (supersedes
+  PDR-0002's dogfood-now/demonstrator-later sequencing) and **reconciled the roster**: charter →
+  shipped as **plainweave** (requirements management); **tabard** is new/forthcoming (identity
+  management — issuing agent names). Edited `vision.md`, `roadmap.md`, `metrics.md`. [PDR-0021]
 
 ## In flight
 
-- **Lacuna tracker:** `lacuna-2046f5ae8a` (`[release] P4` "Future") unchanged; self-tracker quiet
-  ([[filigree-self-tracker-schema-lag]]).
-- **Sibling/hub refs (owned by them, not Lacuna — informational):** loomweave `clarion-f8fc8aebca`
-  (P3, signaling-discipline ask, open); hub `weft-ca12d859bb` (D1/D2 member-main-behind, open). The
-  churn thread (`weft-6fc4a166dc`/`weft-e585382ff3`/`weft-670ec2fe90`) is **CLOSED**.
+- **Lacuna tracker:** `lacuna-2046f5ae8a` (`[release] P4` "Future") unchanged.
+- **Sibling/hub refs (theirs to action):** loomweave `clarion-f8fc8aebca` (P3, signaling ask). The
+  churn thread `weft-6fc4a166dc`/`weft-e585382ff3`/`weft-670ec2fe90` is CLOSED.
 
-## Open questions / next decisions (for the next DECIDE)
+## Open questions / next work
 
-- **[PRODUCT QUESTION] Peer-facts cells — explicit Next theme or completed one-off?** The four
-  peer-facts cells (PDR-0015/0016/0017) shipped via sibling-driven tasking, off the planned roadmap.
-  Decide whether to recognize "members consuming siblings' facts" as an explicit Next theme or close
-  it as done. Not yet decided.
-- **[SEQUENCING] Hand the remaining Now/Next seam items to `/axiom-program-management`:** the
-  deferred **Phase-5 join census** (per-join liveness classes), the port/config oracle, scanner job
-  semantics, rust-wing depth.
+- **[COVERAGE] plainweave surface beyond intent-coverage is unplanted.** The 6 `pw-*` lacunae cover
+  intent (coverage/liveness/orphan/scoping) + 2 peer-facts; plainweave's **baselines, requirement
+  dossiers, verification-status, preflight** surfaces have no planted lacuna yet. Under the
+  comprehensive-coverage theme (PDR-0020) that is the gap to assess/fill. **Confirm with owner**
+  whether there is a specific intended plainweave lacunae set to reconcile against, or whether this
+  is net-new coverage to plant.
+- **[TOUR SOURCE] `matrix.md`/tour roster still says "charter — design-only"** (generated; do-not-
+  hand-edit). Reconcile in the tour source/manifest: charter → plainweave (live); add tabard
+  (forthcoming). A code/manifest change + `make tour` regen, not a doc edit.
+- **[SEQUENCING] Hand the remaining seam-integrity Next items to `/axiom-program-management`:**
+  Phase-5 join census, port/config oracle, scanner job semantics, rust-wing depth — now alongside the
+  standing comprehensive-coverage theme (next pickup: **tabard / identity management** when released).
 
 ## Watch-items (not escalations)
 
-- **legis instruction-block re-stamp** — legis spawns on every `make verify`; a future legis
-  version upgrade re-stamps `AGENTS.md`/`CLAUDE.md` → dirty tree → trips the clean-tree gate.
-  Absorbed v1.3.0 (durable now); re-absorb on the next legis upgrade.
-- **uv-tool build staleness** — a `uv tool upgrade` can revert a `cp`-over-uv-path install for
-  loomweave / warpline-mcp / wardline; re-sync from source if a stale reinstall reverts them
+- **legis instruction-block re-stamp** on a legis version upgrade → dirty tree → trips clean-tree
+  gate. Absorbed v1.3.0; re-absorb on next upgrade.
+- **uv-tool build staleness** — `uv tool upgrade` can revert a `cp`-over-uv-path install
   ([[loom-uvtool-build-staleness]]).
 
 ## Authority grant
 
-CONFIRMED as-is (re-confirmed 2026-06-29); next review 2026-09-25 (quarterly). No grant change.
-**Nothing escalated this checkpoint** — all prior open escalations (push/PR; the carried loomweave
-duplicate-locator report) were RESOLVED this session. The push/PR/merge and the sibling-tracker
-filings were all owner-directed or owner-authorized in-session; the hub closed its own #77 issues.
+CONFIRMED as-is (re-confirmed 2026-06-29); next review 2026-09-25. **One owner-directed VISION
+CHANGE this session** (PDR-0021 — elevate demo to primary + roster reconcile); recorded explicitly,
+not silently. The grant's *scope* is unchanged. Nothing else escalated — all prior open escalations
+were resolved.
 
 ## Where the next session starts
 
-1. **Decide the peer-facts-cells question** (explicit Next theme vs. one-off).
-2. **Sequence the remaining seam-integrity Next items** with `/axiom-program-management`.
-3. **Watch the legis re-stamp** on any legis upgrade before trusting a green `make verify`.
+1. **Assess the plainweave-coverage gap** (above) and decide net-new lacunae vs. a reconcile.
+2. **Reconcile the tour-source roster** (charter→plainweave, +tabard) and regen `matrix.md`/`tour.md`.
+3. **Sequence the seam-integrity Next items + tabard onboarding** via `/axiom-program-management`.

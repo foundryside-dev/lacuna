@@ -81,14 +81,17 @@ attachment was still inconsistent in a real session.
 
 - **Large-repo ingest story.** Chunking / async ingest for the Wardline→Filigree
   pair beyond Lacuna's small corpus (the 1000-finding cap is now visible).
-- **Charter promotion.** When Charter graduates from design-only to live, add the
-  lacunae + tour legs that exercise it (today it is honestly labelled design-only).
+- **Tabard onboarding (identity management).** When tabard's surface is **released**
+  (PDR-0021), plant its identity-management lacunae + tour legs + matrix cells —
+  agent-name issuance is the headline capability. This is the next member-coverage
+  pickup under the comprehensive-coverage theme (PDR-0020). _(Charter promotion —
+  former Later item — is **retired**: charter shipped as plainweave, already covered.)_
 - **Combination-matrix completeness.** Fill remaining empty cells in
   `docs/matrix.md` so every advertised tool-combination has a planted exemplar.
-- **Graduate from dogfood range to demonstrator.** Owner-confirmed end-state
-  (2026-06-13): once the suite is finished, Lacuna turns from internal proving
-  ground into the external "watch it work" demonstrator. This is a *Later*
-  horizon gated on suite completion — the trigger to revisit demonstrator polish
-  (tour narrative quality, onboarding the "point it and watch" path) as primary
-  rather than in service of dogfooding. Not started; do not pull forward until
-  the Now/Next seam work clears.
+- **Demonstrator polish (now continuous, no longer a gated graduation).** Per
+  PDR-0021 the comprehensive demo is the **primary intent now**, served from the
+  same `tour.md`/`matrix.md` artifact as the dogfood range — the old "graduate once
+  the suite is finished" gating is **retired**. What remains as horizon work is the
+  *polish* that makes the demonstrator credible to an outside evaluator: tour
+  narrative quality and the onboarding "point it and watch" path. Pursue
+  opportunistically alongside coverage; it no longer waits on suite completion.
