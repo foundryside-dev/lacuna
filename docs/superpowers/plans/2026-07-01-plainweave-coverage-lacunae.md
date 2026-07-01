@@ -1180,9 +1180,10 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"`
   Command: `cd /home/john/lacuna && .venv/bin/python -c "from tour.capability import detect; caps={c.name:c for c in detect(pw_subcommands=lambda p: frozenset({'intent','req'}))}; print(caps['plainweave-baseline'].available, caps['plainweave-verify'].available, caps['plainweave-dossier'].available)"`
   Expected: `False False False` — under an absent surface the caps are unavailable, so `run_verify` would list the three lacunae in its `CAPABILITY-GATED (… not a failure)` block and NOT red. (The real-1.0.0 path differs — see the acceptance note below.)
 
-- [ ] **Step 4: Confirm the wardline trust-boundary gate is clean.**
-  Command: `cd /home/john/lacuna && wardline scan . --fail-on ERROR`
-  Expected: exit 0 (no boundary findings introduced; the leg touches no external input).
+- [ ] **Step 4: Confirm the wardline trust-boundary gate is clean (PER-CHANGE scope).**
+  Command: `cd /home/john/lacuna && wardline scan . --fail-on ERROR --new-since "$(git merge-base main HEAD)"`
+  Expected: exit 0 — the feature introduces NO new boundary findings.
+  NOTE: a BARE `wardline scan . --fail-on ERROR` will TRIP here — the specimen is *deliberately* full of planted taint lacunae (`wl-*`/`rs-*`), which are the point of the specimen, not defects introduced by this change. The Makefile `scan:` target documents that CI-on-PR must scope to new findings with `--new-since <merge-base>`; that is the correct per-change gate for a planted-taint specimen. (`--trust-suppressions` alone does NOT clear it — the `.wardline/` baseline suppresses only a few of the planted findings.)
 
 **Acceptance checklist (spec §9, concrete against plainweave 1.2.0 + the BIN-resolved gate):**
 
