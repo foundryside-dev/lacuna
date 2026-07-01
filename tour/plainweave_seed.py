@@ -55,7 +55,7 @@ def seed(
     deprecate: bool = True,
     with_trace_links: bool = False,
     root: Path = ROOT,
-) -> None:
+) -> dict[str, str]:
     """Build the corpus. ``pw(args) -> data`` runs ``plainweave <args> --json`` (in the
     caller's cwd) and returns the envelope's ``data`` (raising on an error envelope).
 
@@ -111,18 +111,23 @@ def seed(
             pw(["trace", "accept", link, "--actor", ACTOR])
         return req
 
-    # COVERED (2 justified surfaces): the healthy half of the mix.
-    justify(ADD_BOOK, "Add-a-book command", "The CLI can add a book to the catalog.")
-    justify(CLI_MAIN, "Library CLI entry point", "The app exposes a single CLI entry point.")
+    # COVERED (2 justified surfaces): the healthy half of the mix. Capture every
+    # req-id into a {locator: req_id} map so the coverage leg can thread baseline /
+    # verification / dossier setup onto specific requirements (non-breaking: the
+    # intent + enrichment legs ignore this return).
+    reqs: dict[str, str] = {}
+    reqs[ADD_BOOK] = justify(ADD_BOOK, "Add-a-book command", "The CLI can add a book to the catalog.")
+    reqs[CLI_MAIN] = justify(CLI_MAIN, "Library CLI entry point", "The app exposes a single CLI entry point.")
 
     # UNCOVERED #1 — liveness: bound + laddered, then the requirement is DEPRECATED,
     # so the surface drops out of the north-star numerator (a dead obligation must
     # not inflate honest coverage).
-    reg = justify(REGISTER, "Register command (legacy)", "The CLI can register an account.")
+    reqs[REGISTER] = justify(REGISTER, "Register command (legacy)", "The CLI can register an account.")
     if deprecate:
-        pw(["req", "deprecate", reg, "--expected-version", "1", "--actor", ACTOR])
+        pw(["req", "deprecate", reqs[REGISTER], "--expected-version", "1", "--actor", ACTOR])
 
     # UNCOVERED #2 — orphan: record the tour entry-point as a PUBLIC code entity with
     # no requirement, so `intent orphans code` surfaces it. entity_id is the SEI
     # (positional), NOT the locator, so it matches entity_associations.
     pw(["catalog", "record", locmap[TOUR_MAIN], "--entity-kind", "loomweave_entity", "--actor", ACTOR])
+    return reqs
