@@ -616,6 +616,49 @@ explanation = "NOT A FLAW — a positive plainweave capability demo. `plainweave
 expected_tool = "plainweave-wardline-peer-facts"
 expected_rule = "pw-wardline-peer-facts"
 
+# ── Plainweave coverage-depth capability demos (pw-baseline-drift / pw-verification-status / pw-requirement-dossier) ──
+# Planted 2026-07-01. Plainweave (requirements management) also ships baseline, verification, and
+# dossier surfaces with no planted lacuna; under the comprehensive-coverage intent (PDR-0020) these
+# are coverage gaps. Each cell is a single-member capability-depth demo (matrix cell `plainweave`,
+# already exercised) asserting the load-bearing NO-SILENT-CLEAN invariant over one surface.
+#
+# CAPABILITY-GATED: each cell's `expected_tool` is a per-subcommand capability (plainweave-{baseline,
+# verify,dossier}), probed from the live `plainweave --help` surface — NOT the bare binary. When the
+# surface is absent (a stripped/pre-baseline build) the cells render `[N/A]` and are gated OUT of
+# verify's coverage assertion (honestly unavailable, not red, not faked green). NOTE: unlike the
+# peer-facts subcommands, baseline/verify/dossier ship in plainweave's BASE surface (present in
+# 1.0.0), so these light up on any plainweave that exposes them.
+
+[[lacuna]]
+id = "pw-baseline-drift"
+file = "specimen/cli.py"
+symbol = "_add_book"
+category = "baseline"
+demonstrates = ["plainweave"]
+explanation = "NOT A FLAW — a positive plainweave capability demo. Over the seeded corpus, `plainweave baseline create` locks the approved requirements; superseding one (cli._add_book's requirement) makes `baseline diff` report it as `superseded_since_baseline` drift while an untouched requirement (cli.main's) stays `unchanged`; and in a store with no locked baseline, `baseline diff` of a never-created baseline reports an honest `NOT_FOUND` error — never a silent 'clean / no drift'. The load-bearing no-silent-clean contract over the baseline surface. Advisory, local-only, never gates. Capability-gated on the `baseline` CLI surface: renders [N/A] under a plainweave that lacks the subcommand."
+expected_tool = "plainweave-baseline"
+expected_rule = "pw-baseline-drift"
+
+[[lacuna]]
+id = "pw-verification-status"
+file = "specimen/cli.py"
+symbol = "_register"
+category = "verification"
+demonstrates = ["plainweave"]
+explanation = "NOT A FLAW — a positive plainweave capability demo. A requirement with a verification method AND passing evidence reports `satisfied` (plainweave has no 'verified' status string — the rollup is `satisfied` with reason `passing_evidence`); a requirement with a method but NO evidence reports `unverified` and is listed by `status unverified` — never silently satisfied; and evidence orphaned by a supersede reports `stale` and is listed by `status stale` — an outdated obligation is honestly flagged, never silently passing. The honest satisfied / unverified / stale trichotomy. Advisory, local-only, never gates. Capability-gated on the `verify` CLI surface: renders [N/A] under a plainweave that lacks the subcommand."
+expected_tool = "plainweave-verify"
+expected_rule = "pw-verification-status"
+
+[[lacuna]]
+id = "pw-requirement-dossier"
+file = "specimen/cli.py"
+symbol = "main"
+category = "dossier"
+demonstrates = ["plainweave"]
+explanation = "NOT A FLAW — a positive plainweave capability demo. `plainweave dossier <known-req> --json` over cli.main's requirement yields a COHERENT dossier — `satisfied` verification, a `current` baseline-exposure member, and an incoming `satisfies` trace — consistent with the baseline-drift and verification-status cells; an unknown requirement id reports an honest `NOT_FOUND` error envelope, NEVER an empty-as-clean dossier. The load-bearing no-silent-clean contract over the dossier surface. Advisory, local-only, never gates. Capability-gated on the `dossier` CLI surface: renders [N/A] under a plainweave that lacks the subcommand."
+expected_tool = "plainweave-dossier"
+expected_rule = "pw-requirement-dossier"
+
 # ── MCP-attachment capability demos (mcp-attach-*) ──────────────────────────────
 # Planted 2026-06-28. Each member (loomweave, filigree, wardline, legis, warpline,
 # plainweave) is spawned via .mcp.json, must initialize, and must bind its
