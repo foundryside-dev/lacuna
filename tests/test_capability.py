@@ -159,6 +159,10 @@ def test_extract_choices_pins_real_1_0_0_surface_excludes_peer_facts():
     assert "intent" in subs                                  # a real 1.0.0 subcommand
     assert "requirements-enrichment" not in subs            # absent in 1.0.0
     assert "wardline-peer-facts" not in subs
+    # Divergence pin (coverage-lacunae): baseline/verify/status/dossier DO ship in 1.0.0
+    # (UNLIKE the peer-facts subcommands above) — so the coverage caps read available
+    # under 1.0.0 too, and the [N/A] path is reachable only via a genuinely-absent surface.
+    assert {"baseline", "verify", "status", "dossier"} <= subs
 
 
 def test_extract_choices_pins_cli_parity_surface_includes_peer_facts():
@@ -176,3 +180,51 @@ def test_extract_choices_survives_line_wrapped_block():
 
 def test_extract_choices_empty_on_no_choices_block():
     assert _extract_subcommand_choices("usage: x [-h]\n\nno subparsers here\n") == frozenset()
+
+
+# ── Per-subcommand COVERAGE capabilities (plainweave baseline/verify/dossier) ──
+# baseline/verify/dossier ship in plainweave's BASE surface (present in 1.0.0 per
+# _HELP_1_0_0), so these caps read available on any plainweave that exposes them.
+# The [N/A] path is exercised below via a SIMULATED empty surface, not a real 1.0.0.
+
+
+def test_coverage_caps_live_when_surface_present():
+    caps = {c.name: c for c in detect(
+        _fake_which(_FULL),
+        pw_subcommands=lambda path: frozenset(
+            {"intent", "baseline", "verify", "status", "dossier"}
+        ),
+    )}
+    assert caps["plainweave-baseline"].available is True
+    assert caps["plainweave-verify"].available is True
+    assert caps["plainweave-dossier"].available is True
+
+
+def test_coverage_caps_unavailable_when_surface_absent():
+    # plainweave binary present, but the base subcommands are NOT in the (simulated)
+    # surface — a stripped/pre-baseline build. Caps must read UNAVAILABLE with a
+    # machine-readable reason, NOT a silent-empty. (No "1.0.0" claim: these ship in 1.0.0.)
+    caps = {c.name: c for c in detect(
+        _fake_which(_FULL),
+        pw_subcommands=lambda path: frozenset({"intent", "req", "trace"}),
+    )}
+    assert caps["plainweave"].available is True          # the binary IS present
+    assert caps["plainweave-baseline"].available is False
+    assert caps["plainweave-verify"].available is False
+    assert caps["plainweave-dossier"].available is False
+    assert "baseline" in caps["plainweave-baseline"].detail
+    assert "absent" in caps["plainweave-baseline"].detail
+
+
+def test_coverage_caps_gate_per_subcommand_not_combined():
+    # Mirrors test_peer_facts_caps_gate_per_subcommand_not_combined: a PARTIAL plainweave
+    # release exposing only `baseline` (not verify/dossier) must light up EXACTLY
+    # `plainweave-baseline` and gate the other two — proving the three coverage caps are
+    # probed per-subcommand, never conflated across PLAINWEAVE_COVERAGE_SUBCOMMANDS.
+    caps = {c.name: c for c in detect(
+        _fake_which(_FULL),
+        pw_subcommands=lambda path: frozenset({"baseline"}),
+    )}
+    assert caps["plainweave-baseline"].available is True
+    assert caps["plainweave-verify"].available is False
+    assert caps["plainweave-dossier"].available is False

@@ -39,6 +39,18 @@ WARPLINE_PEER_FACT_OPTIONS = {
     "--attest-bundle": "warpline-attest-bundle",
 }
 
+# Per-subcommand plainweave COVERAGE capabilities (coverage-lacunae, spec §4). These
+# gate each coverage cell on its base subcommand. NOTE: baseline/verify/status/dossier
+# ship in plainweave's BASE surface (present in 1.0.0), so these light up on any
+# plainweave that exposes the subcommand — the [N/A] path is reached only when the
+# surface is genuinely absent (a stripped/pre-baseline build). Maps subcommand ->
+# capability name (a lacuna's `expected_tool`).
+PLAINWEAVE_COVERAGE_SUBCOMMANDS = {
+    "baseline": "plainweave-baseline",
+    "verify": "plainweave-verify",
+    "dossier": "plainweave-dossier",
+}
+
 
 def plainweave_subcommands(plainweave_path: str | None) -> frozenset[str]:
     """The top-level subcommands the installed plainweave actually exposes.
@@ -151,6 +163,23 @@ def detect(
                     if present
                     else f"plainweave `{sub}` CLI surface absent "
                     "(Plainweave PDR-015 / plainweave >= 1.1; not in PyPI 1.0.0)"
+                ),
+            )
+        )
+    # Per-subcommand coverage capabilities, probed from the same plainweave surface.
+    # Absent surface (stripped/pre-baseline build) -> cap UNAVAILABLE with a
+    # machine-readable reason, so the coverage lacunae are gated out of verify's
+    # coverage assertion rather than reported as a failed surface.
+    for sub, cap_name in PLAINWEAVE_COVERAGE_SUBCOMMANDS.items():
+        present = sub in surface
+        caps.append(
+            Capability(
+                name=cap_name,
+                available=present,
+                detail=(
+                    (plainweave_path or "plainweave")
+                    if present
+                    else f"plainweave `{sub}` CLI surface absent"
                 ),
             )
         )
