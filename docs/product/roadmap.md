@@ -45,6 +45,13 @@ attachment was still inconsistent in a real session.
 > findings are filed/reconciled (PDR-0019); the loomweave←warpline churn join flipped NO-GO →
 > **live-GO on main** when loomweave PR #77 merged (2026-06-29). The Now theme continues with the
 > remaining Next items + the deferred Phase-5 join census.
+>
+> **Updated: 2026-07-01 (PDR-0022, PDR-0023).** First concrete increment of the comprehensive-coverage
+> theme (PDR-0020) DELIVERED: three plainweave **own-surface** coverage cells (baseline-drift /
+> verification-status / requirement-dossier), corpus 62 → **65**, opus-reviewed ready-to-merge as
+> **PR #3** (unmerged). The committed narrative was re-blessed to exercised plainweave 1.2.0 (PDR-0022 —
+> PDR-0016's reversal trigger firing; peer-facts cells `[N/A]`→`[PASS]`). Remaining plainweave
+> own-surface pickup: **preflight** (legis-facing). Next member-coverage pickup: **tabard** when released.
 
 - _Moves:_ federation seam health (guardrail) and dogfood friction count.
 - _Why now:_ the joins are the product's reason to exist as a demo; a join that

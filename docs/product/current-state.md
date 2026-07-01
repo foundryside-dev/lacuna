@@ -1,67 +1,72 @@
 # Current State — Lacuna
 
 _The resume brief: fastest path back to the running picture. Read this first._
-_Last checkpoint: 2026-06-29 (`/product-checkpoint`). Bootstrapped 2026-06-13._
+_Last checkpoint: 2026-07-01 (`/product-checkpoint`). Bootstrapped 2026-06-13._
 
 ## The bet right now
 
-**Federation seam integrity, agent-native** (roadmap → Now) — the 6-member MCP-attachment harness is
-**merged to `main`**, so **G1 (seam health) is a gate on `main`**. Sitting above it now is the
-**comprehensive-coverage intent** (PDR-0020/0021): Lacuna is a **comprehensive, growing demo of the
-full suite as each member comes online**, and that demo is now the **primary deliverable** (not a
-future graduation) — serving dogfood AND demonstrator continuously.
+**Comprehensive demo of the full suite, as it comes online** (PDR-0020/0021 — the PRIMARY intent),
+riding above the standing **federation seam integrity** bet (the 6-member MCP-attachment harness is
+merged, so **G1 is a gate on `main`**). This session delivered the **first concrete member-surface
+increment** of that theme: plainweave's own-surface coverage (baseline / verification / dossier).
+North star = `make verify` green with every live lacuna surfaced.
 
 ## What this checkpoint did
 
-- **Merged PR #2** to `main` (owner-directed): harness + peer-facts cells. Corpus 52 → **62**
-  lacunae. [PDR-0018]
-- **Filed + reconciled the merge-gate consumer-boundary escalations**, with dedup + ground-truth
-  verification that caught/corrected two stale-info errors; churn join resolved (loomweave PR #77
-  merged → **live-GO**). [PDR-0019]
-- **Resolved the peer-facts question → a standing comprehensive-coverage theme** (owner-stated
-  intent). [PDR-0020]
-- **Vision change (owner-directed): elevated the comprehensive demo to primary intent** (supersedes
-  PDR-0002's dogfood-now/demonstrator-later sequencing) and **reconciled the roster**: charter →
-  shipped as **plainweave** (requirements management); **tabard** is new/forthcoming (identity
-  management — issuing agent names). Edited `vision.md`, `roadmap.md`, `metrics.md`. [PDR-0021]
+- **Shipped the 3 plainweave coverage cells** (`pw-baseline-drift`, `pw-verification-status`,
+  `pw-requirement-dossier`) — corpus 62 → **65** — answering last checkpoint's open COVERAGE question
+  (net-new, owner-directed). Subagent-driven TDD, whole-branch opus review = ready-to-merge (0
+  Critical/0 Important); `make verify` green; §8.4 smoke passes vs real plainweave 1.2.0. Shipped as
+  **PR #3** (owner-authorized). [PDR-0023]
+- **Re-blessed the tour narrative to exercised plainweave 1.2.0** — PDR-0016's reversal trigger firing
+  (the gate resolves plainweave BIN-first at 1.2.0, which runs the peer-facts subcommands): the 2
+  peer-facts cells flipped `[N/A]` → `[PASS]`. Cleared two prereqs first: reinstalled
+  `wardline[loomweave,rust]` (rust lacunae were dark) and absorbed the legis v1.3.0→v1.4.0 re-stamp.
+  [PDR-0022]
+- **Reconciled the product workspace to `main`:** fast-forwarded the unmerged `product/checkpoint-
+  2026-06-29` branch (PDR-0018→0021) into local `main` (owner-directed), then checkpointed this
+  session on top. `main` is now the single product-history line (PDR-0018→0023).
 
 ## In flight
 
-- **Lacuna tracker:** `lacuna-2046f5ae8a` (`[release] P4` "Future") unchanged.
-- **Sibling/hub refs (theirs to action):** loomweave `clarion-f8fc8aebca` (P3, signaling ask). The
-  churn thread `weft-6fc4a166dc`/`weft-e585382ff3`/`weft-670ec2fe90` is CLOSED.
+- **PR #3** (`feat/plainweave-coverage-lacunae` → main): the coverage cells, opus-reviewed,
+  **awaiting merge** (owner-gated). Base is `origin/main@5107462`; docs-only vs the feature — no
+  conflict with the reconciled product commits.
+- **Lacuna tracker:** `lacuna-2046f5ae8a` (`[release] P4` "Future") unchanged. Observation
+  `lacuna-obs-c116dca009` filed (`materialize_workspace()` outside try across 3 plainweave legs).
+- **Sibling refs (theirs):** loomweave `clarion-f8fc8aebca` (P3 signaling ask). Churn thread CLOSED.
 
-## Open questions / next work
+## Open questions / blocked-on-owner (escalations)
 
-- **[COVERAGE] plainweave surface beyond intent-coverage is unplanted.** The 6 `pw-*` lacunae cover
-  intent (coverage/liveness/orphan/scoping) + 2 peer-facts; plainweave's **baselines, requirement
-  dossiers, verification-status, preflight** surfaces have no planted lacuna yet. Under the
-  comprehensive-coverage theme (PDR-0020) that is the gap to assess/fill. **Confirm with owner**
-  whether there is a specific intended plainweave lacunae set to reconcile against, or whether this
-  is net-new coverage to plant.
+- **[OWNER — push] Local `main` is ahead of `origin/main` by 4 unpushed commits** (PDR-0018→0021 from
+  the reconcile + this checkpoint's PDR-0022/0023). Push is your gate — say the word. (The now-merged
+  `product/checkpoint-2026-06-29` branch is redundant once main is pushed; safe to delete.)
+- **[OWNER — merge] PR #3** (coverage cells) is ready-to-merge; merging to `main` is your gate.
+- **[COVERAGE, residual] plainweave `preflight` surface still unplanted** — the next plainweave
+  own-surface pickup under PDR-0020. (`goal`/`criterion`/`bind`/`trace`/`catalog` already exercised;
+  `actor` → tabard's forthcoming domain.)
 - **[TOUR SOURCE] `matrix.md`/tour roster still says "charter — design-only"** (generated; do-not-
-  hand-edit). Reconcile in the tour source/manifest: charter → plainweave (live); add tabard
-  (forthcoming). A code/manifest change + `make tour` regen, not a doc edit.
-- **[SEQUENCING] Hand the remaining seam-integrity Next items to `/axiom-program-management`:**
-  Phase-5 join census, port/config oracle, scanner job semantics, rust-wing depth — now alongside the
-  standing comprehensive-coverage theme (next pickup: **tabard / identity management** when released).
+  hand-edit). Reconcile in the tour source: charter → plainweave (live); add tabard (forthcoming). A
+  manifest/code change + `make tour` regen. Still outstanding.
 
 ## Watch-items (not escalations)
 
-- **legis instruction-block re-stamp** on a legis version upgrade → dirty tree → trips clean-tree
-  gate. Absorbed v1.3.0; re-absorb on next upgrade.
-- **uv-tool build staleness** — `uv tool upgrade` can revert a `cp`-over-uv-path install
-  ([[loom-uvtool-build-staleness]]).
+- **legis re-stamp** now at **v1.4.0** (absorbed this session); re-absorb on the next legis bump.
+- **wardline extras** — a `uv tool` reinstall/upgrade can drop `[rust]`/`[scanner]` (rust lacunae go
+  dark); reinstall `wardline[loomweave,rust]` ([[loom-uvtool-build-staleness]]).
+- **`make verify` is the LOCAL north-star** — no CI verify gate (only `deploy-site.yml`); green needs
+  plainweave 1.2.0 + wardline `[loomweave,rust]` + sibling release builds for the attach gate.
 
 ## Authority grant
 
-CONFIRMED as-is (re-confirmed 2026-06-29); next review 2026-09-25. **One owner-directed VISION
-CHANGE this session** (PDR-0021 — elevate demo to primary + roster reconcile); recorded explicitly,
-not silently. The grant's *scope* is unchanged. Nothing else escalated — all prior open escalations
-were resolved.
+CONFIRMED as-is (re-confirmed 2026-06-29); next review 2026-09-25. **No vision/strategy/grant change
+this session.** Big actions were owner-directed in-session (wardline reinstall, the §10 re-bless, the
+main reconcile, the PR #3 push) — all within grant; the two outward-facing steps still held (push
+`main`, merge PR #3).
 
 ## Where the next session starts
 
-1. **Assess the plainweave-coverage gap** (above) and decide net-new lacunae vs. a reconcile.
-2. **Reconcile the tour-source roster** (charter→plainweave, +tabard) and regen `matrix.md`/`tour.md`.
+1. **The two owner git decisions:** push local `main` (PDR-0018→0023) and merge **PR #3**.
+2. **Plant plainweave `preflight` coverage** (residual gap) + **reconcile the tour-source roster**
+   (charter→plainweave, +tabard) with a `make tour` regen.
 3. **Sequence the seam-integrity Next items + tabard onboarding** via `/axiom-program-management`.
