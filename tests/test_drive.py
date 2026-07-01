@@ -46,6 +46,20 @@ def test_drive_includes_the_warpline_peer_facts_steps(monkeypatch):
     assert names.index("warpline reverify federation") > names.index("warpline change impact")
 
 
+def test_drive_includes_the_plainweave_coverage_step(monkeypatch):
+    from tour import steps
+    from tour.report import StepResult
+    monkeypatch.setattr(steps, "plainweave_coverage",
+                        lambda: StepResult("plainweave coverage", ok=True, detail="stub"))
+    monkeypatch.setattr(steps, "mcp_attachment",
+                        lambda: StepResult("mcp attachment", ok=True, detail="stub"))
+    monkeypatch.setattr(steps, "warpline_reverify_federation",
+                        lambda: StepResult("warpline reverify federation", ok=True, detail="stub"))
+    _caps, results = _drive()
+    names = [r.name for r in results]
+    assert "plainweave coverage" in names
+
+
 def test_drive_includes_the_plainweave_intent_step(monkeypatch):
     # Stub the self-seeding plainweave leg so this ordering test does NOT wipe/
     # rebuild .plainweave/ (the live seed is exercised by test_steps_plainweave and

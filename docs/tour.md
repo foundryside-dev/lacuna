@@ -42,13 +42,17 @@ reverify(include_federation=true) over a change to _add_book names every Weft fe
 
 seeded a covered+uncovered intent corpus over the specimen; cli._add_book and cli.main are justified (SEI->requirement->goal, traced); _register drops from the numerator once its requirement is deprecated; tour.__main__.main surfaces as an orphan and is scoped out of the product denominator; the catalog honestly reports incomplete public-surface tag coverage — advisory, local-only, never gates
 
-## [N/A] plainweave requirements-enrichment
+## [PASS] plainweave requirements-enrichment
 
-capability-gated — the installed plainweave does not expose the `requirements-enrichment` CLI surface (Plainweave PDR-015; plainweave >= 1.1, absent in the brief-pinned PyPI 1.0.0). This plainweave+warpline peer-facts cell is intentionally not exercised under the installed version — install a plainweave carrying the subcommand to light it up; advisory, local-only, never gates
+over the covered+uncovered seed, plainweave requirements-enrichment reports cli._add_book present (bound, non-empty requirements), tour.__main__.main absent (recorded, unbound), and an unresolvable locator unavailable (identity gap — never a silent 'absent') — the Warpline-facing no-silent-clean contract; advisory, local-only, never gates
 
-## [N/A] plainweave wardline peer facts
+## [PASS] plainweave wardline peer facts
 
-capability-gated — the installed plainweave does not expose the `wardline-peer-facts` CLI surface (Plainweave PDR-015; plainweave >= 1.1, absent in the brief-pinned PyPI 1.0.0). This plainweave+wardline peer-facts cell is intentionally not exercised under the installed version — install a plainweave carrying the subcommand to light it up; advisory, local-only, never gates
+plainweave reads .wardline/ snapshots as advisory peer facts: an active defect and a non-defect finding surface; a finding gone from the latest in-scope snapshot is reported resolved_or_unseen while an out-of-scope prior finding is honestly flagged (scope mismatch), not silently resolved; and an absent .wardline/ is unavailable, never clean — advisory, local-only, never gates
+
+## [PASS] plainweave coverage
+
+seeded the covered+uncovered corpus, then exercised plainweave's baseline, verification, and dossier surfaces: locking a baseline and superseding one approved requirement makes baseline diff report it as drift while an untouched requirement stays unchanged, and diffing a baseline in a store with no locked baseline reports an honest error rather than a silent clean; a requirement with a method and passing evidence reports satisfied while one with a method but no evidence reports unverified (never silently satisfied) and orphaned evidence reports stale; and the requirement dossier is coherent for a known requirement and reports an honest error for an unknown one — never an empty-as-clean dossier; advisory, local-only, never gates
 
 ## [PASS] mcp attachment
 

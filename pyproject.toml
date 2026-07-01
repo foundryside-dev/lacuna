@@ -22,4 +22,7 @@ packages = ["specimen", "tour"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+addopts = "-q -m 'not integration'"
+markers = [
+    "integration: real-producer smoke against the installed plainweave (deselected by default; run with `pytest -m integration`)",
+]

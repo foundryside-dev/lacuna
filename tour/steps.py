@@ -858,6 +858,11 @@ PLAINWEAVE_ENRICH_ABSENT = "python:function:tour.__main__.main"              # -
 PLAINWEAVE_ENRICH_UNAVAILABLE = "python:function:specimen.cli._does_not_exist"  # -> unavailable (identity gap)
 PLAINWEAVE_WARDLINE_ACTIVE = "specimen.peerfacts.unsafe_sink"  # active-defect anchor (frozen fixture)
 
+# Coverage-depth demos (pw-baseline-drift / pw-verification-status / pw-requirement-dossier).
+PLAINWEAVE_COVERAGE_BASELINE = "lacuna-coverage-lock"   # frozen baseline name (no wall-clock)
+PLAINWEAVE_COVERAGE_BOGUS_REQ = "REQ-lacuna-9999"       # never-seeded id (unknown-dossier negative)
+PLAINWEAVE_COVERAGE_BOGUS_BASELINE = "BASELINE-lacuna-9999"  # never-created id (no-baseline negative)
+
 
 def _plainweave_json(args: list[str], cwd: Path = ROOT) -> dict | None:
     """Run `plainweave <args> --json` (in `cwd`) and parse stdout. None on any failure.
@@ -1152,6 +1157,184 @@ def plainweave_wardline_peer_facts() -> StepResult:
             "unavailable, never clean — advisory, local-only, never gates"
         ),
         surfaced=tuple(pairs),
+    )
+
+
+def plainweave_coverage() -> StepResult:
+    """plainweave capability-depth: baseline / verification / dossier, no-silent-clean.
+
+    Seeds the covered+uncovered corpus in an isolated offline workspace, then exercises
+    three plainweave surfaces over their --json envelopes:
+      * pw-baseline-drift     — lock a baseline, supersede one approved requirement ->
+        `baseline diff` reports it as drift; an untouched requirement stays unchanged;
+        and in a store with no locked baseline, diffing a baseline reports honestly
+        (a NOT_FOUND error) rather than a silent clean.
+      * pw-verification-status — a requirement with a method AND passing evidence reports
+        `satisfied`; one with a method but NO evidence reports `unverified` (never
+        silently satisfied) and is listed by `status unverified`; orphaned evidence
+        reports `stale` and is listed by `status stale`.
+      * pw-requirement-dossier — `dossier <known>` is coherent (satisfied verification,
+        current baseline member, an incoming trace); `dossier <unknown>` reports an honest
+        error (never an empty-as-clean dossier).
+
+    Determinism (`make verify` is byte-for-byte): `detail` is FROZEN prose with no digits;
+    live ids/counts ride the non-rendered `note`. Capability-gated; never raises (tour
+    contract). _add_book does double duty (drift + stale): the single supersede AFTER
+    lock+evidence produces both.
+    """
+    name = "plainweave coverage"
+    if not (
+        _plainweave_supports("baseline")
+        and _plainweave_supports("verify")
+        and _plainweave_supports("dossier")
+    ):
+        return StepResult(
+            name, ok=False, available=False,
+            detail=(
+                "capability-gated — the installed plainweave does not expose the "
+                "`baseline`/`verify`/`dossier` CLI surface. These plainweave coverage "
+                "cells are intentionally not exercised when the surface is absent (a "
+                "stripped or pre-baseline build) — install a plainweave carrying the "
+                "subcommands to light them up; advisory, local-only, never gates"
+            ),
+        )
+
+    workspace = plainweave_seed.materialize_workspace()
+
+    def pw(args: list[str]) -> dict:
+        env = _plainweave_json(args, cwd=workspace)
+        if env is None or not env.get("ok"):
+            raise RuntimeError(f"plainweave call failed: {args[0] if args else '?'}")
+        return env.get("data") or {}
+
+    try:
+        reqs = plainweave_seed.seed(pw, deprecate=False, with_trace_links=True, root=workspace)
+        add_book = reqs[plainweave_seed.ADD_BOOK]
+        cli_main = reqs[plainweave_seed.CLI_MAIN]
+        register = reqs[plainweave_seed.REGISTER]
+
+        # Verification setup: passing evidence on add_book (v1) + cli_main (satisfied);
+        # register gets a method but NO evidence (unverified).
+        m_add = pw(["verify", "method", "add", add_book, "--method", "test",
+                    "--target", "tests/test_cli.py::test_add_book", "--actor", plainweave_seed.ACTOR])["id"]
+        pw(["verify", "evidence", "record", m_add, "--status", "passing",
+            "--evidence-ref", "ci://run/coverage-add-book", "--actor", plainweave_seed.ACTOR])
+        m_cli = pw(["verify", "method", "add", cli_main, "--method", "test",
+                    "--target", "tests/test_cli.py::test_main", "--actor", plainweave_seed.ACTOR])["id"]
+        pw(["verify", "evidence", "record", m_cli, "--status", "passing",
+            "--evidence-ref", "ci://run/coverage-cli-main", "--actor", plainweave_seed.ACTOR])
+        pw(["verify", "method", "add", register, "--method", "test",
+            "--target", "tests/test_cli.py::test_register", "--actor", plainweave_seed.ACTOR])
+
+        # No-baseline arm: BEFORE locking, diffing a never-created baseline must report an
+        # honest NOT_FOUND (or empty items) — never a silent clean. `ok=False` is the
+        # EXPECTED answer here (real plainweave 1.2.0 returns NOT_FOUND), so this read is
+        # EXCLUDED from the strict read-ok loop below (it must not trip the degrade path).
+        no_baseline = _plainweave_json(
+            ["baseline", "diff", PLAINWEAVE_COVERAGE_BOGUS_BASELINE], cwd=workspace)
+
+        # Lock at v1, THEN supersede add_book -> v2 (yields drift AND stale from one change).
+        baseline_id = pw(["baseline", "create", "--name", PLAINWEAVE_COVERAGE_BASELINE,
+                          "--actor", plainweave_seed.ACTOR])["id"]
+        pw(["req", "supersede", add_book, "--title", "Add-a-book command (revised)",
+            "--statement", "The CLI can add a book to the catalog with validation.",
+            "--expected-version", "1", "--actor", plainweave_seed.ACTOR])
+
+        diff = _plainweave_json(["baseline", "diff", baseline_id], cwd=workspace)
+        st_add = _plainweave_json(["verify", "status", add_book], cwd=workspace)
+        st_cli = _plainweave_json(["verify", "status", cli_main], cwd=workspace)
+        st_reg = _plainweave_json(["verify", "status", register], cwd=workspace)
+        unver = _plainweave_json(["status", "unverified"], cwd=workspace)
+        stale = _plainweave_json(["status", "stale"], cwd=workspace)
+        doss = _plainweave_json(["dossier", cli_main], cwd=workspace)
+        doss_unknown = _plainweave_json(["dossier", PLAINWEAVE_COVERAGE_BOGUS_REQ], cwd=workspace)
+        # `no_baseline` is intentionally absent here: an honest NOT_FOUND is its expected
+        # value, asserted by the no_baseline_honest conjunct below (not a failed read).
+        for env in (diff, st_add, st_cli, st_reg, unver, stale, doss):
+            if env is None or not env.get("ok"):
+                raise RuntimeError("plainweave coverage read failed")
+    except Exception as exc:  # tour contract: degrade, never raise. Type name only — no hex/digits.
+        return StepResult(name, ok=False, detail=f"plainweave coverage seed/read failed: {type(exc).__name__}")
+    finally:
+        shutil.rmtree(workspace, ignore_errors=True)  # single-use isolated workspace
+
+    # Tolerate either id form (display `REQ-...` or internal `req-N`) on items/lists.
+    def _item(items: list, rid: str) -> dict:
+        for it in items:
+            if it.get("id") == rid or it.get("requirement_id") == rid:
+                return it
+        return {}
+
+    def _ids(env: dict) -> set:
+        out: set = set()
+        for it in (env.get("data") or {}).get("items", []):
+            out |= {it.get("id"), it.get("requirement_id")}
+        return out
+
+    def _status(env: dict) -> str | None:
+        return (env.get("data") or {}).get("status")
+
+    def _reasons(env: dict) -> set:
+        return {r.get("code") for r in (env.get("data") or {}).get("reasons", [])}
+
+    pairs: list[tuple[str, str]] = []
+
+    # ── pw-baseline-drift ────────────────────────────────────────────────────
+    diff_items = (diff.get("data") or {}).get("items", [])
+    drift_flagged = _item(diff_items, add_book).get("status") == "superseded_since_baseline"
+    control_unchanged = _item(diff_items, cli_main).get("status") == "unchanged"
+    # Honest no-baseline: a structured envelope that is EITHER an `ok=False` error
+    # (real plainweave 1.2.0 -> NOT_FOUND) OR `ok=True` with empty items — never a
+    # silent clean (`ok=True` with a populated diff), and never a None (subprocess crash).
+    no_baseline_honest = no_baseline is not None and (
+        not no_baseline.get("ok")
+        or (no_baseline.get("data") or {}).get("items") == []
+    )
+    if drift_flagged and control_unchanged and no_baseline_honest:
+        pairs.append(("pw-baseline-drift", PLAINWEAVE_ADD_BOOK))
+
+    # ── pw-verification-status ─────────────────────────────────────────────────
+    satisfied = _status(st_cli) == "satisfied" and "passing_evidence" in _reasons(st_cli)
+    unverified = _status(st_reg) == "unverified"
+    unverified_listed = register in _ids(unver)
+    stale_status = _status(st_add) == "stale"
+    stale_listed = add_book in _ids(stale)
+    if satisfied and unverified and unverified_listed and stale_status and stale_listed:
+        pairs.append(("pw-verification-status", PLAINWEAVE_REGISTER))
+
+    # ── pw-requirement-dossier ─────────────────────────────────────────────────
+    ddata = doss.get("data") or {}
+    dossier_verification = (ddata.get("verification") or {}).get("status") == "satisfied"
+    dossier_baseline_current = any(
+        it.get("state") == "current"
+        for it in ((ddata.get("baseline_exposure") or {}).get("items") or [])
+    )
+    dossier_trace = bool((ddata.get("traces") or {}).get("incoming"))
+    unknown_honest = doss_unknown is None or not doss_unknown.get("ok")
+    if dossier_verification and dossier_baseline_current and dossier_trace and unknown_honest:
+        pairs.append(("pw-requirement-dossier", PLAINWEAVE_CLI_MAIN))
+
+    note = (
+        f"baseline={baseline_id}; add_book={add_book} cli_main={cli_main} register={register}; "
+        f"superseded={(diff.get('data') or {}).get('summary', {}).get('superseded_since_baseline')}"
+    )
+    return StepResult(
+        name,
+        ok=len(pairs) == 3,
+        detail=(
+            "seeded the covered+uncovered corpus, then exercised plainweave's baseline, "
+            "verification, and dossier surfaces: locking a baseline and superseding one "
+            "approved requirement makes baseline diff report it as drift while an untouched "
+            "requirement stays unchanged, and diffing a baseline in a store with no locked "
+            "baseline reports an honest error rather than a silent clean; a requirement with a method "
+            "and passing evidence reports satisfied while one with a method but no evidence "
+            "reports unverified (never silently satisfied) and orphaned evidence reports "
+            "stale; and the requirement dossier is coherent for a known requirement and "
+            "reports an honest error for an unknown one — never an empty-as-clean dossier; "
+            "advisory, local-only, never gates"
+        ),
+        surfaced=tuple(pairs),
+        note=note,
     )
 
 
